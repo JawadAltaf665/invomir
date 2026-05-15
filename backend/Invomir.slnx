@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/InvoMir.Application/InvoMir.Application.csproj" />
+    <Project Path="src/Invomir.Domain/Invomir.Domain.csproj" />
+    <Project Path="src/InvoMir.Infrastructure/InvoMir.Infrastructure.csproj" />
+    <Project Path="src/InvoMir.Shared/InvoMir.Shared.csproj" />
+  </Folder>
+  <Folder Name="/src/InvoMir.API/">
+    <Project Path="src/InvoMir.API/InvoMir.API/InvoMir.API.csproj" />
+  </Folder>
+</Solution>

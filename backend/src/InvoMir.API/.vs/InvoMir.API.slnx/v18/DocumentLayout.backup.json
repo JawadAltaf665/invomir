@@ -1,0 +1,84 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "E:\\Project\\InvoMir.API\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{B74067FB-DAC4-4C66-A738-56B0198DAF13}|..\\InvoMir.Shared\\InvoMir.Shared.csproj|e:\\project\\invomir.shared\\class1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{17119815-01C9-4440-B757-B519E45026A8}|..\\InvoMir.Infrastructure\\InvoMir.Infrastructure.csproj|e:\\project\\invomir.infrastructure\\class1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{0FD3DA61-5A15-4863-A92D-2F2F5BF94111}|..\\InvoMir.Application\\InvoMir.Application.csproj|e:\\project\\invomir.application\\class1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{957F48A5-35B6-46EF-9031-C829716545E8}|..\\InvoMir.Domain\\InvoMir.Domain.csproj|e:\\project\\invomir.domain\\class1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 0,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "Class1.cs",
+              "DocumentMoniker": "E:\\Project\\InvoMir.Shared\\Class1.cs",
+              "RelativeDocumentMoniker": "..\\InvoMir.Shared\\Class1.cs",
+              "ToolTip": "E:\\Project\\InvoMir.Shared\\Class1.cs",
+              "RelativeToolTip": "..\\InvoMir.Shared\\Class1.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-13T19:29:15.58Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "Class1.cs",
+              "DocumentMoniker": "E:\\Project\\InvoMir.Infrastructure\\Class1.cs",
+              "RelativeDocumentMoniker": "..\\InvoMir.Infrastructure\\Class1.cs",
+              "ToolTip": "E:\\Project\\InvoMir.Infrastructure\\Class1.cs",
+              "RelativeToolTip": "..\\InvoMir.Infrastructure\\Class1.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-13T19:28:51.578Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "Class1.cs",
+              "DocumentMoniker": "E:\\Project\\InvoMir.Application\\Class1.cs",
+              "RelativeDocumentMoniker": "..\\InvoMir.Application\\Class1.cs",
+              "ToolTip": "E:\\Project\\InvoMir.Application\\Class1.cs",
+              "RelativeToolTip": "..\\InvoMir.Application\\Class1.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-13T19:28:04.357Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "Class1.cs",
+              "DocumentMoniker": "E:\\Project\\InvoMir.Domain\\Class1.cs",
+              "RelativeDocumentMoniker": "..\\InvoMir.Domain\\Class1.cs",
+              "ToolTip": "E:\\Project\\InvoMir.Domain\\Class1.cs",
+              "RelativeToolTip": "..\\InvoMir.Domain\\Class1.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-13T19:27:01.374Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
