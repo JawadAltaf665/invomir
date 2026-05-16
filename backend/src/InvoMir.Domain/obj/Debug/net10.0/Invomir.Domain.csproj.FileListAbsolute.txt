@@ -1,0 +1,16 @@
+D:\Jawad\invomir\backend\src\Invomir.Domain\bin\Debug\net10.0\Invomir.Domain.deps.json
+D:\Jawad\invomir\backend\src\Invomir.Domain\bin\Debug\net10.0\Invomir.Domain.dll
+D:\Jawad\invomir\backend\src\Invomir.Domain\bin\Debug\net10.0\Invomir.Domain.pdb
+D:\Jawad\invomir\backend\src\Invomir.Domain\bin\Debug\net10.0\InvoMir.Shared.dll
+D:\Jawad\invomir\backend\src\Invomir.Domain\bin\Debug\net10.0\InvoMir.Shared.pdb
+D:\Jawad\invomir\backend\src\Invomir.Domain\obj\Debug\net10.0\Invomir.Domain.csproj.AssemblyReference.cache
+D:\Jawad\invomir\backend\src\Invomir.Domain\obj\Debug\net10.0\Invomir.Domain.GeneratedMSBuildEditorConfig.editorconfig
+D:\Jawad\invomir\backend\src\Invomir.Domain\obj\Debug\net10.0\Invomir.Domain.AssemblyInfoInputs.cache
+D:\Jawad\invomir\backend\src\Invomir.Domain\obj\Debug\net10.0\Invomir.Domain.AssemblyInfo.cs
+D:\Jawad\invomir\backend\src\Invomir.Domain\obj\Debug\net10.0\Invomir.Domain.csproj.CoreCompileInputs.cache
+D:\Jawad\invomir\backend\src\Invomir.Domain\obj\Debug\net10.0\Invomir.Domain.sourcelink.json
+D:\Jawad\invomir\backend\src\Invomir.Domain\obj\Debug\net10.0\Invomir.Domain.dll
+D:\Jawad\invomir\backend\src\Invomir.Domain\obj\Debug\net10.0\refint\Invomir.Domain.dll
+D:\Jawad\invomir\backend\src\Invomir.Domain\obj\Debug\net10.0\Invomir.Domain.pdb
+D:\Jawad\invomir\backend\src\Invomir.Domain\obj\Debug\net10.0\ref\Invomir.Domain.dll
+D:\Jawad\invomir\backend\src\Invomir.Domain\obj\Debug\net10.0\Invomir..0BD8A97E.Up2Date
