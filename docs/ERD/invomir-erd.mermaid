@@ -1,0 +1,262 @@
+erDiagram
+
+    %% ══════════════════════════════════════════════════════
+    %% INVOMIR — COMPLETE ENTITY RELATIONSHIP DIAGRAM v1.2
+    %% Multi-Tenant SaaS | PostgreSQL | EF Core 10
+    %% Current auth backend adds enterprise audit metadata to domain entities:
+    %% concurrency_stamp, creation_time, creator_user_id,
+    %% last_modification_time, last_modifier_user_id,
+    %% is_deleted, deletion_time, deleter_user_id.
+    %% AUDIT_LOGS remains immutable and is intentionally not soft-deleted.
+    %% ══════════════════════════════════════════════════════
+
+    %% ─── TENANT (Root of everything) ───────────────────
+    TENANTS {
+        uuid        id              PK
+        varchar     concurrency_stamp
+        varchar     name
+        varchar     slug            UK "invomir.com/slug"
+        varchar     plan            "free|starter|professional|business"
+        timestamp   trial_ends_at
+        varchar     stripe_customer_id
+        boolean     is_active
+        timestamp   creation_time
+        uuid        creator_user_id
+        timestamp   last_modification_time
+        uuid        last_modifier_user_id
+        boolean     is_deleted
+        timestamp   deletion_time
+        uuid        deleter_user_id
+    }
+
+    %% ─── USERS ──────────────────────────────────────────
+    USERS {
+        uuid        id              PK
+        varchar     concurrency_stamp
+        uuid        tenant_id       FK
+        varchar     email           UK
+        varchar     password_hash
+        varchar     first_name
+        varchar     last_name
+        varchar     role            "owner|admin|member"
+        varchar     plan            "free|starter|professional|business"
+        varchar     logo_url
+        varchar     currency        "USD|PKR|AED|GBP|EUR|SAR"
+        decimal     tax_percent
+        varchar     stripe_account_id
+        boolean     is_active
+        boolean     email_verified
+        timestamp   last_login_at
+        timestamp   trial_ends_at
+        timestamp   creation_time
+        uuid        creator_user_id
+        timestamp   last_modification_time
+        uuid        last_modifier_user_id
+        boolean     is_deleted
+        timestamp   deletion_time
+        uuid        deleter_user_id
+    }
+
+    %% ─── CLIENTS ────────────────────────────────────────
+    CLIENTS {
+        uuid        id              PK
+        uuid        tenant_id       FK
+        uuid        created_by      FK "users.id"
+        varchar     name
+        varchar     email
+        varchar     phone
+        text        address
+        varchar     company
+        varchar     tax_id
+        text        notes
+        boolean     is_active
+        timestamp   created_at
+        timestamp   updated_at
+    }
+
+    %% ─── INVOICES ───────────────────────────────────────
+    INVOICES {
+        uuid        id              PK
+        uuid        tenant_id       FK
+        uuid        user_id         FK
+        uuid        client_id       FK
+        varchar     invoice_number  "INV-001"
+        varchar     status          "draft|sent|viewed|paid|overdue|cancelled"
+        date        issue_date
+        date        due_date
+        varchar     currency
+        decimal     subtotal
+        decimal     tax_percent
+        decimal     tax_amount
+        decimal     discount
+        decimal     total
+        text        notes
+        varchar     payment_link_token  UK
+        varchar     stripe_payment_intent_id
+        timestamp   sent_at
+        timestamp   viewed_at
+        timestamp   paid_at
+        timestamp   cancelled_at
+        timestamp   created_at
+        timestamp   updated_at
+    }
+
+    %% ─── INVOICE ITEMS ──────────────────────────────────
+    INVOICE_ITEMS {
+        uuid        id              PK
+        uuid        invoice_id      FK
+        varchar     description
+        decimal     quantity
+        decimal     unit_price
+        decimal     amount          "quantity x unit_price"
+        int         sort_order
+        timestamp   created_at
+    }
+
+    %% ─── PAYMENTS ───────────────────────────────────────
+    PAYMENTS {
+        uuid        id              PK
+        uuid        invoice_id      FK
+        uuid        tenant_id       FK
+        uuid        user_id         FK
+        decimal     amount
+        varchar     currency
+        varchar     method          "card|bank|manual"
+        varchar     status          "pending|completed|failed|refunded"
+        varchar     stripe_charge_id
+        varchar     stripe_payment_intent_id
+        text        failure_reason
+        timestamp   paid_at
+        timestamp   created_at
+    }
+
+    %% ─── REMINDERS ──────────────────────────────────────
+    REMINDERS {
+        uuid        id              PK
+        uuid        invoice_id      FK
+        uuid        tenant_id       FK
+        varchar     type            "pre_due|overdue_1|overdue_7"
+        varchar     status          "pending|sent|failed"
+        text        failure_reason
+        timestamp   scheduled_at
+        timestamp   sent_at
+        timestamp   created_at
+    }
+
+    %% ─── SUBSCRIPTIONS ──────────────────────────────────
+    SUBSCRIPTIONS {
+        uuid        id              PK
+        uuid        tenant_id       FK
+        uuid        user_id         FK
+        varchar     stripe_subscription_id  UK
+        varchar     stripe_customer_id
+        varchar     plan            "starter|professional|business"
+        varchar     status          "active|cancelled|past_due|trialing"
+        varchar     interval        "month|year"
+        decimal     amount
+        varchar     currency
+        timestamp   current_period_start
+        timestamp   current_period_end
+        timestamp   cancelled_at
+        timestamp   created_at
+        timestamp   updated_at
+    }
+
+    %% ─── REFRESH TOKENS ─────────────────────────────────
+    REFRESH_TOKENS {
+        uuid        id              PK
+        varchar     concurrency_stamp
+        uuid        user_id         FK
+        uuid        tenant_id       FK
+        varchar     token           UK
+        varchar     device_info
+        varchar     ip_address
+        boolean     is_revoked
+        timestamp   expires_at
+        timestamp   revoked_at
+        timestamp   creation_time
+        uuid        creator_user_id
+        timestamp   last_modification_time
+        uuid        last_modifier_user_id
+        boolean     is_deleted
+        timestamp   deletion_time
+        uuid        deleter_user_id
+    }
+
+    %% ─── AUDIT LOGS ─────────────────────────────────────
+    AUDIT_LOGS {
+        uuid        id              PK
+        uuid        tenant_id       FK
+        uuid        user_id         FK "nullable — system actions"
+        varchar     entity_name     "Invoice|Client|User"
+        uuid        entity_id
+        varchar     action          "created|updated|deleted|sent|paid"
+        jsonb       old_values      "before state snapshot"
+        jsonb       new_values      "after state snapshot"
+        varchar     ip_address
+        varchar     user_agent
+        timestamp   created_at
+    }
+
+    %% ─── EMAIL LOGS ─────────────────────────────────────
+    EMAIL_LOGS {
+        uuid        id              PK
+        uuid        tenant_id       FK
+        uuid        invoice_id      FK "nullable"
+        uuid        user_id         FK "nullable"
+        varchar     type            "invoice_sent|reminder|receipt|welcome|reset"
+        varchar     to_email
+        varchar     subject
+        varchar     status          "queued|sent|delivered|failed|bounced"
+        varchar     sendgrid_message_id
+        text        failure_reason
+        timestamp   sent_at
+        timestamp   delivered_at
+        timestamp   created_at
+    }
+
+    %% ─── PASSWORD RESET TOKENS ──────────────────────────
+    PASSWORD_RESET_TOKENS {
+        uuid        id              PK
+        varchar     concurrency_stamp
+        uuid        user_id         FK
+        varchar     token           UK
+        boolean     is_used
+        timestamp   expires_at
+        timestamp   used_at
+        timestamp   creation_time
+        uuid        creator_user_id
+        timestamp   last_modification_time
+        uuid        last_modifier_user_id
+        boolean     is_deleted
+        timestamp   deletion_time
+        uuid        deleter_user_id
+    }
+
+    %% ══════════════════════════════════════════════════════
+    %% RELATIONSHIPS
+    %% ══════════════════════════════════════════════════════
+
+    TENANTS ||--o{ USERS : "has many"
+    TENANTS ||--o{ CLIENTS : "has many"
+    TENANTS ||--o{ INVOICES : "has many"
+    TENANTS ||--o{ PAYMENTS : "has many"
+    TENANTS ||--o{ SUBSCRIPTIONS : "has"
+    TENANTS ||--o{ AUDIT_LOGS : "has many"
+    TENANTS ||--o{ EMAIL_LOGS : "has many"
+    TENANTS ||--o{ REMINDERS : "has many"
+    TENANTS ||--o{ REFRESH_TOKENS : "has many"
+
+    USERS ||--o{ INVOICES : "creates"
+    USERS ||--o{ CLIENTS : "creates"
+    USERS ||--o{ REFRESH_TOKENS : "has many"
+    USERS ||--o{ PASSWORD_RESET_TOKENS : "has"
+    USERS ||--o{ AUDIT_LOGS : "performs"
+    USERS ||--o{ SUBSCRIPTIONS : "owns"
+
+    CLIENTS ||--o{ INVOICES : "receives many"
+
+    INVOICES ||--o{ INVOICE_ITEMS : "has many"
+    INVOICES ||--o{ PAYMENTS : "receives"
+    INVOICES ||--o{ REMINDERS : "triggers"
+    INVOICES ||--o{ EMAIL_LOGS : "generates"

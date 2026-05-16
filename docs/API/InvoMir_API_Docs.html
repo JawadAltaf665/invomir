@@ -1,0 +1,2492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>InvoMir API Reference v1.1</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,400&family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --surface2: #16161f;
+    --border: #1e1e2e;
+    --border-bright: #2a2a3e;
+    --gold: #c9a84c;
+    --gold-dim: #9a7835;
+    --gold-glow: rgba(201, 168, 76, 0.12);
+    --gold-glow2: rgba(201, 168, 76, 0.06);
+    --text: #e8e8f0;
+    --text-dim: #8888a8;
+    --text-muted: #55556a;
+    --green: #4ade80;
+    --green-bg: rgba(74, 222, 128, 0.08);
+    --red: #f87171;
+    --red-bg: rgba(248, 113, 113, 0.08);
+    --blue: #60a5fa;
+    --blue-bg: rgba(96, 165, 250, 0.08);
+    --orange: #fb923c;
+    --orange-bg: rgba(251, 146, 60, 0.08);
+    --purple: #a78bfa;
+    --purple-bg: rgba(167, 139, 250, 0.08);
+    --radius: 8px;
+    --radius-lg: 12px;
+    --sidebar-w: 280px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    display: flex;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── Sidebar ── */
+  #sidebar {
+    width: var(--sidebar-w);
+    min-width: var(--sidebar-w);
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    height: 100vh;
+    position: sticky;
+    top: 0;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-bright) transparent;
+  }
+
+  .sidebar-logo {
+    padding: 28px 24px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo-wordmark {
+    font-family: 'Syne', sans-serif;
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--gold);
+    letter-spacing: -0.02em;
+    display: block;
+  }
+
+  .logo-sub {
+    font-size: 11px;
+    color: var(--text-muted);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-family: 'DM Mono', monospace;
+    margin-top: 2px;
+  }
+
+  .sidebar-version {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 10px;
+    padding: 3px 8px;
+    background: var(--gold-glow2);
+    border: 1px solid var(--gold-dim);
+    border-radius: 4px;
+    font-size: 10px;
+    font-family: 'DM Mono', monospace;
+    color: var(--gold);
+    letter-spacing: 0.06em;
+  }
+
+  .sidebar-search {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .search-input {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border-bright);
+    border-radius: var(--radius);
+    padding: 7px 12px 7px 32px;
+    color: var(--text);
+    font-size: 13px;
+    font-family: 'DM Sans', sans-serif;
+    outline: none;
+    transition: border-color 0.2s;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2355556a' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: 10px center;
+  }
+
+  .search-input:focus { border-color: var(--gold-dim); }
+  .search-input::placeholder { color: var(--text-muted); }
+
+  .sidebar-nav { padding: 8px 0; flex: 1; }
+
+  .nav-group { margin-bottom: 2px; }
+
+  .nav-group-label {
+    padding: 10px 20px 4px;
+    font-size: 10px;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 20px;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-decoration: none;
+    border-left: 2px solid transparent;
+    user-select: none;
+  }
+
+  .nav-item:hover { background: var(--gold-glow2); color: var(--text); }
+
+  .nav-item.active {
+    background: var(--gold-glow);
+    border-left-color: var(--gold);
+    color: var(--gold);
+  }
+
+  .nav-item .method-pill {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    font-weight: 500;
+    padding: 2px 5px;
+    border-radius: 3px;
+    min-width: 36px;
+    text-align: center;
+    letter-spacing: 0.04em;
+  }
+
+  .nav-item .ep-path {
+    font-size: 12px;
+    font-family: 'DM Mono', monospace;
+    color: var(--text-dim);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .nav-item.active .ep-path { color: var(--gold); }
+
+  .pill-GET    { background: var(--green-bg); color: var(--green); }
+  .pill-POST   { background: var(--blue-bg); color: var(--blue); }
+  .pill-PUT    { background: var(--orange-bg); color: var(--orange); }
+  .pill-DELETE { background: var(--red-bg); color: var(--red); }
+  .pill-PATCH  { background: var(--purple-bg); color: var(--purple); }
+
+  /* ── Main ── */
+  #main {
+    flex: 1;
+    overflow-y: auto;
+    min-width: 0;
+  }
+
+  /* ── Header ── */
+  .api-header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 48px 60px 40px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .api-header::before {
+    content: '';
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 300px; height: 300px;
+    background: radial-gradient(circle, rgba(201,168,76,0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .api-header-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    background: var(--gold-glow);
+    border: 1px solid var(--gold-dim);
+    border-radius: 20px;
+    font-size: 11px;
+    font-family: 'DM Mono', monospace;
+    color: var(--gold);
+    margin-bottom: 16px;
+    letter-spacing: 0.05em;
+  }
+
+  .api-header h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: 36px;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    color: var(--text);
+    margin-bottom: 10px;
+  }
+
+  .api-header h1 span { color: var(--gold); }
+
+  .api-header-desc {
+    color: var(--text-dim);
+    font-size: 15px;
+    max-width: 560px;
+    line-height: 1.7;
+    margin-bottom: 28px;
+  }
+
+  .header-meta {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+
+  .meta-chip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+
+  .meta-chip strong {
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+  }
+
+  .meta-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 6px var(--green);
+  }
+
+  /* ── Base URL Banner ── */
+  .base-url-bar {
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 60px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+  }
+
+  .base-url-label {
+    color: var(--text-muted);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    white-space: nowrap;
+  }
+
+  .base-url-val {
+    color: var(--gold);
+    background: var(--gold-glow2);
+    padding: 4px 12px;
+    border-radius: 4px;
+    border: 1px solid var(--border-bright);
+  }
+
+  /* ── Auth Info ── */
+  .auth-banner {
+    margin: 32px 60px 0;
+    background: var(--surface2);
+    border: 1px solid var(--border-bright);
+    border-radius: var(--radius-lg);
+    padding: 20px 24px;
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+  }
+
+  .auth-icon {
+    width: 36px; height: 36px;
+    background: var(--gold-glow);
+    border: 1px solid var(--gold-dim);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+
+  .auth-body h3 {
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+
+  .auth-body p { color: var(--text-dim); font-size: 13px; line-height: 1.6; }
+
+  .auth-body code {
+    font-family: 'DM Mono', monospace;
+    background: var(--bg);
+    color: var(--gold);
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-size: 12px;
+  }
+
+  /* ── Section ── */
+  .section {
+    padding: 40px 60px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+
+  .section-icon {
+    width: 32px; height: 32px;
+    background: var(--gold-glow);
+    border: 1px solid var(--gold-dim);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+  }
+
+  .section-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.02em;
+  }
+
+  .section-count {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--text-muted);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    padding: 2px 7px;
+    border-radius: 10px;
+  }
+
+  /* ── Endpoint Card ── */
+  .endpoint-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    margin-bottom: 16px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+
+  .endpoint-card:hover { border-color: var(--border-bright); }
+  .endpoint-card.expanded { border-color: var(--gold-dim); }
+
+  .endpoint-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 20px;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s;
+  }
+
+  .endpoint-header:hover { background: var(--gold-glow2); }
+
+  .method-badge {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    padding: 4px 10px;
+    border-radius: 5px;
+    min-width: 58px;
+    text-align: center;
+    letter-spacing: 0.05em;
+    flex-shrink: 0;
+  }
+
+  .badge-GET    { background: var(--green-bg); color: var(--green); border: 1px solid rgba(74,222,128,0.2); }
+  .badge-POST   { background: var(--blue-bg); color: var(--blue); border: 1px solid rgba(96,165,250,0.2); }
+  .badge-PUT    { background: var(--orange-bg); color: var(--orange); border: 1px solid rgba(251,146,60,0.2); }
+  .badge-DELETE { background: var(--red-bg); color: var(--red); border: 1px solid rgba(248,113,113,0.2); }
+  .badge-PATCH  { background: var(--purple-bg); color: var(--purple); border: 1px solid rgba(167,139,250,0.2); }
+
+  .endpoint-path {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    color: var(--text);
+    flex: 1;
+  }
+
+  .endpoint-path .param { color: var(--gold); }
+
+  .endpoint-summary {
+    font-size: 12px;
+    color: var(--text-dim);
+    flex: 1;
+    text-align: right;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 240px;
+  }
+
+  .auth-tag {
+    font-size: 10px;
+    font-family: 'DM Mono', monospace;
+    padding: 2px 7px;
+    border-radius: 4px;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .auth-jwt    { background: var(--gold-glow2); color: var(--gold); border: 1px solid var(--gold-dim); }
+  .auth-public { background: var(--green-bg); color: var(--green); border: 1px solid rgba(74,222,128,0.2); }
+  .auth-stripe { background: var(--purple-bg); color: var(--purple); border: 1px solid rgba(167,139,250,0.2); }
+
+  .chevron {
+    color: var(--text-muted);
+    font-size: 12px;
+    transition: transform 0.2s;
+    flex-shrink: 0;
+  }
+
+  .expanded .chevron { transform: rotate(180deg); }
+
+  /* ── Endpoint Body ── */
+  .endpoint-body {
+    display: none;
+    border-top: 1px solid var(--border);
+    padding: 24px 20px;
+    gap: 24px;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .endpoint-body.visible { display: grid; }
+
+  .col-left { display: flex; flex-direction: column; gap: 20px; }
+  .col-right { display: flex; flex-direction: column; gap: 20px; }
+
+  .detail-section h4 {
+    font-family: 'Syne', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 10px;
+  }
+
+  .desc-text {
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.7;
+  }
+
+  /* ── Param Table ── */
+  .param-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+
+  .param-table th {
+    text-align: left;
+    padding: 6px 10px;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .param-table td {
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+
+  .param-table tr:last-child td { border-bottom: none; }
+
+  .param-name {
+    font-family: 'DM Mono', monospace;
+    color: var(--text);
+    font-size: 12px;
+  }
+
+  .param-type {
+    font-family: 'DM Mono', monospace;
+    color: var(--blue);
+    font-size: 11px;
+  }
+
+  .param-req {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    padding: 1px 5px;
+    border-radius: 3px;
+  }
+
+  .req-yes { background: var(--red-bg); color: var(--red); }
+  .req-no  { background: var(--surface); color: var(--text-muted); }
+
+  .param-desc { color: var(--text-dim); font-size: 12px; }
+
+  /* ── Code Block ── */
+  .code-block {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .code-block-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 14px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+
+  .code-lang {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .copy-btn {
+    background: none;
+    border: 1px solid var(--border-bright);
+    color: var(--text-muted);
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    cursor: pointer;
+    font-family: 'DM Mono', monospace;
+    transition: all 0.15s;
+  }
+
+  .copy-btn:hover { border-color: var(--gold-dim); color: var(--gold); }
+
+  .code-content {
+    padding: 14px;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    line-height: 1.7;
+    overflow-x: auto;
+    white-space: pre;
+    color: var(--text-dim);
+  }
+
+  .code-content .key { color: var(--blue); }
+  .code-content .str { color: var(--green); }
+  .code-content .num { color: var(--orange); }
+  .code-content .bool { color: var(--purple); }
+  .code-content .null { color: var(--text-muted); }
+  .code-content .comment { color: var(--text-muted); font-style: italic; }
+
+  /* ── Response Tags ── */
+  .response-list { display: flex; flex-direction: column; gap: 6px; }
+
+  .response-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 8px 12px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-size: 12px;
+  }
+
+  .status-code {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 500;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .s-2xx { background: var(--green-bg); color: var(--green); }
+  .s-4xx { background: var(--orange-bg); color: var(--orange); }
+  .s-5xx { background: var(--red-bg); color: var(--red); }
+
+  .response-desc { color: var(--text-dim); }
+
+  /* ── Inferred badge ── */
+  .inferred-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 9px;
+    font-family: 'DM Mono', monospace;
+    padding: 1px 6px;
+    background: var(--purple-bg);
+    border: 1px solid rgba(167,139,250,0.3);
+    color: var(--purple);
+    border-radius: 3px;
+    letter-spacing: 0.04em;
+    margin-left: 8px;
+    vertical-align: middle;
+  }
+
+  /* ── TOC intro block ── */
+  .intro-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    margin: 32px 60px 0;
+  }
+
+  .intro-stat {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 16px 20px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .intro-stat::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px; height: 100%;
+    background: var(--gold);
+  }
+
+  .intro-stat-val {
+    font-family: 'Syne', sans-serif;
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--gold);
+    letter-spacing: -0.04em;
+  }
+
+  .intro-stat-label {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+
+  /* ── Footer ── */
+  .api-footer {
+    padding: 32px 60px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .footer-brand {
+    font-family: 'Syne', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--gold);
+  }
+
+  .footer-meta {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+  /* ── Highlighted search ── */
+  .highlight { background: rgba(201,168,76,0.25); border-radius: 2px; }
+
+  /* ── Nav group toggle ── */
+  .nav-group-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 20px 4px;
+    cursor: pointer;
+  }
+
+  .nav-group-head:hover .nav-group-label { color: var(--text-dim); }
+  .nav-group-chevron { font-size: 10px; color: var(--text-muted); }
+
+  .nav-group-items { display: block; }
+  .nav-group-items.collapsed { display: none; }
+
+  @media (max-width: 900px) {
+    #sidebar { display: none; }
+    .section, .api-header, .base-url-bar, .auth-banner, .intro-grid, .api-footer { padding-left: 24px; padding-right: 24px; }
+    .intro-grid { margin-left: 24px; margin-right: 24px; }
+    .auth-banner { margin-left: 24px; margin-right: 24px; }
+    .endpoint-body { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════ SIDEBAR ══════════ -->
+<nav id="sidebar">
+  <div class="sidebar-logo">
+    <span class="logo-wordmark">InvoMir</span>
+    <span class="logo-sub">API Reference</span>
+    <div class="sidebar-version">v1.1 · REST · JWT</div>
+  </div>
+
+  <div class="sidebar-search">
+    <input class="search-input" id="searchInput" type="text" placeholder="Search endpoints…" autocomplete="off">
+  </div>
+
+  <div class="sidebar-nav" id="sidebarNav">
+    <!-- Auth -->
+    <div class="nav-group" data-group="auth">
+      <div class="nav-group-head" onclick="toggleGroup('auth')">
+        <span class="nav-group-label">🔐 Authentication</span>
+        <span class="nav-group-chevron" id="chev-auth">▾</span>
+      </div>
+      <div class="nav-group-items" id="group-auth">
+        <a class="nav-item" onclick="scrollTo('ep-auth-register')"><span class="method-pill pill-POST">POST</span><span class="ep-path">/auth/register</span></a>
+        <a class="nav-item" onclick="scrollTo('ep-auth-login')"><span class="method-pill pill-POST">POST</span><span class="ep-path">/auth/login</span></a>
+        <a class="nav-item" onclick="scrollTo('ep-auth-refresh')"><span class="method-pill pill-POST">POST</span><span class="ep-path">/auth/refresh</span></a>
+        <a class="nav-item" onclick="scrollTo('ep-auth-forgot')"><span class="method-pill pill-POST">POST</span><span class="ep-path">/auth/forgot-password</span></a>
+        <a class="nav-item" onclick="scrollTo('ep-auth-reset')"><span class="method-pill pill-POST">POST</span><span class="ep-path">/auth/reset-password</span></a>
+      </div>
+    </div>
+    <!-- Users -->
+    <div class="nav-group" data-group="users">
+      <div class="nav-group-head" onclick="toggleGroup('users')">
+        <span class="nav-group-label">👤 Users</span>
+        <span class="nav-group-chevron" id="chev-users">▾</span>
+      </div>
+      <div class="nav-group-items" id="group-users">
+        <a class="nav-item" onclick="scrollTo('ep-users-me-get')"><span class="method-pill pill-GET">GET</span><span class="ep-path">/users/me</span></a>
+        <a class="nav-item" onclick="scrollTo('ep-users-me-put')"><span class="method-pill pill-PUT">PUT</span><span class="ep-path">/users/me</span></a>
+        <a class="nav-item" onclick="scrollTo('ep-users-logo')"><span class="method-pill pill-POST">POST</span><span class="ep-path">/users/me/logo</span></a>
+      </div>
+    </div>
+    <!-- Clients -->
+    <div class="nav-group" data-group="clients">
+      <div class="nav-group-head" onclick="toggleGroup('clients')">
+        <span class="nav-group-label">🏢 Clients</span>
+        <span class="nav-group-chevron" id="chev-clients">▾</span>
+      </div>
+      <div class="nav-group-items" id="group-clients">
+        <a class="nav-item" onclick="scrollTo('ep-clients-list')"><span class="method-pill pill-GET">GET</span><span class="ep-path">/clients</span></a>
+        <a class="nav-item" onclick="scrollTo('ep-clients-create')"><span class="method-pill pill-POST">POST</span><span class="ep-path">/clients</span></a>
+        <a class="nav-item" onclick="scrollTo('ep-clients-get')"><span class="method-pill pill-GET">GET</span><span class="ep-path">/clients/{id}</span></a>
+        <a class="nav-item" onclick="scrollTo('ep-clients-update')"><span class="method-pill pill-PUT">PUT</span><span class="ep-path">/clients/{id}</span></a>
+        <a class="nav-item" onclick="scrollTo('ep-clients-delete')"><span class="method-pill pill-DELETE">DEL</span><span class="ep-path">/clients/{id}</span></a>
+      </div>
+    </div>
+    <!-- Invoices -->
+    <div class="nav-group" data-group="invoices">
+      <div class="nav-group-head" onclick="toggleGroup('invoices')">
+        <span class="nav-group-label">🧾 Invoices</span>
+        <span class="nav-group-chevron" id="chev-invoices">▾</span>
+      </div>
+      <div class="nav-group-items" id="group-invoices">
+        <a class="nav-item" onclick="scrollTo('ep-inv-list')"><span class="method-pill pill-GET">GET</span><span class="ep-path">/invoices</span></a>
+        <a class="nav-item" onclick="scrollTo('ep-inv-create')"><span class="method-pill pill-POST">POST</span><span class="ep-path">/invoices</span></a>
+        <a class="nav-item" onclick="scrollTo('ep-inv-get')"><span class="method-pill pill-GET">GET</span><span class="ep-path">/invoices/{id}</span></a>
+        <a class="nav-item" onclick="scrollTo('ep-inv-update')"><span class="method-pill pill-PUT">PUT</span><span class="ep-path">/invoices/{id}</span></a>
+        <a class="nav-item" onclick="scrollTo('ep-inv-delete')"><span class="method-pill pill-DELETE">DEL</span><span class="ep-path">/invoices/{id}</span></a>
+        <a class="nav-item" onclick="scrollTo('ep-inv-send')"><span class="method-pill pill-POST">POST</span><span class="ep-path">/invoices/{id}/send</span></a>
+        <a class="nav-item" onclick="scrollTo('ep-inv-paid')"><span class="method-pill pill-POST">POST</span><span class="ep-path">/invoices/{id}/mark-paid</span></a>
+        <a class="nav-item" onclick="scrollTo('ep-inv-pdf')"><span class="method-pill pill-GET">GET</span><span class="ep-path">/invoices/{id}/pdf</span></a>
+        <a class="nav-item" onclick="scrollTo('ep-inv-dupe')"><span class="method-pill pill-POST">POST</span><span class="ep-path">/invoices/{id}/duplicate</span></a>
+        <a class="nav-item" onclick="scrollTo('ep-inv-reminders')"><span class="method-pill pill-PATCH">PAT</span><span class="ep-path">/invoices/{id}/reminders</span></a>
+      </div>
+    </div>
+    <!-- Payments -->
+    <div class="nav-group" data-group="payments">
+      <div class="nav-group-head" onclick="toggleGroup('payments')">
+        <span class="nav-group-label">💳 Payments & Stripe</span>
+        <span class="nav-group-chevron" id="chev-payments">▾</span>
+      </div>
+      <div class="nav-group-items" id="group-payments">
+        <a class="nav-item" onclick="scrollTo('ep-pay-page')"><span class="method-pill pill-GET">GET</span><span class="ep-path">/pay/{token}</span></a>
+        <a class="nav-item" onclick="scrollTo('ep-stripe-webhook')"><span class="method-pill pill-POST">POST</span><span class="ep-path">/stripe/webhook</span></a>
+        <a class="nav-item" onclick="scrollTo('ep-stripe-connect')"><span class="method-pill pill-POST">POST</span><span class="ep-path">/stripe/connect</span></a>
+      </div>
+    </div>
+    <!-- Dashboard -->
+    <div class="nav-group" data-group="dashboard">
+      <div class="nav-group-head" onclick="toggleGroup('dashboard')">
+        <span class="nav-group-label">📊 Dashboard & Reports</span>
+        <span class="nav-group-chevron" id="chev-dashboard">▾</span>
+      </div>
+      <div class="nav-group-items" id="group-dashboard">
+        <a class="nav-item" onclick="scrollTo('ep-dashboard')"><span class="method-pill pill-GET">GET</span><span class="ep-path">/dashboard</span></a>
+        <a class="nav-item" onclick="scrollTo('ep-reports-monthly')"><span class="method-pill pill-GET">GET</span><span class="ep-path">/reports/monthly</span></a>
+        <a class="nav-item" onclick="scrollTo('ep-reports-export')"><span class="method-pill pill-GET">GET</span><span class="ep-path">/reports/export</span></a>
+      </div>
+    </div>
+    <!-- Subscriptions -->
+    <div class="nav-group" data-group="subscriptions">
+      <div class="nav-group-head" onclick="toggleGroup('subscriptions')">
+        <span class="nav-group-label">🔖 Subscriptions</span>
+        <span class="nav-group-chevron" id="chev-subscriptions">▾</span>
+      </div>
+      <div class="nav-group-items" id="group-subscriptions">
+        <a class="nav-item" onclick="scrollTo('ep-sub-get')"><span class="method-pill pill-GET">GET</span><span class="ep-path">/subscriptions</span></a>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- ══════════ MAIN ══════════ -->
+<main id="main">
+
+  <!-- Header -->
+  <div class="api-header">
+    <div class="api-header-badge">● REST API · v1.1</div>
+    <h1>InvoMir <span>API Reference</span></h1>
+    <p class="api-header-desc">Complete REST API documentation for InvoMir — the invoicing SaaS built for freelancers, agencies, and field service businesses. All endpoints, request schemas, response shapes, and status codes.</p>
+    <div class="header-meta">
+      <div class="meta-chip"><div class="meta-dot"></div><strong>31 Endpoints</strong></div>
+      <div class="meta-chip">🔐 <strong>JWT Bearer Auth</strong></div>
+      <div class="meta-chip">📦 <strong>.NET Core 8</strong></div>
+      <div class="meta-chip">🗄️ <strong>PostgreSQL</strong></div>
+      <div class="meta-chip">💳 <strong>Stripe</strong></div>
+    </div>
+  </div>
+
+  <!-- Base URL -->
+  <div class="base-url-bar">
+    <span class="base-url-label">Base URL</span>
+    <span class="base-url-val">https://api.invomir.app</span>
+    <span class="base-url-label" style="margin-left:20px;">Staging</span>
+    <span class="base-url-val">https://staging-api.invomir.app</span>
+  </div>
+
+  <!-- Stats grid -->
+  <div class="intro-grid">
+    <div class="intro-stat"><div class="intro-stat-val">31</div><div class="intro-stat-label">Total Endpoints</div></div>
+    <div class="intro-stat"><div class="intro-stat-val">23</div><div class="intro-stat-label">PRD-Specified</div></div>
+    <div class="intro-stat"><div class="intro-stat-val">8</div><div class="intro-stat-label">Inferred / Gap-filled</div></div>
+    <div class="intro-stat"><div class="intro-stat-val">7</div><div class="intro-stat-label">Resource Groups</div></div>
+  </div>
+
+  <!-- Auth Banner -->
+  <div class="auth-banner">
+    <div class="auth-icon">🔐</div>
+    <div class="auth-body">
+      <h3>Authentication</h3>
+      <p>All protected endpoints require a Bearer JWT token in the <code>Authorization</code> header: <code>Authorization: Bearer &lt;access_token&gt;</code>. Tokens are issued by <code>POST /api/auth/login</code> and expire in <strong>15 minutes</strong>. Use <code>POST /api/auth/refresh</code> with the refresh token (httpOnly cookie) to obtain a new access token. Auth endpoints write security audit rows to <code>audit_logs</code> for register, login, refresh, forgot password, and reset password events. The Stripe webhook endpoint uses Stripe-Signature header validation instead of JWT.</p>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+       SECTION 1 — AUTHENTICATION
+  ════════════════════════════════════════════════ -->
+  <div class="section" id="sec-auth">
+    <div class="section-header">
+      <div class="section-icon">🔐</div>
+      <div class="section-title">Authentication</div>
+      <div class="section-count">5 endpoints</div>
+    </div>
+
+    <!-- REGISTER -->
+    <div class="endpoint-card" id="ep-auth-register">
+      <div class="endpoint-header" onclick="toggleCard(this)">
+        <span class="method-badge badge-POST">POST</span>
+        <span class="endpoint-path">/api/auth/register</span>
+        <span class="endpoint-summary">Create new user account</span>
+        <span class="auth-tag auth-public">PUBLIC</span>
+        <span class="chevron">▾</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="col-left">
+          <div class="detail-section">
+            <h4>Description</h4>
+            <p class="desc-text">Creates a new InvoMir account. Sends an email verification link. User cannot send invoices until email is verified. A 14-day full-feature trial starts immediately on account creation.</p>
+          </div>
+          <div class="detail-section">
+            <h4>Request Body · application/json</h4>
+            <table class="param-table">
+              <tr><th>Field</th><th>Type</th><th>Req</th><th>Description</th></tr>
+              <tr><td class="param-name">email</td><td class="param-type">string</td><td><span class="param-req req-yes">Yes</span></td><td class="param-desc">Must be unique. Used for login and notifications.</td></tr>
+              <tr><td class="param-name">password</td><td class="param-type">string</td><td><span class="param-req req-yes">Yes</span></td><td class="param-desc">Min 8 chars. Stored as bcrypt hash.</td></tr>
+              <tr><td class="param-name">business_name</td><td class="param-type">string</td><td><span class="param-req req-yes">Yes</span></td><td class="param-desc">Used on all generated PDFs.</td></tr>
+              <tr><td class="param-name">currency</td><td class="param-type">string</td><td><span class="param-req req-no">No</span></td><td class="param-desc">ISO 4217 code. Default: "USD".</td></tr>
+              <tr><td class="param-name">tax_percent</td><td class="param-type">number</td><td><span class="param-req req-no">No</span></td><td class="param-desc">Default tax % applied to invoices. Default: 0.</td></tr>
+            </table>
+          </div>
+          <div class="detail-section">
+            <h4>Responses</h4>
+            <div class="response-list">
+              <div class="response-item"><span class="status-code s-2xx">201</span><span class="response-desc">Account created. Returns user object + access_token.</span></div>
+              <div class="response-item"><span class="status-code s-4xx">400</span><span class="response-desc">Validation error — missing fields or weak password.</span></div>
+              <div class="response-item"><span class="status-code s-4xx">409</span><span class="response-desc">Email already registered.</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="col-right">
+          <div class="detail-section">
+            <h4>Request Example</h4>
+            <div class="code-block">
+              <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+              <div class="code-content">{
+  <span class="key">"email"</span>: <span class="str">"sara@example.com"</span>,
+  <span class="key">"password"</span>: <span class="str">"Secur3Pass!"</span>,
+  <span class="key">"business_name"</span>: <span class="str">"Sara Design Studio"</span>,
+  <span class="key">"currency"</span>: <span class="str">"USD"</span>,
+  <span class="key">"tax_percent"</span>: <span class="num">5</span>
+}</div>
+            </div>
+          </div>
+          <div class="detail-section">
+            <h4>Response · 201</h4>
+            <div class="code-block">
+              <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+              <div class="code-content">{
+  <span class="key">"user"</span>: {
+    <span class="key">"id"</span>: <span class="str">"usr_01j3k..."</span>,
+    <span class="key">"email"</span>: <span class="str">"sara@example.com"</span>,
+    <span class="key">"business_name"</span>: <span class="str">"Sara Design Studio"</span>,
+    <span class="key">"plan"</span>: <span class="str">"trial"</span>,
+    <span class="key">"trial_ends_at"</span>: <span class="str">"2026-05-29T00:00:00Z"</span>
+  },
+  <span class="key">"access_token"</span>: <span class="str">"eyJhbGci..."</span>,
+  <span class="key">"token_type"</span>: <span class="str">"Bearer"</span>,
+  <span class="key">"expires_in"</span>: <span class="num">900</span>
+}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LOGIN -->
+    <div class="endpoint-card" id="ep-auth-login">
+      <div class="endpoint-header" onclick="toggleCard(this)">
+        <span class="method-badge badge-POST">POST</span>
+        <span class="endpoint-path">/api/auth/login</span>
+        <span class="endpoint-summary">Login, return JWT access token</span>
+        <span class="auth-tag auth-public">PUBLIC</span>
+        <span class="chevron">▾</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="col-left">
+          <div class="detail-section">
+            <h4>Description</h4>
+            <p class="desc-text">Authenticates a user with email and password. Returns a short-lived JWT access token (15 min) and sets an httpOnly refresh token cookie (7 days). Google OAuth users who have not set a password should use the OAuth flow instead.</p>
+          </div>
+          <div class="detail-section">
+            <h4>Request Body</h4>
+            <table class="param-table">
+              <tr><th>Field</th><th>Type</th><th>Req</th><th>Description</th></tr>
+              <tr><td class="param-name">email</td><td class="param-type">string</td><td><span class="param-req req-yes">Yes</span></td><td class="param-desc">Registered email address.</td></tr>
+              <tr><td class="param-name">password</td><td class="param-type">string</td><td><span class="param-req req-yes">Yes</span></td><td class="param-desc">User's password.</td></tr>
+            </table>
+          </div>
+          <div class="detail-section">
+            <h4>Responses</h4>
+            <div class="response-list">
+              <div class="response-item"><span class="status-code s-2xx">200</span><span class="response-desc">Success. Returns access_token. Sets refresh token cookie.</span></div>
+              <div class="response-item"><span class="status-code s-4xx">401</span><span class="response-desc">Invalid credentials.</span></div>
+              <div class="response-item"><span class="status-code s-4xx">403</span><span class="response-desc">Email not yet verified.</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="col-right">
+          <div class="detail-section">
+            <h4>Request Example</h4>
+            <div class="code-block">
+              <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+              <div class="code-content">{
+  <span class="key">"email"</span>: <span class="str">"sara@example.com"</span>,
+  <span class="key">"password"</span>: <span class="str">"Secur3Pass!"</span>
+}</div>
+            </div>
+          </div>
+          <div class="detail-section">
+            <h4>Response · 200</h4>
+            <div class="code-block">
+              <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+              <div class="code-content">{
+  <span class="key">"access_token"</span>: <span class="str">"eyJhbGci..."</span>,
+  <span class="key">"token_type"</span>: <span class="str">"Bearer"</span>,
+  <span class="key">"expires_in"</span>: <span class="num">900</span>,
+  <span class="key">"user"</span>: {
+    <span class="key">"id"</span>: <span class="str">"usr_01j3k..."</span>,
+    <span class="key">"email"</span>: <span class="str">"sara@example.com"</span>,
+    <span class="key">"plan"</span>: <span class="str">"starter"</span>
+  }
+}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- REFRESH -->
+    <div class="endpoint-card" id="ep-auth-refresh">
+      <div class="endpoint-header" onclick="toggleCard(this)">
+        <span class="method-badge badge-POST">POST</span>
+        <span class="endpoint-path">/api/auth/refresh</span>
+        <span class="endpoint-summary">Refresh access token using cookie</span>
+        <span class="auth-tag auth-public">PUBLIC</span>
+        <span class="chevron">▾</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="col-left">
+          <div class="detail-section">
+            <h4>Description</h4>
+            <p class="desc-text">Issues a new access token using the httpOnly refresh token cookie. No request body required — the cookie is read automatically. The old refresh token is rotated (invalidated) and a new one is set.</p>
+          </div>
+          <div class="detail-section">
+            <h4>Responses</h4>
+            <div class="response-list">
+              <div class="response-item"><span class="status-code s-2xx">200</span><span class="response-desc">New access_token returned. Refresh token cookie rotated.</span></div>
+              <div class="response-item"><span class="status-code s-4xx">401</span><span class="response-desc">Refresh token missing, expired, or revoked.</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="col-right">
+          <div class="detail-section">
+            <h4>Response · 200</h4>
+            <div class="code-block">
+              <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+              <div class="code-content">{
+  <span class="key">"access_token"</span>: <span class="str">"eyJhbGci..."</span>,
+  <span class="key">"token_type"</span>: <span class="str">"Bearer"</span>,
+  <span class="key">"expires_in"</span>: <span class="num">900</span>
+}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FORGOT PASSWORD — INFERRED -->
+    <div class="endpoint-card" id="ep-auth-forgot">
+      <div class="endpoint-header" onclick="toggleCard(this)">
+        <span class="method-badge badge-POST">POST</span>
+        <span class="endpoint-path">/api/auth/forgot-password</span>
+        <span class="endpoint-summary">Request password reset email</span>
+        <span class="auth-tag auth-public">PUBLIC</span>
+        <span class="chevron">▾</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="col-left">
+          <div class="detail-section">
+            <h4>Description</h4>
+            <p class="desc-text">Implemented auth endpoint. Sends a one-time password reset link to the user's registered email. Always returns 200 to prevent email enumeration attacks. A password reset request audit row is written when the email exists.</p>
+          </div>
+          <div class="detail-section">
+            <h4>Request Body</h4>
+            <table class="param-table">
+              <tr><th>Field</th><th>Type</th><th>Req</th><th>Description</th></tr>
+              <tr><td class="param-name">email</td><td class="param-type">string</td><td><span class="param-req req-yes">Yes</span></td><td class="param-desc">Registered email to send reset link to.</td></tr>
+            </table>
+          </div>
+          <div class="detail-section">
+            <h4>Responses</h4>
+            <div class="response-list">
+              <div class="response-item"><span class="status-code s-2xx">200</span><span class="response-desc">Always 200 (prevents email enumeration). Reset email sent if account exists.</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="col-right">
+          <div class="detail-section">
+            <h4>Request Example</h4>
+            <div class="code-block">
+              <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+              <div class="code-content">{ <span class="key">"email"</span>: <span class="str">"sara@example.com"</span> }</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RESET PASSWORD — INFERRED -->
+    <div class="endpoint-card" id="ep-auth-reset">
+      <div class="endpoint-header" onclick="toggleCard(this)">
+        <span class="method-badge badge-POST">POST</span>
+        <span class="endpoint-path">/api/auth/reset-password</span>
+        <span class="endpoint-summary">Set new password using reset token</span>
+        <span class="auth-tag auth-public">PUBLIC</span>
+        <span class="chevron">▾</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="col-left">
+          <div class="detail-section">
+            <h4>Description</h4>
+            <p class="desc-text">Completes the password reset flow. The token is extracted from the reset email link and expires after 15 minutes as specified in the PRD. On success, invalidates all existing sessions.</p>
+          </div>
+          <div class="detail-section">
+            <h4>Request Body</h4>
+            <table class="param-table">
+              <tr><th>Field</th><th>Type</th><th>Req</th><th>Description</th></tr>
+              <tr><td class="param-name">token</td><td class="param-type">string</td><td><span class="param-req req-yes">Yes</span></td><td class="param-desc">Reset token from email link. Expires in 15 min.</td></tr>
+              <tr><td class="param-name">new_password</td><td class="param-type">string</td><td><span class="param-req req-yes">Yes</span></td><td class="param-desc">Min 8 chars. Must differ from previous password.</td></tr>
+            </table>
+          </div>
+          <div class="detail-section">
+            <h4>Responses</h4>
+            <div class="response-list">
+              <div class="response-item"><span class="status-code s-2xx">200</span><span class="response-desc">Password updated. All existing sessions invalidated.</span></div>
+              <div class="response-item"><span class="status-code s-4xx">400</span><span class="response-desc">Token invalid, expired, or password too weak.</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="col-right">
+          <div class="detail-section">
+            <h4>Request Example</h4>
+            <div class="code-block">
+              <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+              <div class="code-content">{
+  <span class="key">"token"</span>: <span class="str">"reset_abc123xyz..."</span>,
+  <span class="key">"new_password"</span>: <span class="str">"NewSecur3Pass!"</span>
+}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ USERS ═══ -->
+  <div class="section" id="sec-users">
+    <div class="section-header">
+      <div class="section-icon">👤</div>
+      <div class="section-title">Users</div>
+      <div class="section-count">3 endpoints</div>
+    </div>
+
+    <div class="endpoint-card" id="ep-users-me-get">
+      <div class="endpoint-header" onclick="toggleCard(this)">
+        <span class="method-badge badge-GET">GET</span>
+        <span class="endpoint-path">/api/users/me</span>
+        <span class="endpoint-summary">Get current user profile</span>
+        <span class="auth-tag auth-jwt">JWT</span>
+        <span class="chevron">▾</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="col-left">
+          <div class="detail-section">
+            <h4>Description</h4>
+            <p class="desc-text">Returns the authenticated user's full profile including business settings, plan status, and Stripe connection state. Used by both Angular web app and React Native on app load.</p>
+          </div>
+          <div class="detail-section">
+            <h4>Responses</h4>
+            <div class="response-list">
+              <div class="response-item"><span class="status-code s-2xx">200</span><span class="response-desc">Returns full user profile object.</span></div>
+              <div class="response-item"><span class="status-code s-4xx">401</span><span class="response-desc">Missing or invalid JWT.</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="col-right">
+          <div class="detail-section">
+            <h4>Response · 200</h4>
+            <div class="code-block">
+              <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+              <div class="code-content">{
+  <span class="key">"id"</span>: <span class="str">"usr_01j3k..."</span>,
+  <span class="key">"email"</span>: <span class="str">"sara@example.com"</span>,
+  <span class="key">"business_name"</span>: <span class="str">"Sara Design Studio"</span>,
+  <span class="key">"logo_url"</span>: <span class="str">"https://cdn.invomir.app/logos/..."</span>,
+  <span class="key">"currency"</span>: <span class="str">"USD"</span>,
+  <span class="key">"tax_percent"</span>: <span class="num">5</span>,
+  <span class="key">"plan"</span>: <span class="str">"starter"</span>,
+  <span class="key">"stripe_account_id"</span>: <span class="str">"acct_1Nxyz..."</span>,
+  <span class="key">"trial_ends_at"</span>: <span class="null">null</span>,
+  <span class="key">"created_at"</span>: <span class="str">"2026-05-01T10:22:00Z"</span>
+}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="endpoint-card" id="ep-users-me-put">
+      <div class="endpoint-header" onclick="toggleCard(this)">
+        <span class="method-badge badge-PUT">PUT</span>
+        <span class="endpoint-path">/api/users/me</span>
+        <span class="endpoint-summary">Update profile / business info</span>
+        <span class="auth-tag auth-jwt">JWT</span>
+        <span class="chevron">▾</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="col-left">
+          <div class="detail-section">
+            <h4>Description</h4>
+            <p class="desc-text">Updates business settings — name, currency, tax rate. All fields optional; only provided fields are updated. Logo updates use the dedicated <code>POST /users/me/logo</code> multipart endpoint.</p>
+          </div>
+          <div class="detail-section">
+            <h4>Request Body (all optional)</h4>
+            <table class="param-table">
+              <tr><th>Field</th><th>Type</th><th>Req</th><th>Description</th></tr>
+              <tr><td class="param-name">business_name</td><td class="param-type">string</td><td><span class="param-req req-no">No</span></td><td class="param-desc">Updated business name for PDFs.</td></tr>
+              <tr><td class="param-name">currency</td><td class="param-type">string</td><td><span class="param-req req-no">No</span></td><td class="param-desc">ISO 4217 code. Affects new invoices only.</td></tr>
+              <tr><td class="param-name">tax_percent</td><td class="param-type">number</td><td><span class="param-req req-no">No</span></td><td class="param-desc">Default tax % for new invoices.</td></tr>
+            </table>
+          </div>
+          <div class="detail-section">
+            <h4>Responses</h4>
+            <div class="response-list">
+              <div class="response-item"><span class="status-code s-2xx">200</span><span class="response-desc">Updated user profile returned.</span></div>
+              <div class="response-item"><span class="status-code s-4xx">400</span><span class="response-desc">Invalid currency code or tax_percent out of range.</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="col-right">
+          <div class="detail-section">
+            <h4>Request Example</h4>
+            <div class="code-block">
+              <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+              <div class="code-content">{
+  <span class="key">"currency"</span>: <span class="str">"AED"</span>,
+  <span class="key">"tax_percent"</span>: <span class="num">5</span>
+}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="endpoint-card" id="ep-users-logo">
+      <div class="endpoint-header" onclick="toggleCard(this)">
+        <span class="method-badge badge-POST">POST</span>
+        <span class="endpoint-path">/api/users/me/logo <span class="inferred-badge">⚡ INFERRED</span></span>
+        <span class="endpoint-summary">Upload business logo</span>
+        <span class="auth-tag auth-jwt">JWT</span>
+        <span class="chevron">▾</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="col-left">
+          <div class="detail-section">
+            <h4>Description</h4>
+            <p class="desc-text">Inferred from PRD: "Business Logo on PDF" (P0) and "User Profile Page — logo upload" (P0). Accepts multipart/form-data. Uploads to CDN, stores URL in users.logo_url. PNG/JPG/SVG accepted. Max 2MB. Previous logo is overwritten.</p>
+          </div>
+          <div class="detail-section">
+            <h4>Request · multipart/form-data</h4>
+            <table class="param-table">
+              <tr><th>Field</th><th>Type</th><th>Req</th><th>Description</th></tr>
+              <tr><td class="param-name">logo</td><td class="param-type">file</td><td><span class="param-req req-yes">Yes</span></td><td class="param-desc">PNG, JPG, or SVG. Max 2MB. Square recommended.</td></tr>
+            </table>
+          </div>
+          <div class="detail-section">
+            <h4>Responses</h4>
+            <div class="response-list">
+              <div class="response-item"><span class="status-code s-2xx">200</span><span class="response-desc">Logo uploaded. Returns new logo_url.</span></div>
+              <div class="response-item"><span class="status-code s-4xx">400</span><span class="response-desc">Invalid file type or file too large.</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="col-right">
+          <div class="detail-section">
+            <h4>Response · 200</h4>
+            <div class="code-block">
+              <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+              <div class="code-content">{
+  <span class="key">"logo_url"</span>: <span class="str">"https://cdn.invomir.app/logos/usr_01j3k_logo.png"</span>
+}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ CLIENTS ═══ -->
+  <div class="section" id="sec-clients">
+    <div class="section-header">
+      <div class="section-icon">🏢</div>
+      <div class="section-title">Clients</div>
+      <div class="section-count">5 endpoints</div>
+    </div>
+
+    <div class="endpoint-card" id="ep-clients-list">
+      <div class="endpoint-header" onclick="toggleCard(this)">
+        <span class="method-badge badge-GET">GET</span>
+        <span class="endpoint-path">/api/clients</span>
+        <span class="endpoint-summary">List all clients</span>
+        <span class="auth-tag auth-jwt">JWT</span>
+        <span class="chevron">▾</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="col-left">
+          <div class="detail-section">
+            <h4>Description</h4>
+            <p class="desc-text">Returns all clients belonging to the authenticated user. Results are paginated and support search by name or email. Each client object includes their total revenue earned to date.</p>
+          </div>
+          <div class="detail-section">
+            <h4>Query Parameters</h4>
+            <table class="param-table">
+              <tr><th>Param</th><th>Type</th><th>Req</th><th>Description</th></tr>
+              <tr><td class="param-name">q</td><td class="param-type">string</td><td><span class="param-req req-no">No</span></td><td class="param-desc">Search by client name or email.</td></tr>
+              <tr><td class="param-name">page</td><td class="param-type">integer</td><td><span class="param-req req-no">No</span></td><td class="param-desc">Page number. Default: 1.</td></tr>
+              <tr><td class="param-name">limit</td><td class="param-type">integer</td><td><span class="param-req req-no">No</span></td><td class="param-desc">Results per page. Default: 20, max: 100.</td></tr>
+            </table>
+          </div>
+          <div class="detail-section">
+            <h4>Responses</h4>
+            <div class="response-list">
+              <div class="response-item"><span class="status-code s-2xx">200</span><span class="response-desc">Paginated array of client objects.</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="col-right">
+          <div class="detail-section">
+            <h4>Response · 200</h4>
+            <div class="code-block">
+              <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+              <div class="code-content">{
+  <span class="key">"data"</span>: [
+    {
+      <span class="key">"id"</span>: <span class="str">"cli_01abc..."</span>,
+      <span class="key">"name"</span>: <span class="str">"Acme Corp"</span>,
+      <span class="key">"email"</span>: <span class="str">"billing@acme.com"</span>,
+      <span class="key">"company"</span>: <span class="str">"Acme Corporation"</span>,
+      <span class="key">"total_revenue"</span>: <span class="num">4250.00</span>,
+      <span class="key">"invoice_count"</span>: <span class="num">8</span>
+    }
+  ],
+  <span class="key">"pagination"</span>: {
+    <span class="key">"page"</span>: <span class="num">1</span>, <span class="key">"limit"</span>: <span class="num">20</span>, <span class="key">"total"</span>: <span class="num">14</span>
+  }
+}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="endpoint-card" id="ep-clients-create">
+      <div class="endpoint-header" onclick="toggleCard(this)">
+        <span class="method-badge badge-POST">POST</span>
+        <span class="endpoint-path">/api/clients</span>
+        <span class="endpoint-summary">Create new client</span>
+        <span class="auth-tag auth-jwt">JWT</span>
+        <span class="chevron">▾</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="col-left">
+          <div class="detail-section">
+            <h4>Description</h4>
+            <p class="desc-text">Creates a new client record scoped to the authenticated user. The client is immediately available for invoice creation.</p>
+          </div>
+          <div class="detail-section">
+            <h4>Request Body</h4>
+            <table class="param-table">
+              <tr><th>Field</th><th>Type</th><th>Req</th><th>Description</th></tr>
+              <tr><td class="param-name">name</td><td class="param-type">string</td><td><span class="param-req req-yes">Yes</span></td><td class="param-desc">Client's full name or contact person.</td></tr>
+              <tr><td class="param-name">email</td><td class="param-type">string</td><td><span class="param-req req-yes">Yes</span></td><td class="param-desc">Invoice delivery and payment notification email.</td></tr>
+              <tr><td class="param-name">phone</td><td class="param-type">string</td><td><span class="param-req req-no">No</span></td><td class="param-desc">Contact phone number.</td></tr>
+              <tr><td class="param-name">address</td><td class="param-type">string</td><td><span class="param-req req-no">No</span></td><td class="param-desc">Billing address printed on PDF.</td></tr>
+              <tr><td class="param-name">company</td><td class="param-type">string</td><td><span class="param-req req-no">No</span></td><td class="param-desc">Company name.</td></tr>
+              <tr><td class="param-name">tax_id</td><td class="param-type">string</td><td><span class="param-req req-no">No</span></td><td class="param-desc">VAT / GST / Tax registration number.</td></tr>
+              <tr><td class="param-name">notes</td><td class="param-type">string</td><td><span class="param-req req-no">No</span></td><td class="param-desc">Private notes. Never shown to client.</td></tr>
+            </table>
+          </div>
+          <div class="detail-section">
+            <h4>Responses</h4>
+            <div class="response-list">
+              <div class="response-item"><span class="status-code s-2xx">201</span><span class="response-desc">Client created. Returns full client object.</span></div>
+              <div class="response-item"><span class="status-code s-4xx">400</span><span class="response-desc">Missing required fields or invalid email format.</span></div>
+              <div class="response-item"><span class="status-code s-4xx">403</span><span class="response-desc">Free plan client limit reached (2 clients max).</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="col-right">
+          <div class="detail-section">
+            <h4>Request Example</h4>
+            <div class="code-block">
+              <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+              <div class="code-content">{
+  <span class="key">"name"</span>: <span class="str">"Khalid Mehmood"</span>,
+  <span class="key">"email"</span>: <span class="str">"khalid@brightco.pk"</span>,
+  <span class="key">"company"</span>: <span class="str">"Bright Co. Digital"</span>,
+  <span class="key">"address"</span>: <span class="str">"12 Mall Road, Lahore"</span>,
+  <span class="key">"tax_id"</span>: <span class="str">"PK-NTN-1234567"</span>,
+  <span class="key">"notes"</span>: <span class="str">"Prefers invoices on the 1st."</span>
+}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GET CLIENT BY ID — INFERRED -->
+    <div class="endpoint-card" id="ep-clients-get">
+      <div class="endpoint-header" onclick="toggleCard(this)">
+        <span class="method-badge badge-GET">GET</span>
+        <span class="endpoint-path">/api/clients/<span class="param">{id}</span> <span class="inferred-badge">⚡ INFERRED</span></span>
+        <span class="endpoint-summary">Get single client with invoice history</span>
+        <span class="auth-tag auth-jwt">JWT</span>
+        <span class="chevron">▾</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="col-left">
+          <div class="detail-section">
+            <h4>Description</h4>
+            <p class="desc-text">Inferred: the PRD specifies "Client Invoice History" and "Client Revenue Total" as P0 features, requiring a single-client detail endpoint. Returns full client record plus paginated invoice history and revenue summary.</p>
+          </div>
+          <div class="detail-section">
+            <h4>Path Parameters</h4>
+            <table class="param-table">
+              <tr><th>Param</th><th>Type</th><th>Req</th><th>Description</th></tr>
+              <tr><td class="param-name">id</td><td class="param-type">string</td><td><span class="param-req req-yes">Yes</span></td><td class="param-desc">Client ID (e.g. cli_01abc...).</td></tr>
+            </table>
+          </div>
+          <div class="detail-section">
+            <h4>Responses</h4>
+            <div class="response-list">
+              <div class="response-item"><span class="status-code s-2xx">200</span><span class="response-desc">Client object with invoices array and revenue totals.</span></div>
+              <div class="response-item"><span class="status-code s-4xx">404</span><span class="response-desc">Client not found or does not belong to user.</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="col-right">
+          <div class="detail-section">
+            <h4>Response · 200</h4>
+            <div class="code-block">
+              <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+              <div class="code-content">{
+  <span class="key">"id"</span>: <span class="str">"cli_01abc..."</span>,
+  <span class="key">"name"</span>: <span class="str">"Khalid Mehmood"</span>,
+  <span class="key">"email"</span>: <span class="str">"khalid@brightco.pk"</span>,
+  <span class="key">"total_revenue"</span>: <span class="num">4250.00</span>,
+  <span class="key">"invoices"</span>: [
+    {
+      <span class="key">"id"</span>: <span class="str">"inv_001..."</span>,
+      <span class="key">"invoice_number"</span>: <span class="str">"INV-007"</span>,
+      <span class="key">"status"</span>: <span class="str">"paid"</span>,
+      <span class="key">"total"</span>: <span class="num">850.00</span>,
+      <span class="key">"due_date"</span>: <span class="str">"2026-04-30"</span>
+    }
+  ]
+}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="endpoint-card" id="ep-clients-update">
+      <div class="endpoint-header" onclick="toggleCard(this)">
+        <span class="method-badge badge-PUT">PUT</span>
+        <span class="endpoint-path">/api/clients/<span class="param">{id}</span></span>
+        <span class="endpoint-summary">Update client details</span>
+        <span class="auth-tag auth-jwt">JWT</span>
+        <span class="chevron">▾</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="col-left">
+          <div class="detail-section"><h4>Description</h4><p class="desc-text">Updates any field on a client record. All fields are optional — only provided fields are updated (partial update semantics). Changes do not affect already-sent invoices.</p></div>
+          <div class="detail-section">
+            <h4>Responses</h4>
+            <div class="response-list">
+              <div class="response-item"><span class="status-code s-2xx">200</span><span class="response-desc">Updated client object returned.</span></div>
+              <div class="response-item"><span class="status-code s-4xx">404</span><span class="response-desc">Client not found.</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="col-right">
+          <div class="detail-section">
+            <h4>Request Example</h4>
+            <div class="code-block">
+              <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+              <div class="code-content">{
+  <span class="key">"email"</span>: <span class="str">"new.email@brightco.pk"</span>,
+  <span class="key">"notes"</span>: <span class="str">"Now pays via bank transfer only."</span>
+}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="endpoint-card" id="ep-clients-delete">
+      <div class="endpoint-header" onclick="toggleCard(this)">
+        <span class="method-badge badge-DELETE">DELETE</span>
+        <span class="endpoint-path">/api/clients/<span class="param">{id}</span></span>
+        <span class="endpoint-summary">Delete client record</span>
+        <span class="auth-tag auth-jwt">JWT</span>
+        <span class="chevron">▾</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="col-left">
+          <div class="detail-section"><h4>Description</h4><p class="desc-text">Permanently deletes a client. Soft-delete is recommended — client is flagged as archived but invoice history is preserved for financial records. If client has active unpaid invoices, returns 409 conflict requiring resolution first.</p></div>
+          <div class="detail-section">
+            <h4>Responses</h4>
+            <div class="response-list">
+              <div class="response-item"><span class="status-code s-2xx">204</span><span class="response-desc">Client deleted (no body returned).</span></div>
+              <div class="response-item"><span class="status-code s-4xx">404</span><span class="response-desc">Client not found.</span></div>
+              <div class="response-item"><span class="status-code s-4xx">409</span><span class="response-desc">Client has unpaid invoices — resolve before deleting.</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="col-right">
+          <div class="detail-section">
+            <h4>Note</h4>
+            <p class="desc-text" style="color:var(--orange)">⚠️ Deleted clients cannot be restored. All associated invoice history is archived (not deleted) to preserve financial records.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ INVOICES ═══ -->
+  <div class="section" id="sec-invoices">
+    <div class="section-header">
+      <div class="section-icon">🧾</div>
+      <div class="section-title">Invoices</div>
+      <div class="section-count">10 endpoints</div>
+    </div>
+
+    <div class="endpoint-card" id="ep-inv-list">
+      <div class="endpoint-header" onclick="toggleCard(this)">
+        <span class="method-badge badge-GET">GET</span>
+        <span class="endpoint-path">/api/invoices</span>
+        <span class="endpoint-summary">List invoices with filters</span>
+        <span class="auth-tag auth-jwt">JWT</span>
+        <span class="chevron">▾</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="col-left">
+          <div class="detail-section"><h4>Description</h4><p class="desc-text">Returns all invoices for the authenticated user. Supports filtering by status, client, and date range. Results are paginated. Used by dashboard recent invoices list and the full invoices screen.</p></div>
+          <div class="detail-section">
+            <h4>Query Parameters</h4>
+            <table class="param-table">
+              <tr><th>Param</th><th>Type</th><th>Req</th><th>Description</th></tr>
+              <tr><td class="param-name">status</td><td class="param-type">string</td><td><span class="param-req req-no">No</span></td><td class="param-desc">draft | sent | viewed | paid | overdue | cancelled</td></tr>
+              <tr><td class="param-name">client_id</td><td class="param-type">string</td><td><span class="param-req req-no">No</span></td><td class="param-desc">Filter by client ID.</td></tr>
+              <tr><td class="param-name">from</td><td class="param-type">date</td><td><span class="param-req req-no">No</span></td><td class="param-desc">ISO 8601. Filter issue_date ≥ from.</td></tr>
+              <tr><td class="param-name">to</td><td class="param-type">date</td><td><span class="param-req req-no">No</span></td><td class="param-desc">ISO 8601. Filter issue_date ≤ to.</td></tr>
+              <tr><td class="param-name">page</td><td class="param-type">integer</td><td><span class="param-req req-no">No</span></td><td class="param-desc">Default: 1.</td></tr>
+              <tr><td class="param-name">limit</td><td class="param-type">integer</td><td><span class="param-req req-no">No</span></td><td class="param-desc">Default: 20, max: 100.</td></tr>
+            </table>
+          </div>
+          <div class="detail-section">
+            <h4>Responses</h4>
+            <div class="response-list">
+              <div class="response-item"><span class="status-code s-2xx">200</span><span class="response-desc">Paginated array of invoice summary objects.</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="col-right">
+          <div class="detail-section">
+            <h4>Response · 200</h4>
+            <div class="code-block">
+              <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+              <div class="code-content">{
+  <span class="key">"data"</span>: [
+    {
+      <span class="key">"id"</span>: <span class="str">"inv_01xyz..."</span>,
+      <span class="key">"invoice_number"</span>: <span class="str">"INV-009"</span>,
+      <span class="key">"client_name"</span>: <span class="str">"Acme Corp"</span>,
+      <span class="key">"status"</span>: <span class="str">"overdue"</span>,
+      <span class="key">"total"</span>: <span class="num">1200.00</span>,
+      <span class="key">"currency"</span>: <span class="str">"USD"</span>,
+      <span class="key">"due_date"</span>: <span class="str">"2026-04-15"</span>,
+      <span class="key">"sent_at"</span>: <span class="str">"2026-04-01T09:00:00Z"</span>
+    }
+  ],
+  <span class="key">"pagination"</span>: {
+    <span class="key">"page"</span>: <span class="num">1</span>, <span class="key">"total"</span>: <span class="num">42</span>
+  }
+}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="endpoint-card" id="ep-inv-create">
+      <div class="endpoint-header" onclick="toggleCard(this)">
+        <span class="method-badge badge-POST">POST</span>
+        <span class="endpoint-path">/api/invoices</span>
+        <span class="endpoint-summary">Create new invoice</span>
+        <span class="auth-tag auth-jwt">JWT</span>
+        <span class="chevron">▾</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="col-left">
+          <div class="detail-section"><h4>Description</h4><p class="desc-text">Creates a new invoice in Draft status. Auto-assigns the next sequential invoice number (INV-001, INV-002…). Tax is auto-calculated from user's default tax_percent unless overridden. Invoice is not sent until <code>POST /invoices/{id}/send</code> is called.</p></div>
+          <div class="detail-section">
+            <h4>Request Body</h4>
+            <table class="param-table">
+              <tr><th>Field</th><th>Type</th><th>Req</th><th>Description</th></tr>
+              <tr><td class="param-name">client_id</td><td class="param-type">string</td><td><span class="param-req req-yes">Yes</span></td><td class="param-desc">Client to invoice.</td></tr>
+              <tr><td class="param-name">items</td><td class="param-type">array</td><td><span class="param-req req-yes">Yes</span></td><td class="param-desc">Min 1 line item. See item schema below.</td></tr>
+              <tr><td class="param-name">due_date</td><td class="param-type">date</td><td><span class="param-req req-yes">Yes</span></td><td class="param-desc">ISO 8601 date. Or use payment_terms.</td></tr>
+              <tr><td class="param-name">payment_terms</td><td class="param-type">string</td><td><span class="param-req req-no">No</span></td><td class="param-desc">due_on_receipt | net_7 | net_14 | net_30</td></tr>
+              <tr><td class="param-name">tax_percent</td><td class="param-type">number</td><td><span class="param-req req-no">No</span></td><td class="param-desc">Override user default for this invoice.</td></tr>
+              <tr><td class="param-name">discount</td><td class="param-type">object</td><td><span class="param-req req-no">No</span></td><td class="param-desc">{type: "percent"|"fixed", value: number}</td></tr>
+              <tr><td class="param-name">notes</td><td class="param-type">string</td><td><span class="param-req req-no">No</span></td><td class="param-desc">Printed on PDF (bank details, terms, etc.).</td></tr>
+              <tr><td class="param-name">currency</td><td class="param-type">string</td><td><span class="param-req req-no">No</span></td><td class="param-desc">Override user default currency for this invoice.</td></tr>
+            </table>
+          </div>
+          <div class="detail-section">
+            <h4>Line Item Schema</h4>
+            <table class="param-table">
+              <tr><th>Field</th><th>Type</th><th>Req</th><th>Description</th></tr>
+              <tr><td class="param-name">description</td><td class="param-type">string</td><td><span class="param-req req-yes">Yes</span></td><td class="param-desc">Service or product name.</td></tr>
+              <tr><td class="param-name">quantity</td><td class="param-type">number</td><td><span class="param-req req-yes">Yes</span></td><td class="param-desc">Quantity (supports decimals for hourly billing).</td></tr>
+              <tr><td class="param-name">unit_price</td><td class="param-type">number</td><td><span class="param-req req-yes">Yes</span></td><td class="param-desc">Price per unit. Amount = quantity × unit_price.</td></tr>
+            </table>
+          </div>
+        </div>
+        <div class="col-right">
+          <div class="detail-section">
+            <h4>Request Example</h4>
+            <div class="code-block">
+              <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+              <div class="code-content">{
+  <span class="key">"client_id"</span>: <span class="str">"cli_01abc..."</span>,
+  <span class="key">"due_date"</span>: <span class="str">"2026-06-15"</span>,
+  <span class="key">"payment_terms"</span>: <span class="str">"net_14"</span>,
+  <span class="key">"tax_percent"</span>: <span class="num">5</span>,
+  <span class="key">"discount"</span>: { <span class="key">"type"</span>: <span class="str">"percent"</span>, <span class="key">"value"</span>: <span class="num">10</span> },
+  <span class="key">"notes"</span>: <span class="str">"Bank: HBL 1234-5678. Thank you!"</span>,
+  <span class="key">"items"</span>: [
+    {
+      <span class="key">"description"</span>: <span class="str">"Logo Design"</span>,
+      <span class="key">"quantity"</span>: <span class="num">1</span>,
+      <span class="key">"unit_price"</span>: <span class="num">500.00</span>
+    },
+    {
+      <span class="key">"description"</span>: <span class="str">"Brand Guidelines"</span>,
+      <span class="key">"quantity"</span>: <span class="num">1</span>,
+      <span class="key">"unit_price"</span>: <span class="num">300.00</span>
+    }
+  ]
+}</div>
+            </div>
+          </div>
+          <div class="detail-section">
+            <h4>Response · 201</h4>
+            <div class="code-block">
+              <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+              <div class="code-content">{
+  <span class="key">"id"</span>: <span class="str">"inv_01xyz..."</span>,
+  <span class="key">"invoice_number"</span>: <span class="str">"INV-009"</span>,
+  <span class="key">"status"</span>: <span class="str">"draft"</span>,
+  <span class="key">"subtotal"</span>: <span class="num">800.00</span>,
+  <span class="key">"discount_amount"</span>: <span class="num">80.00</span>,
+  <span class="key">"tax_amount"</span>: <span class="num">36.00</span>,
+  <span class="key">"total"</span>: <span class="num">756.00</span>,
+  <span class="key">"currency"</span>: <span class="str">"USD"</span>
+}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="endpoint-card" id="ep-inv-get">
+      <div class="endpoint-header" onclick="toggleCard(this)">
+        <span class="method-badge badge-GET">GET</span>
+        <span class="endpoint-path">/api/invoices/<span class="param">{id}</span></span>
+        <span class="endpoint-summary">Get single invoice with line items</span>
+        <span class="auth-tag auth-jwt">JWT</span>
+        <span class="chevron">▾</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="col-left">
+          <div class="detail-section"><h4>Description</h4><p class="desc-text">Returns the full invoice object including all line items, client snapshot, payment status, tracking timestamps (sent_at, viewed_at, paid_at), and reminder history.</p></div>
+          <div class="detail-section">
+            <h4>Responses</h4>
+            <div class="response-list">
+              <div class="response-item"><span class="status-code s-2xx">200</span><span class="response-desc">Full invoice with items, reminders, and timestamps.</span></div>
+              <div class="response-item"><span class="status-code s-4xx">404</span><span class="response-desc">Invoice not found or unauthorized.</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="col-right">
+          <div class="detail-section">
+            <h4>Response · 200</h4>
+            <div class="code-block">
+              <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+              <div class="code-content">{
+  <span class="key">"id"</span>: <span class="str">"inv_01xyz..."</span>,
+  <span class="key">"invoice_number"</span>: <span class="str">"INV-009"</span>,
+  <span class="key">"status"</span>: <span class="str">"sent"</span>,
+  <span class="key">"client"</span>: { <span class="key">"id"</span>: <span class="str">"cli_..."</span>, <span class="key">"name"</span>: <span class="str">"Acme Corp"</span> },
+  <span class="key">"items"</span>: [...],
+  <span class="key">"subtotal"</span>: <span class="num">800.00</span>,
+  <span class="key">"tax_amount"</span>: <span class="num">36.00</span>,
+  <span class="key">"total"</span>: <span class="num">756.00</span>,
+  <span class="key">"sent_at"</span>: <span class="str">"2026-05-01T09:00:00Z"</span>,
+  <span class="key">"viewed_at"</span>: <span class="str">"2026-05-01T11:32:00Z"</span>,
+  <span class="key">"paid_at"</span>: <span class="null">null</span>,
+  <span class="key">"reminders_enabled"</span>: <span class="bool">true</span>
+}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="endpoint-card" id="ep-inv-update">
+      <div class="endpoint-header" onclick="toggleCard(this)">
+        <span class="method-badge badge-PUT">PUT</span>
+        <span class="endpoint-path">/api/invoices/<span class="param">{id}</span></span>
+        <span class="endpoint-summary">Update draft invoice</span>
+        <span class="auth-tag auth-jwt">JWT</span>
+        <span class="chevron">▾</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="col-left">
+          <div class="detail-section"><h4>Description</h4><p class="desc-text">Updates a draft invoice. Only invoices in Draft status can be edited. Sent invoices must be cancelled and re-issued. Accepts the same body as POST /invoices. Full replacement of items array if provided.</p></div>
+          <div class="detail-section">
+            <h4>Responses</h4>
+            <div class="response-list">
+              <div class="response-item"><span class="status-code s-2xx">200</span><span class="response-desc">Updated invoice returned with recalculated totals.</span></div>
+              <div class="response-item"><span class="status-code s-4xx">400</span><span class="response-desc">Invoice is not in Draft status — cannot edit.</span></div>
+              <div class="response-item"><span class="status-code s-4xx">404</span><span class="response-desc">Invoice not found.</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="col-right">
+          <div class="detail-section">
+            <h4>Business Rule</h4>
+            <p class="desc-text" style="color:var(--orange)">⚠️ Sent invoices are immutable. To correct a sent invoice: cancel it (<code>DELETE /invoices/{id}</code>), then create a new one. This preserves audit trail integrity.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DELETE INVOICE — INFERRED -->
+    <div class="endpoint-card" id="ep-inv-delete">
+      <div class="endpoint-header" onclick="toggleCard(this)">
+        <span class="method-badge badge-DELETE">DELETE</span>
+        <span class="endpoint-path">/api/invoices/<span class="param">{id}</span> <span class="inferred-badge">⚡ INFERRED</span></span>
+        <span class="endpoint-summary">Cancel / delete invoice</span>
+        <span class="auth-tag auth-jwt">JWT</span>
+        <span class="chevron">▾</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="col-left">
+          <div class="detail-section"><h4>Description</h4><p class="desc-text">Inferred: PRD lists "Cancelled" as an invoice status, implying a cancellation endpoint. Draft invoices are hard-deleted. Sent/viewed invoices are soft-deleted (status → Cancelled) to preserve the client communication record. Paid invoices cannot be cancelled.</p></div>
+          <div class="detail-section">
+            <h4>Responses</h4>
+            <div class="response-list">
+              <div class="response-item"><span class="status-code s-2xx">200</span><span class="response-desc">Draft: deleted. Sent: status set to cancelled.</span></div>
+              <div class="response-item"><span class="status-code s-4xx">400</span><span class="response-desc">Cannot cancel a paid invoice.</span></div>
+              <div class="response-item"><span class="status-code s-4xx">404</span><span class="response-desc">Invoice not found.</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="col-right">
+          <div class="detail-section">
+            <h4>Response · 200</h4>
+            <div class="code-block">
+              <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+              <div class="code-content">{
+  <span class="key">"id"</span>: <span class="str">"inv_01xyz..."</span>,
+  <span class="key">"status"</span>: <span class="str">"cancelled"</span>,
+  <span class="key">"cancelled_at"</span>: <span class="str">"2026-05-15T14:22:00Z"</span>
+}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="endpoint-card" id="ep-inv-send">
+      <div class="endpoint-header" onclick="toggleCard(this)">
+        <span class="method-badge badge-POST">POST</span>
+        <span class="endpoint-path">/api/invoices/<span class="param">{id}</span>/send</span>
+        <span class="endpoint-summary">Send invoice email to client</span>
+        <span class="auth-tag auth-jwt">JWT</span>
+        <span class="chevron">▾</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="col-left">
+          <div class="detail-section"><h4>Description</h4><p class="desc-text">Sends the invoice to the client via transactional email (SendGrid/Mailgun). Attaches PDF. Generates a Stripe payment link if the user has Stripe connected. Marks invoice as Sent and records sent_at. Schedules automated reminder jobs via Hangfire.</p></div>
+          <div class="detail-section">
+            <h4>Request Body (all optional)</h4>
+            <table class="param-table">
+              <tr><th>Field</th><th>Type</th><th>Req</th><th>Description</th></tr>
+              <tr><td class="param-name">message</td><td class="param-type">string</td><td><span class="param-req req-no">No</span></td><td class="param-desc">Custom personal message included in email body.</td></tr>
+              <tr><td class="param-name">cc_self</td><td class="param-type">boolean</td><td><span class="param-req req-no">No</span></td><td class="param-desc">CC the sender on the email. Default: user's preference.</td></tr>
+            </table>
+          </div>
+          <div class="detail-section">
+            <h4>Responses</h4>
+            <div class="response-list">
+              <div class="response-item"><span class="status-code s-2xx">200</span><span class="response-desc">Email queued. Invoice marked Sent. Payment link returned.</span></div>
+              <div class="response-item"><span class="status-code s-4xx">400</span><span class="response-desc">Invoice is not in Draft status, or client has no email.</span></div>
+              <div class="response-item"><span class="status-code s-4xx">403</span><span class="response-desc">Free plan invoice limit reached (5/month).</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="col-right">
+          <div class="detail-section">
+            <h4>Response · 200</h4>
+            <div class="code-block">
+              <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+              <div class="code-content">{
+  <span class="key">"status"</span>: <span class="str">"sent"</span>,
+  <span class="key">"sent_at"</span>: <span class="str">"2026-05-15T10:00:00Z"</span>,
+  <span class="key">"payment_link"</span>: <span class="str">"https://invomir.app/pay/tok_abc123"</span>,
+  <span class="key">"reminders_scheduled"</span>: [
+    <span class="str">"2026-06-12T09:00:00Z"</span>, <span class="comment">// 3 days before due</span>
+    <span class="str">"2026-06-16T09:00:00Z"</span>  <span class="comment">// 1 day after due</span>
+  ]
+}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="endpoint-card" id="ep-inv-paid">
+      <div class="endpoint-header" onclick="toggleCard(this)">
+        <span class="method-badge badge-POST">POST</span>
+        <span class="endpoint-path">/api/invoices/<span class="param">{id}</span>/mark-paid</span>
+        <span class="endpoint-summary">Manually mark invoice as paid</span>
+        <span class="auth-tag auth-jwt">JWT</span>
+        <span class="chevron">▾</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="col-left">
+          <div class="detail-section"><h4>Description</h4><p class="desc-text">Marks an invoice as Paid for offline payments — cash, bank transfers, cheques. Cancels any scheduled Hangfire reminder jobs. Creates a payment record with method "manual". Auto-sends a payment receipt to the client.</p></div>
+          <div class="detail-section">
+            <h4>Request Body (optional)</h4>
+            <table class="param-table">
+              <tr><th>Field</th><th>Type</th><th>Req</th><th>Description</th></tr>
+              <tr><td class="param-name">paid_at</td><td class="param-type">datetime</td><td><span class="param-req req-no">No</span></td><td class="param-desc">When payment was received. Default: now.</td></tr>
+              <tr><td class="param-name">method</td><td class="param-type">string</td><td><span class="param-req req-no">No</span></td><td class="param-desc">cash | bank_transfer | cheque | other</td></tr>
+              <tr><td class="param-name">note</td><td class="param-type">string</td><td><span class="param-req req-no">No</span></td><td class="param-desc">Internal payment note (e.g. "Paid via HBL").</td></tr>
+            </table>
+          </div>
+          <div class="detail-section">
+            <h4>Responses</h4>
+            <div class="response-list">
+              <div class="response-item"><span class="status-code s-2xx">200</span><span class="response-desc">Invoice marked paid. Reminders cancelled. Receipt sent.</span></div>
+              <div class="response-item"><span class="status-code s-4xx">400</span><span class="response-desc">Invoice already paid or cancelled.</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="col-right">
+          <div class="detail-section">
+            <h4>Request Example</h4>
+            <div class="code-block">
+              <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+              <div class="code-content">{
+  <span class="key">"paid_at"</span>: <span class="str">"2026-05-14T15:00:00Z"</span>,
+  <span class="key">"method"</span>: <span class="str">"bank_transfer"</span>,
+  <span class="key">"note"</span>: <span class="str">"Received via HBL. Ref: 78421."</span>
+}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="endpoint-card" id="ep-inv-pdf">
+      <div class="endpoint-header" onclick="toggleCard(this)">
+        <span class="method-badge badge-GET">GET</span>
+        <span class="endpoint-path">/api/invoices/<span class="param">{id}</span>/pdf</span>
+        <span class="endpoint-summary">Download invoice as PDF</span>
+        <span class="auth-tag auth-jwt">JWT</span>
+        <span class="chevron">▾</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="col-left">
+          <div class="detail-section"><h4>Description</h4><p class="desc-text">Returns the invoice as a PDF binary. Renders via DinkToPdf (wkhtmltopdf) from an HTML template. PDF is cached after first generation and invalidated on invoice edit. Response is streamed with application/pdf content type. Also used for the real-time preview before sending.</p></div>
+          <div class="detail-section">
+            <h4>Query Parameters</h4>
+            <table class="param-table">
+              <tr><th>Param</th><th>Type</th><th>Req</th><th>Description</th></tr>
+              <tr><td class="param-name">preview</td><td class="param-type">boolean</td><td><span class="param-req req-no">No</span></td><td class="param-desc">If true, returns inline (for browser preview). Default: false (attachment download).</td></tr>
+            </table>
+          </div>
+          <div class="detail-section">
+            <h4>Responses</h4>
+            <div class="response-list">
+              <div class="response-item"><span class="status-code s-2xx">200</span><span class="response-desc">PDF binary. Content-Type: application/pdf. Content-Disposition: attachment or inline.</span></div>
+              <div class="response-item"><span class="status-code s-4xx">404</span><span class="response-desc">Invoice not found.</span></div>
+              <div class="response-item"><span class="status-code s-5xx">500</span><span class="response-desc">PDF generation failed (DinkToPdf error).</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="col-right">
+          <div class="detail-section">
+            <h4>Response Headers</h4>
+            <div class="code-block">
+              <div class="code-block-header"><span class="code-lang">HTTP</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+              <div class="code-content">HTTP/1.1 200 OK
+Content-Type: application/pdf
+Content-Disposition: attachment; filename="INV-009.pdf"
+Content-Length: 48291
+X-PDF-Generated-At: 2026-05-15T10:00:00Z
+X-PDF-Cached: true</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DUPLICATE — INFERRED -->
+    <div class="endpoint-card" id="ep-inv-dupe">
+      <div class="endpoint-header" onclick="toggleCard(this)">
+        <span class="method-badge badge-POST">POST</span>
+        <span class="endpoint-path">/api/invoices/<span class="param">{id}</span>/duplicate <span class="inferred-badge">⚡ INFERRED</span></span>
+        <span class="endpoint-summary">Clone invoice as new draft</span>
+        <span class="auth-tag auth-jwt">JWT</span>
+        <span class="chevron">▾</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="col-left">
+          <div class="detail-section"><h4>Description</h4><p class="desc-text">Inferred from PRD P1 feature: "Duplicate Invoice — One-tap clone of existing invoice to same/different client." Creates a new Draft invoice copying all line items, notes, and tax settings from the source. Assigns a new invoice number. Client can be overridden.</p></div>
+          <div class="detail-section">
+            <h4>Request Body (all optional)</h4>
+            <table class="param-table">
+              <tr><th>Field</th><th>Type</th><th>Req</th><th>Description</th></tr>
+              <tr><td class="param-name">client_id</td><td class="param-type">string</td><td><span class="param-req req-no">No</span></td><td class="param-desc">Override client. Default: same client as original.</td></tr>
+              <tr><td class="param-name">due_date</td><td class="param-type">date</td><td><span class="param-req req-no">No</span></td><td class="param-desc">Override due date. Default: same offset from today.</td></tr>
+            </table>
+          </div>
+          <div class="detail-section">
+            <h4>Responses</h4>
+            <div class="response-list">
+              <div class="response-item"><span class="status-code s-2xx">201</span><span class="response-desc">New draft invoice created. Returns new invoice object.</span></div>
+              <div class="response-item"><span class="status-code s-4xx">404</span><span class="response-desc">Source invoice not found.</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="col-right">
+          <div class="detail-section">
+            <h4>Response · 201</h4>
+            <div class="code-block">
+              <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+              <div class="code-content">{
+  <span class="key">"id"</span>: <span class="str">"inv_02new..."</span>,
+  <span class="key">"invoice_number"</span>: <span class="str">"INV-010"</span>,
+  <span class="key">"status"</span>: <span class="str">"draft"</span>,
+  <span class="key">"duplicated_from"</span>: <span class="str">"inv_01xyz..."</span>,
+  <span class="key">"total"</span>: <span class="num">756.00</span>
+}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- REMINDERS TOGGLE — INFERRED -->
+    <div class="endpoint-card" id="ep-inv-reminders">
+      <div class="endpoint-header" onclick="toggleCard(this)">
+        <span class="method-badge badge-PATCH">PATCH</span>
+        <span class="endpoint-path">/api/invoices/<span class="param">{id}</span>/reminders <span class="inferred-badge">⚡ INFERRED</span></span>
+        <span class="endpoint-summary">Toggle automated reminders on/off</span>
+        <span class="auth-tag auth-jwt">JWT</span>
+        <span class="chevron">▾</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="col-left">
+          <div class="detail-section"><h4>Description</h4><p class="desc-text">Inferred from PRD P1 feature: "Disable Reminders per Invoice." Enables or disables automated reminder emails for a specific invoice. Disabling cancels scheduled Hangfire jobs. Enabling reschedules them based on current due date.</p></div>
+          <div class="detail-section">
+            <h4>Request Body</h4>
+            <table class="param-table">
+              <tr><th>Field</th><th>Type</th><th>Req</th><th>Description</th></tr>
+              <tr><td class="param-name">enabled</td><td class="param-type">boolean</td><td><span class="param-req req-yes">Yes</span></td><td class="param-desc">true to enable, false to disable reminders.</td></tr>
+            </table>
+          </div>
+          <div class="detail-section">
+            <h4>Responses</h4>
+            <div class="response-list">
+              <div class="response-item"><span class="status-code s-2xx">200</span><span class="response-desc">Reminder status updated.</span></div>
+              <div class="response-item"><span class="status-code s-4xx">400</span><span class="response-desc">Invoice is paid or cancelled — reminders not applicable.</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="col-right">
+          <div class="detail-section">
+            <h4>Request + Response</h4>
+            <div class="code-block">
+              <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+              <div class="code-content"><span class="comment">// Request</span>
+{ <span class="key">"enabled"</span>: <span class="bool">false</span> }
+
+<span class="comment">// Response 200</span>
+{
+  <span class="key">"invoice_id"</span>: <span class="str">"inv_01xyz..."</span>,
+  <span class="key">"reminders_enabled"</span>: <span class="bool">false</span>,
+  <span class="key">"scheduled_reminders_cancelled"</span>: <span class="num">2</span>
+}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ PAYMENTS ═══ -->
+  <div class="section" id="sec-payments">
+    <div class="section-header">
+      <div class="section-icon">💳</div>
+      <div class="section-title">Payments & Stripe</div>
+      <div class="section-count">3 endpoints</div>
+    </div>
+
+    <div class="endpoint-card" id="ep-pay-page">
+      <div class="endpoint-header" onclick="toggleCard(this)">
+        <span class="method-badge badge-GET">GET</span>
+        <span class="endpoint-path">/pay/<span class="param">{token}</span></span>
+        <span class="endpoint-summary">Public client payment page</span>
+        <span class="auth-tag auth-public">PUBLIC</span>
+        <span class="chevron">▾</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="col-left">
+          <div class="detail-section"><h4>Description</h4><p class="desc-text">The public-facing payment page. No login required by the client. Returns the invoice details and a Stripe Checkout session for card payment. The token is a signed, time-limited JWT containing the invoice ID. This is the URL sent in the invoice email's "Pay Now" button.</p></div>
+          <div class="detail-section">
+            <h4>Path Parameters</h4>
+            <table class="param-table">
+              <tr><th>Param</th><th>Type</th><th>Req</th><th>Description</th></tr>
+              <tr><td class="param-name">token</td><td class="param-type">string</td><td><span class="param-req req-yes">Yes</span></td><td class="param-desc">Signed payment token from invoice send flow.</td></tr>
+            </table>
+          </div>
+          <div class="detail-section">
+            <h4>Responses</h4>
+            <div class="response-list">
+              <div class="response-item"><span class="status-code s-2xx">200</span><span class="response-desc">Payment page data: invoice summary + Stripe checkout URL.</span></div>
+              <div class="response-item"><span class="status-code s-4xx">404</span><span class="response-desc">Token invalid or invoice not found.</span></div>
+              <div class="response-item"><span class="status-code s-4xx">410</span><span class="response-desc">Invoice already paid or link expired.</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="col-right">
+          <div class="detail-section">
+            <h4>Response · 200</h4>
+            <div class="code-block">
+              <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+              <div class="code-content">{
+  <span class="key">"invoice"</span>: {
+    <span class="key">"number"</span>: <span class="str">"INV-009"</span>,
+    <span class="key">"business_name"</span>: <span class="str">"Sara Design Studio"</span>,
+    <span class="key">"business_logo"</span>: <span class="str">"https://cdn.invomir.app/..."</span>,
+    <span class="key">"total"</span>: <span class="num">756.00</span>,
+    <span class="key">"currency"</span>: <span class="str">"USD"</span>,
+    <span class="key">"due_date"</span>: <span class="str">"2026-06-15"</span>,
+    <span class="key">"status"</span>: <span class="str">"sent"</span>
+  },
+  <span class="key">"stripe_checkout_url"</span>: <span class="str">"https://checkout.stripe.com/c/pay/..."</span>
+}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="endpoint-card" id="ep-stripe-webhook">
+      <div class="endpoint-header" onclick="toggleCard(this)">
+        <span class="method-badge badge-POST">POST</span>
+        <span class="endpoint-path">/api/stripe/webhook</span>
+        <span class="endpoint-summary">Handle Stripe payment events</span>
+        <span class="auth-tag auth-stripe">STRIPE-SIG</span>
+        <span class="chevron">▾</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="col-left">
+          <div class="detail-section"><h4>Description</h4><p class="desc-text">Stripe's server-to-server webhook endpoint. Validates the <code>Stripe-Signature</code> header using the endpoint secret. Handles key events: <code>payment_intent.succeeded</code> marks invoice as Paid; <code>payment_intent.payment_failed</code> notifies user; <code>customer.subscription.*</code> events update plan status. Must return 200 immediately — processing is async via Hangfire.</p></div>
+          <div class="detail-section">
+            <h4>Handled Events</h4>
+            <table class="param-table">
+              <tr><th>Event</th><th>Action</th></tr>
+              <tr><td class="param-name">payment_intent.succeeded</td><td class="param-desc">Mark invoice Paid, send receipt, cancel reminders, notify user.</td></tr>
+              <tr><td class="param-name">payment_intent.payment_failed</td><td class="param-desc">Push notification to user. Log failure.</td></tr>
+              <tr><td class="param-name">customer.subscription.created</td><td class="param-desc">Update user plan to active.</td></tr>
+              <tr><td class="param-name">customer.subscription.deleted</td><td class="param-desc">Downgrade user to Free plan.</td></tr>
+              <tr><td class="param-name">invoice.payment_failed</td><td class="param-desc">Notify user of subscription billing failure.</td></tr>
+            </table>
+          </div>
+          <div class="detail-section">
+            <h4>Responses</h4>
+            <div class="response-list">
+              <div class="response-item"><span class="status-code s-2xx">200</span><span class="response-desc">Always return 200 immediately. Stripe retries on failure.</span></div>
+              <div class="response-item"><span class="status-code s-4xx">400</span><span class="response-desc">Invalid Stripe-Signature header.</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="col-right">
+          <div class="detail-section">
+            <h4>Security Note</h4>
+            <p class="desc-text" style="color:var(--orange)">⚠️ This endpoint does NOT use JWT auth. It validates using <code>Stripe-Signature</code> header + your webhook secret via <code>StripeClient.ConstructEvent()</code>. Raw request body must be read before any parsing.</p>
+          </div>
+          <div class="detail-section">
+            <h4>Sample Payload</h4>
+            <div class="code-block">
+              <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+              <div class="code-content">{
+  <span class="key">"type"</span>: <span class="str">"payment_intent.succeeded"</span>,
+  <span class="key">"data"</span>: {
+    <span class="key">"object"</span>: {
+      <span class="key">"id"</span>: <span class="str">"pi_3Nxyz..."</span>,
+      <span class="key">"amount"</span>: <span class="num">75600</span>, <span class="comment">// cents</span>
+      <span class="key">"metadata"</span>: {
+        <span class="key">"invoice_id"</span>: <span class="str">"inv_01xyz..."</span>
+      }
+    }
+  }
+}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STRIPE CONNECT — INFERRED -->
+    <div class="endpoint-card" id="ep-stripe-connect">
+      <div class="endpoint-header" onclick="toggleCard(this)">
+        <span class="method-badge badge-POST">POST</span>
+        <span class="endpoint-path">/api/stripe/connect <span class="inferred-badge">⚡ INFERRED</span></span>
+        <span class="endpoint-summary">Initiate Stripe Connect OAuth</span>
+        <span class="auth-tag auth-jwt">JWT</span>
+        <span class="chevron">▾</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="col-left">
+          <div class="detail-section"><h4>Description</h4><p class="desc-text">Inferred from PRD P1 feature: "Stripe Connect — User connects their Stripe account — money goes directly to them." Generates a Stripe Connect OAuth authorization URL. User is redirected to Stripe to authorize. On callback, the stripe_account_id is stored on the user record.</p></div>
+          <div class="detail-section">
+            <h4>Responses</h4>
+            <div class="response-list">
+              <div class="response-item"><span class="status-code s-2xx">200</span><span class="response-desc">Stripe OAuth URL returned.</span></div>
+              <div class="response-item"><span class="status-code s-4xx">400</span><span class="response-desc">Stripe account already connected.</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="col-right">
+          <div class="detail-section">
+            <h4>Response · 200</h4>
+            <div class="code-block">
+              <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+              <div class="code-content">{
+  <span class="key">"oauth_url"</span>: <span class="str">"https://connect.stripe.com/oauth/authorize?response_type=code&client_id=ca_...&scope=read_write&state=usr_01j3k"</span>
+}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ DASHBOARD & REPORTS ═══ -->
+  <div class="section" id="sec-dashboard">
+    <div class="section-header">
+      <div class="section-icon">📊</div>
+      <div class="section-title">Dashboard & Reports</div>
+      <div class="section-count">3 endpoints</div>
+    </div>
+
+    <div class="endpoint-card" id="ep-dashboard">
+      <div class="endpoint-header" onclick="toggleCard(this)">
+        <span class="method-badge badge-GET">GET</span>
+        <span class="endpoint-path">/api/dashboard</span>
+        <span class="endpoint-summary">Revenue stats, overdue, recent invoices</span>
+        <span class="auth-tag auth-jwt">JWT</span>
+        <span class="chevron">▾</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="col-left">
+          <div class="detail-section"><h4>Description</h4><p class="desc-text">Returns aggregated dashboard data for the authenticated user. Single call powers the entire dashboard screen on both web and mobile. Optimized for < 300ms P99 response time.</p></div>
+          <div class="detail-section">
+            <h4>Responses</h4>
+            <div class="response-list">
+              <div class="response-item"><span class="status-code s-2xx">200</span><span class="response-desc">Full dashboard payload.</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="col-right">
+          <div class="detail-section">
+            <h4>Response · 200</h4>
+            <div class="code-block">
+              <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+              <div class="code-content">{
+  <span class="key">"revenue"</span>: {
+    <span class="key">"this_month"</span>: <span class="num">3240.00</span>,
+    <span class="key">"last_month"</span>: <span class="num">2850.00</span>,
+    <span class="key">"all_time"</span>: <span class="num">28400.00</span>
+  },
+  <span class="key">"outstanding"</span>: <span class="num">1800.00</span>,
+  <span class="key">"overdue"</span>: <span class="num">450.00</span>,
+  <span class="key">"invoice_counts"</span>: {
+    <span class="key">"draft"</span>: <span class="num">2</span>, <span class="key">"sent"</span>: <span class="num">5</span>,
+    <span class="key">"paid"</span>: <span class="num">18</span>, <span class="key">"overdue"</span>: <span class="num">1</span>
+  },
+  <span class="key">"recent_invoices"</span>: [<span class="comment">/* last 10 */</span>],
+  <span class="key">"top_clients"</span>: [
+    { <span class="key">"name"</span>: <span class="str">"Acme Corp"</span>, <span class="key">"revenue"</span>: <span class="num">4250.00</span> }
+  ]
+}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="endpoint-card" id="ep-reports-monthly">
+      <div class="endpoint-header" onclick="toggleCard(this)">
+        <span class="method-badge badge-GET">GET</span>
+        <span class="endpoint-path">/api/reports/monthly</span>
+        <span class="endpoint-summary">Monthly revenue breakdown</span>
+        <span class="auth-tag auth-jwt">JWT</span>
+        <span class="chevron">▾</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="col-left">
+          <div class="detail-section"><h4>Description</h4><p class="desc-text">Returns month-by-month revenue data for the last 12 months. Powers the bar chart on the dashboard and the Reports screen. Each month includes paid, outstanding, and overdue totals.</p></div>
+          <div class="detail-section">
+            <h4>Query Parameters</h4>
+            <table class="param-table">
+              <tr><th>Param</th><th>Type</th><th>Req</th><th>Description</th></tr>
+              <tr><td class="param-name">months</td><td class="param-type">integer</td><td><span class="param-req req-no">No</span></td><td class="param-desc">Number of months to return. Default: 12, max: 24.</td></tr>
+              <tr><td class="param-name">year</td><td class="param-type">integer</td><td><span class="param-req req-no">No</span></td><td class="param-desc">Filter to a specific year. Default: current year.</td></tr>
+            </table>
+          </div>
+          <div class="detail-section">
+            <h4>Responses</h4>
+            <div class="response-list">
+              <div class="response-item"><span class="status-code s-2xx">200</span><span class="response-desc">Array of monthly revenue objects.</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="col-right">
+          <div class="detail-section">
+            <h4>Response · 200</h4>
+            <div class="code-block">
+              <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+              <div class="code-content">{
+  <span class="key">"months"</span>: [
+    {
+      <span class="key">"month"</span>: <span class="str">"2026-04"</span>,
+      <span class="key">"paid"</span>: <span class="num">2850.00</span>,
+      <span class="key">"outstanding"</span>: <span class="num">600.00</span>,
+      <span class="key">"overdue"</span>: <span class="num">0.00</span>,
+      <span class="key">"invoice_count"</span>: <span class="num">9</span>
+    },
+    {
+      <span class="key">"month"</span>: <span class="str">"2026-05"</span>,
+      <span class="key">"paid"</span>: <span class="num">3240.00</span>,
+      <span class="key">"outstanding"</span>: <span class="num">1800.00</span>,
+      <span class="key">"overdue"</span>: <span class="num">450.00</span>,
+      <span class="key">"invoice_count"</span>: <span class="num">11</span>
+    }
+  ]
+}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- REPORTS EXPORT — INFERRED -->
+    <div class="endpoint-card" id="ep-reports-export">
+      <div class="endpoint-header" onclick="toggleCard(this)">
+        <span class="method-badge badge-GET">GET</span>
+        <span class="endpoint-path">/api/reports/export <span class="inferred-badge">⚡ INFERRED</span></span>
+        <span class="endpoint-summary">Download report as CSV or PDF</span>
+        <span class="auth-tag auth-jwt">JWT</span>
+        <span class="chevron">▾</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="col-left">
+          <div class="detail-section"><h4>Description</h4><p class="desc-text">Inferred from PRD P2 feature: "Export Reports (CSV/PDF) — Download monthly summary for accountant/taxes." Generates a downloadable report for a specified period. PDF uses the same DinkToPdf pipeline as invoices. CSV is streamed directly from the DB query.</p></div>
+          <div class="detail-section">
+            <h4>Query Parameters</h4>
+            <table class="param-table">
+              <tr><th>Param</th><th>Type</th><th>Req</th><th>Description</th></tr>
+              <tr><td class="param-name">format</td><td class="param-type">string</td><td><span class="param-req req-yes">Yes</span></td><td class="param-desc">csv | pdf</td></tr>
+              <tr><td class="param-name">from</td><td class="param-type">date</td><td><span class="param-req req-yes">Yes</span></td><td class="param-desc">Start of report period. ISO 8601.</td></tr>
+              <tr><td class="param-name">to</td><td class="param-type">date</td><td><span class="param-req req-yes">Yes</span></td><td class="param-desc">End of report period. ISO 8601.</td></tr>
+              <tr><td class="param-name">status</td><td class="param-type">string</td><td><span class="param-req req-no">No</span></td><td class="param-desc">Filter by invoice status. Default: all.</td></tr>
+            </table>
+          </div>
+          <div class="detail-section">
+            <h4>Responses</h4>
+            <div class="response-list">
+              <div class="response-item"><span class="status-code s-2xx">200</span><span class="response-desc">File binary. Content-Type: text/csv or application/pdf.</span></div>
+              <div class="response-item"><span class="status-code s-4xx">400</span><span class="response-desc">Invalid format, date range too large, or missing params.</span></div>
+              <div class="response-item"><span class="status-code s-4xx">403</span><span class="response-desc">Report export requires Professional plan or above.</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="col-right">
+          <div class="detail-section">
+            <h4>Example Request</h4>
+            <div class="code-block">
+              <div class="code-block-header"><span class="code-lang">HTTP</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+              <div class="code-content">GET /api/reports/export
+  ?format=csv
+  &from=2026-01-01
+  &to=2026-05-31
+
+<span class="comment"># Response Headers</span>
+Content-Type: text/csv; charset=utf-8
+Content-Disposition: attachment; filename="invomir-report-2026-01-2026-05.csv"</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ SUBSCRIPTIONS ═══ -->
+  <div class="section" id="sec-subscriptions">
+    <div class="section-header">
+      <div class="section-icon">🔖</div>
+      <div class="section-title">Subscriptions</div>
+      <div class="section-count">1 endpoint</div>
+    </div>
+
+    <!-- GET SUBSCRIPTION — INFERRED -->
+    <div class="endpoint-card" id="ep-sub-get">
+      <div class="endpoint-header" onclick="toggleCard(this)">
+        <span class="method-badge badge-GET">GET</span>
+        <span class="endpoint-path">/api/subscriptions <span class="inferred-badge">⚡ INFERRED</span></span>
+        <span class="endpoint-summary">Get current plan and billing info</span>
+        <span class="auth-tag auth-jwt">JWT</span>
+        <span class="chevron">▾</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="col-left">
+          <div class="detail-section"><h4>Description</h4><p class="desc-text">Inferred from PRD subscription schema: users.plan, subscriptions table, and the Business Model section. Returns the user's current plan, trial status, billing period, and usage counts against plan limits. Displayed on the Profile & Settings screen.</p></div>
+          <div class="detail-section">
+            <h4>Responses</h4>
+            <div class="response-list">
+              <div class="response-item"><span class="status-code s-2xx">200</span><span class="response-desc">Current subscription object with usage stats.</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="col-right">
+          <div class="detail-section">
+            <h4>Response · 200</h4>
+            <div class="code-block">
+              <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+              <div class="code-content">{
+  <span class="key">"plan"</span>: <span class="str">"starter"</span>,
+  <span class="key">"status"</span>: <span class="str">"active"</span>,
+  <span class="key">"price_per_month"</span>: <span class="num">9.00</span>,
+  <span class="key">"current_period_end"</span>: <span class="str">"2026-06-15T00:00:00Z"</span>,
+  <span class="key">"trial_ends_at"</span>: <span class="null">null</span>,
+  <span class="key">"stripe_subscription_id"</span>: <span class="str">"sub_1Nxyz..."</span>,
+  <span class="key">"usage"</span>: {
+    <span class="key">"clients"</span>: { <span class="key">"used"</span>: <span class="num">7</span>, <span class="key">"limit"</span>: <span class="num">10</span> },
+    <span class="key">"invoices_this_month"</span>: { <span class="key">"used"</span>: <span class="num">12</span>, <span class="key">"limit"</span>: <span class="null">null</span> }
+  },
+  <span class="key">"features"</span>: {
+    <span class="key">"reminders"</span>: <span class="bool">true</span>,
+    <span class="key">"online_payments"</span>: <span class="bool">true</span>,
+    <span class="key">"reports_export"</span>: <span class="bool">false</span>,
+    <span class="key">"team_seats"</span>: <span class="bool">false</span>
+  }
+}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="api-footer">
+    <div class="footer-brand">InvoMir</div>
+    <div class="footer-meta">API Reference v1.1 · .NET Core 8 · PostgreSQL · Stripe · © Dream Garage Ventures 2026</div>
+    <div class="footer-meta">21 PRD endpoints + 10 inferred = 31 total</div>
+  </div>
+
+</main>
+
+<script>
+  function toggleCard(header) {
+    const card = header.parentElement;
+    const body = card.querySelector('.endpoint-body');
+    const isExpanded = card.classList.contains('expanded');
+    card.classList.toggle('expanded', !isExpanded);
+    body.classList.toggle('visible', !isExpanded);
+  }
+
+  function toggleGroup(groupId) {
+    const items = document.getElementById('group-' + groupId);
+    const chev = document.getElementById('chev-' + groupId);
+    if (items) {
+      items.classList.toggle('collapsed');
+      chev.textContent = items.classList.contains('collapsed') ? '▸' : '▾';
+    }
+  }
+
+  function scrollTo(id) {
+    const el = document.getElementById(id);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      const header = el.querySelector('.endpoint-header');
+      const body = el.querySelector('.endpoint-body');
+      if (body && !body.classList.contains('visible')) {
+        el.classList.add('expanded');
+        body.classList.add('visible');
+      }
+      el.style.borderColor = 'var(--gold)';
+      setTimeout(() => { el.style.borderColor = ''; }, 1800);
+    }
+
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => {
+      if (n.getAttribute('onclick') && n.getAttribute('onclick').includes(id)) {
+        n.classList.add('active');
+      }
+    });
+  }
+
+  function copyCode(btn) {
+    const block = btn.closest('.code-block').querySelector('.code-content');
+    const text = block.innerText;
+    navigator.clipboard.writeText(text).then(() => {
+      btn.textContent = 'Copied!';
+      setTimeout(() => btn.textContent = 'Copy', 1500);
+    });
+  }
+
+  // Search
+  document.getElementById('searchInput').addEventListener('input', function() {
+    const q = this.value.toLowerCase().trim();
+    document.querySelectorAll('.nav-item').forEach(item => {
+      const text = item.innerText.toLowerCase();
+      item.style.display = (!q || text.includes(q)) ? '' : 'none';
+    });
+    document.querySelectorAll('.nav-group-label').forEach(label => {
+      label.textContent = label.textContent.replace(/<mark[^>]*>/g,'').replace(/<\/mark>/g,'');
+    });
+  });
+
+  // Intersection observer to highlight active nav item on scroll
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const id = entry.target.id;
+        document.querySelectorAll('.nav-item').forEach(n => {
+          n.classList.toggle('active',
+            n.getAttribute('onclick') && n.getAttribute('onclick').includes(id));
+        });
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+
+  document.querySelectorAll('.endpoint-card[id]').forEach(card => observer.observe(card));
+</script>
+</body>
+</html>
