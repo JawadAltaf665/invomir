@@ -132,7 +132,19 @@ When you need to swap SendGrid for Mailgun, change PostgreSQL to SQL Server, or 
 
 Every single table has a `TenantId` column. All queries are automatically filtered by tenant. **No exceptions.**
 
-### The BaseEntity Every Entity Must Inherit
+### Entity Auditing Hierarchy Every Entity Must Follow
+
+**Current implementation update:** InvoMir now uses an ABP-style four-level audit chain before tenant ownership:
+
+`BaseEntity -> AuditedEntity -> SoftDeleteEntity -> TenantEntity`
+
+Normal product entities should inherit from the deepest correct base:
+
+- `TenantEntity` for tenant-owned records such as `User`, `RefreshToken`, future `Client`, `Invoice`, `Payment`, `Reminder`, `Subscription`, and `EmailLog`.
+- `SoftDeleteEntity` for non-tenant records that still need create/update/delete metadata, such as `Tenant` and `PasswordResetToken`.
+- `AuditLog` is a deliberate exception. It is an immutable security ledger, has its own nullable `tenant_id` / `user_id`, has no soft delete, and must not receive the tenant global query filter.
+
+The older examples below are historical guidance only where they mention `CreatedAt` / `UpdatedAt`; use `CreationTime` / `LastModificationTime` in new backend code.
 
 ```csharp
 // Domain/Entities/BaseEntity.cs
@@ -180,6 +192,19 @@ public interface ITenantContext
     bool IsAuthenticated { get; }
 }
 ```
+
+```csharp
+// Application/Interfaces/ICurrentUserContext.cs
+namespace InvoMir.Application.Interfaces;
+
+public interface ICurrentUserContext
+{
+    Guid? UserId { get; }
+    bool IsAuthenticated { get; }
+}
+```
+
+`ICurrentUserContext` is used by `AppDbContext.SaveChangesAsync()` to automatically populate `CreatorUserId`, `LastModifierUserId`, and `DeleterUserId`. Handlers should not set those fields manually.
 
 ```csharp
 // Infrastructure/Identity/TenantContext.cs
@@ -289,8 +314,10 @@ public sealed class AppDbContext : DbContext
 
 **What this guarantees:**
 - It is **architecturally impossible** for Tenant A to read Tenant B's data
-- No developer has to remember to add `WHERE TenantId = X` — it happens automatically
+- No developer has to remember to add `WHERE TenantId = X` or `IsDeleted = false` — it happens automatically
 - If the filter is accidentally bypassed (with `IgnoreQueryFilters()`), that is a deliberate, visible, code-reviewed decision
+
+**Current implementation note:** the real `AppDbContext` applies both soft-delete and tenant filters. It also converts `EntityState.Deleted` into a soft delete for `SoftDeleteEntity`, and fills creation/modification/deletion audit fields automatically.
 
 ---
 
@@ -397,7 +424,7 @@ public record PaginatedQuery(int Page = 1, int PageSize = 20);
 var query = _context.Invoices
     .AsNoTracking()
     .Where(i => i.Status == status) // filter first
-    .OrderByDescending(i => i.CreatedAt)
+    .OrderByDescending(i => i.CreationTime)
     .Select(i => new InvoiceListDto { ... });
 
 var totalCount = await query.CountAsync(cancellationToken);
@@ -465,6 +492,23 @@ public sealed class InvoiceConfiguration : IEntityTypeConfiguration<Invoice>
 ## PART 4 — API RESPONSE STANDARDS
 
 Every endpoint returns the same envelope. No exceptions.
+
+### API Contract Gap Addendum
+
+These routes are accepted into the InvoMir API contract because the product roadmap and feature descriptions require them, even where the original PRD endpoint table did not spell them out:
+
+- `GET /api/clients/{id}` - single client detail with invoice history.
+- `DELETE /api/invoices/{id}` - cancel an issued invoice or remove a draft.
+- `POST /api/invoices/{id}/duplicate` - clone an invoice as a new draft.
+- `PATCH /api/invoices/{id}/reminders` - enable or disable reminders per invoice.
+- `POST /api/auth/forgot-password` - request a password reset link.
+- `POST /api/auth/reset-password` - reset password and revoke active sessions.
+- `POST /api/users/me/logo` - upload business logo for profile and PDF branding.
+- `GET /api/subscriptions` - fetch current plan, trial, billing, and usage limits.
+- `POST /api/stripe/connect` - start Stripe Connect OAuth.
+- `GET /api/reports/export` - download reports as CSV/PDF.
+
+Current implementation status: `POST /api/auth/forgot-password` and `POST /api/auth/reset-password` are implemented in the auth backend. The remaining product endpoints are planned contracts and must not be marked implemented until their handlers, persistence, validation, and tests exist.
 
 ### ApiResponse<T> — The Single Response Shape
 
@@ -1022,8 +1066,8 @@ Every column used in WHERE, ORDER BY, or JOIN must have an index. Define in IEnt
 ```csharp
 // Standard indexes for every TenantEntity
 builder.HasIndex(e => e.TenantId);                              // base filter
-builder.HasIndex(e => e.CreatedAt);                             // date sorting
-builder.HasIndex(e => new { e.TenantId, e.CreatedAt });         // filtered + sorted
+builder.HasIndex(e => e.CreationTime);                          // date sorting
+builder.HasIndex(e => new { e.TenantId, e.CreationTime });      // filtered + sorted
 builder.HasIndex(e => new { e.TenantId, e.Status });            // filtered lists
 ```
 
@@ -1143,5 +1187,4 @@ Clean Code:
 | Error | Throw domain exception → caught by global middleware |
 | Tenant context | Injected via `ITenantContext` — never passed as parameter |
 | Invoice number | `IInvoiceNumberService` — sequential per tenant (INV-001...) |
-| Timestamps | Set automatically in `SaveChangesAsync` override |
-
+| Audit fields | `CreationTime`, creator/modifier/delete fields, soft delete, and concurrency stamp are set automatically in `SaveChangesAsync` |
