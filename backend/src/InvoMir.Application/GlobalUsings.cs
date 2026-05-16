@@ -1,0 +1,11 @@
+global using System.Reflection;
+global using System.Security.Claims;
+global using FluentValidation;
+global using MediatR;
+global using Microsoft.EntityFrameworkCore;
+global using Microsoft.Extensions.DependencyInjection;
+global using InvoMir.Application.Features.Auth.DTOs;
+global using InvoMir.Application.Interfaces;
+global using InvoMir.Domain.Entities;
+global using InvoMir.Shared.Constants;
+global using InvoMir.Shared.Response;
