@@ -4,6 +4,7 @@ namespace InvoMir.API.Controllers;
 [Authorize]
 [Route("api/clients")]
 [Produces("application/json")]
+[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status401Unauthorized)]
 public sealed class ClientsController(ISender mediator) : ControllerBase
 {
     [HttpGet]
