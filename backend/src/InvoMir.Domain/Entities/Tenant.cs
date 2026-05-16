@@ -33,4 +33,12 @@ public sealed class Tenant : SoftDeleteEntity
             TrialEndsAt = DateTime.UtcNow.AddDays(14)
         };
     }
+
+    public void UpdateName(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            throw new ArgumentException("Tenant name is required.", nameof(name));
+
+        Name = name.Trim();
+    }
 }

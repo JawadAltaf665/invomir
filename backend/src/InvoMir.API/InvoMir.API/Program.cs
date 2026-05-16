@@ -2,9 +2,29 @@ using InvoMir.API.Extensions;
 using InvoMir.API.Middlewares;
 using InvoMir.Application;
 using InvoMir.Infrastructure;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.OpenApi;
 
 var builder = WebApplication.CreateBuilder(args);
+
+if (builder.Environment.IsDevelopment())
+{
+    builder.Logging.ClearProviders();
+    builder.Logging.AddConsole();
+    builder.Logging.AddDebug();
+
+    var dataProtectionKeysPath = Path.Combine(
+        builder.Environment.ContentRootPath,
+        "App_Data",
+        "DataProtectionKeys");
+
+    Directory.CreateDirectory(dataProtectionKeysPath);
+
+    builder.Services
+        .AddDataProtection()
+        .SetApplicationName("InvoMir.API")
+        .PersistKeysToFileSystem(new DirectoryInfo(dataProtectionKeysPath));
+}
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -58,6 +78,7 @@ app.UseMiddleware<GlobalExceptionMiddleware>();
 if (!app.Environment.IsDevelopment())
     app.UseHttpsRedirection();
 
+app.UseStaticFiles();
 app.UseCors("InvoMirPolicy");
 app.UseAuthentication();
 app.UseAuthorization();
