@@ -1,6 +1,0 @@
-Folder PATH listing for volume New Volume
-Volume serial number is 000000D8 E4CF:4553
-D:\YOURFOLDER
-Invalid path - \YOURFOLDER
-No subfolders exist 
-
