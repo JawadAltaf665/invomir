@@ -493,6 +493,23 @@ public sealed class InvoiceConfiguration : IEntityTypeConfiguration<Invoice>
 
 Every endpoint returns the same envelope. No exceptions.
 
+### API Contract Gap Addendum
+
+These routes are accepted into the InvoMir API contract because the product roadmap and feature descriptions require them, even where the original PRD endpoint table did not spell them out:
+
+- `GET /api/clients/{id}` - single client detail with invoice history.
+- `DELETE /api/invoices/{id}` - cancel an issued invoice or remove a draft.
+- `POST /api/invoices/{id}/duplicate` - clone an invoice as a new draft.
+- `PATCH /api/invoices/{id}/reminders` - enable or disable reminders per invoice.
+- `POST /api/auth/forgot-password` - request a password reset link.
+- `POST /api/auth/reset-password` - reset password and revoke active sessions.
+- `POST /api/users/me/logo` - upload business logo for profile and PDF branding.
+- `GET /api/subscriptions` - fetch current plan, trial, billing, and usage limits.
+- `POST /api/stripe/connect` - start Stripe Connect OAuth.
+- `GET /api/reports/export` - download reports as CSV/PDF.
+
+Current implementation status: `POST /api/auth/forgot-password` and `POST /api/auth/reset-password` are implemented in the auth backend. The remaining product endpoints are planned contracts and must not be marked implemented until their handlers, persistence, validation, and tests exist.
+
 ### ApiResponse<T> — The Single Response Shape
 
 ```csharp
