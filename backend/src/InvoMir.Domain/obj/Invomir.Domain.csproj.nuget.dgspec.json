@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "D:\\Jawad\\invomir\\backend\\src\\Invomir.Domain\\Invomir.Domain.csproj": {}
+    "D:\\Jawad\\invomir\\backend\\src\\InvoMir.Domain\\InvoMir.Domain.csproj": {}
   },
   "projects": {
-    "D:\\Jawad\\invomir\\backend\\src\\Invomir.Domain\\Invomir.Domain.csproj": {
+    "D:\\Jawad\\invomir\\backend\\src\\InvoMir.Domain\\InvoMir.Domain.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\Jawad\\invomir\\backend\\src\\Invomir.Domain\\Invomir.Domain.csproj",
-        "projectName": "Invomir.Domain",
-        "projectPath": "D:\\Jawad\\invomir\\backend\\src\\Invomir.Domain\\Invomir.Domain.csproj",
+        "projectUniqueName": "D:\\Jawad\\invomir\\backend\\src\\InvoMir.Domain\\InvoMir.Domain.csproj",
+        "projectName": "InvoMir.Domain",
+        "projectPath": "D:\\Jawad\\invomir\\backend\\src\\InvoMir.Domain\\InvoMir.Domain.csproj",
         "packagesPath": "C:\\Users\\jawad\\.nuget\\packages\\",
-        "outputPath": "D:\\Jawad\\invomir\\backend\\src\\Invomir.Domain\\obj\\",
+        "outputPath": "D:\\Jawad\\invomir\\backend\\src\\InvoMir.Domain\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

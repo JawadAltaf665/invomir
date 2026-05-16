@@ -33,8 +33,8 @@
             "framework": "net10.0",
             "targetAlias": "net10.0",
             "projectReferences": {
-              "D:\\Jawad\\invomir\\backend\\src\\Invomir.Domain\\Invomir.Domain.csproj": {
-                "projectPath": "D:\\Jawad\\invomir\\backend\\src\\Invomir.Domain\\Invomir.Domain.csproj"
+              "D:\\Jawad\\invomir\\backend\\src\\InvoMir.Domain\\InvoMir.Domain.csproj": {
+                "projectPath": "D:\\Jawad\\invomir\\backend\\src\\InvoMir.Domain\\InvoMir.Domain.csproj"
               },
               "D:\\Jawad\\invomir\\backend\\src\\InvoMir.Shared\\InvoMir.Shared.csproj": {
                 "projectPath": "D:\\Jawad\\invomir\\backend\\src\\InvoMir.Shared\\InvoMir.Shared.csproj"
@@ -59,17 +59,21 @@
           "framework": "net10.0",
           "targetAlias": "net10.0",
           "dependencies": {
-            "AutoMapper.Extensions.Microsoft.DependencyInjection": {
-              "target": "Package",
-              "version": "[12.0.1, )"
-            },
             "FluentValidation": {
               "target": "Package",
               "version": "[12.1.1, )"
             },
+            "FluentValidation.AspNetCore": {
+              "target": "Package",
+              "version": "[11.3.1, )"
+            },
             "MediatR": {
               "target": "Package",
               "version": "[14.1.0, )"
+            },
+            "Microsoft.EntityFrameworkCore": {
+              "target": "Package",
+              "version": "[10.0.8, )"
             }
           },
           "imports": [
@@ -366,14 +370,14 @@
         }
       }
     },
-    "D:\\Jawad\\invomir\\backend\\src\\Invomir.Domain\\Invomir.Domain.csproj": {
+    "D:\\Jawad\\invomir\\backend\\src\\InvoMir.Domain\\InvoMir.Domain.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\Jawad\\invomir\\backend\\src\\Invomir.Domain\\Invomir.Domain.csproj",
-        "projectName": "Invomir.Domain",
-        "projectPath": "D:\\Jawad\\invomir\\backend\\src\\Invomir.Domain\\Invomir.Domain.csproj",
+        "projectUniqueName": "D:\\Jawad\\invomir\\backend\\src\\InvoMir.Domain\\InvoMir.Domain.csproj",
+        "projectName": "InvoMir.Domain",
+        "projectPath": "D:\\Jawad\\invomir\\backend\\src\\InvoMir.Domain\\InvoMir.Domain.csproj",
         "packagesPath": "C:\\Users\\jawad\\.nuget\\packages\\",
-        "outputPath": "D:\\Jawad\\invomir\\backend\\src\\Invomir.Domain\\obj\\",
+        "outputPath": "D:\\Jawad\\invomir\\backend\\src\\InvoMir.Domain\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

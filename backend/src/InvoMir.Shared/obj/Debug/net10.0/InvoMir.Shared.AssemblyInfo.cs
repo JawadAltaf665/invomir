@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("InvoMir.Shared")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+0e102558e7f0311d4241733e5f479abd923c31b7")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+426d7c9361017294d7043f314847783aacee0033")]
 [assembly: System.Reflection.AssemblyProductAttribute("InvoMir.Shared")]
 [assembly: System.Reflection.AssemblyTitleAttribute("InvoMir.Shared")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

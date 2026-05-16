@@ -1,3 +1,6 @@
+D:\Jawad\invomir\backend\src\InvoMir.Shared\bin\Debug\net10.0\InvoMir.Shared.deps.json
+D:\Jawad\invomir\backend\src\InvoMir.Shared\bin\Debug\net10.0\InvoMir.Shared.dll
+D:\Jawad\invomir\backend\src\InvoMir.Shared\bin\Debug\net10.0\InvoMir.Shared.pdb
 D:\Jawad\invomir\backend\src\InvoMir.Shared\obj\Debug\net10.0\InvoMir.Shared.GeneratedMSBuildEditorConfig.editorconfig
 D:\Jawad\invomir\backend\src\InvoMir.Shared\obj\Debug\net10.0\InvoMir.Shared.AssemblyInfoInputs.cache
 D:\Jawad\invomir\backend\src\InvoMir.Shared\obj\Debug\net10.0\InvoMir.Shared.AssemblyInfo.cs
@@ -6,7 +9,4 @@ D:\Jawad\invomir\backend\src\InvoMir.Shared\obj\Debug\net10.0\InvoMir.Shared.sou
 D:\Jawad\invomir\backend\src\InvoMir.Shared\obj\Debug\net10.0\InvoMir.Shared.dll
 D:\Jawad\invomir\backend\src\InvoMir.Shared\obj\Debug\net10.0\refint\InvoMir.Shared.dll
 D:\Jawad\invomir\backend\src\InvoMir.Shared\obj\Debug\net10.0\InvoMir.Shared.pdb
-D:\Jawad\invomir\backend\src\InvoMir.Shared\bin\Debug\net10.0\InvoMir.Shared.deps.json
-D:\Jawad\invomir\backend\src\InvoMir.Shared\bin\Debug\net10.0\InvoMir.Shared.dll
-D:\Jawad\invomir\backend\src\InvoMir.Shared\bin\Debug\net10.0\InvoMir.Shared.pdb
 D:\Jawad\invomir\backend\src\InvoMir.Shared\obj\Debug\net10.0\ref\InvoMir.Shared.dll

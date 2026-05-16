@@ -1,11 +1,12 @@
 D:\Jawad\invomir\backend\src\InvoMir.Infrastructure\bin\Debug\net10.0\InvoMir.Infrastructure.deps.json
+D:\Jawad\invomir\backend\src\InvoMir.Infrastructure\bin\Debug\net10.0\InvoMir.Infrastructure.runtimeconfig.json
 D:\Jawad\invomir\backend\src\InvoMir.Infrastructure\bin\Debug\net10.0\InvoMir.Infrastructure.dll
 D:\Jawad\invomir\backend\src\InvoMir.Infrastructure\bin\Debug\net10.0\InvoMir.Infrastructure.pdb
-D:\Jawad\invomir\backend\src\InvoMir.Infrastructure\bin\Debug\net10.0\Invomir.Application.dll
-D:\Jawad\invomir\backend\src\InvoMir.Infrastructure\bin\Debug\net10.0\Invomir.Domain.dll
+D:\Jawad\invomir\backend\src\InvoMir.Infrastructure\bin\Debug\net10.0\InvoMir.Application.dll
+D:\Jawad\invomir\backend\src\InvoMir.Infrastructure\bin\Debug\net10.0\InvoMir.Domain.dll
 D:\Jawad\invomir\backend\src\InvoMir.Infrastructure\bin\Debug\net10.0\InvoMir.Shared.dll
-D:\Jawad\invomir\backend\src\InvoMir.Infrastructure\bin\Debug\net10.0\Invomir.Application.pdb
-D:\Jawad\invomir\backend\src\InvoMir.Infrastructure\bin\Debug\net10.0\Invomir.Domain.pdb
+D:\Jawad\invomir\backend\src\InvoMir.Infrastructure\bin\Debug\net10.0\InvoMir.Application.pdb
+D:\Jawad\invomir\backend\src\InvoMir.Infrastructure\bin\Debug\net10.0\InvoMir.Domain.pdb
 D:\Jawad\invomir\backend\src\InvoMir.Infrastructure\bin\Debug\net10.0\InvoMir.Shared.pdb
 D:\Jawad\invomir\backend\src\InvoMir.Infrastructure\obj\Debug\net10.0\InvoMir.Infrastructure.csproj.AssemblyReference.cache
 D:\Jawad\invomir\backend\src\InvoMir.Infrastructure\obj\Debug\net10.0\InvoMir.Infrastructure.GeneratedMSBuildEditorConfig.editorconfig
@@ -17,6 +18,5 @@ D:\Jawad\invomir\backend\src\InvoMir.Infrastructure\obj\Debug\net10.0\InvoMir..D
 D:\Jawad\invomir\backend\src\InvoMir.Infrastructure\obj\Debug\net10.0\InvoMir.Infrastructure.dll
 D:\Jawad\invomir\backend\src\InvoMir.Infrastructure\obj\Debug\net10.0\refint\InvoMir.Infrastructure.dll
 D:\Jawad\invomir\backend\src\InvoMir.Infrastructure\obj\Debug\net10.0\InvoMir.Infrastructure.pdb
-D:\Jawad\invomir\backend\src\InvoMir.Infrastructure\obj\Debug\net10.0\ref\InvoMir.Infrastructure.dll
-D:\Jawad\invomir\backend\src\InvoMir.Infrastructure\bin\Debug\net10.0\InvoMir.Infrastructure.runtimeconfig.json
 D:\Jawad\invomir\backend\src\InvoMir.Infrastructure\obj\Debug\net10.0\InvoMir.Infrastructure.genruntimeconfig.cache
+D:\Jawad\invomir\backend\src\InvoMir.Infrastructure\obj\Debug\net10.0\ref\InvoMir.Infrastructure.dll

@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "HU7dY2vr0ng=",
+  "dgSpecHash": "HdJlLfPPEKc=",
   "success": true,
-  "projectFilePath": "D:\\Jawad\\invomir\\backend\\src\\Invomir.Domain\\Invomir.Domain.csproj",
+  "projectFilePath": "D:\\Jawad\\invomir\\backend\\src\\InvoMir.Domain\\InvoMir.Domain.csproj",
   "expectedPackageFiles": [],
   "logs": []
 }
