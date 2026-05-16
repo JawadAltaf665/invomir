@@ -78,4 +78,32 @@ public sealed class User : TenantEntity
 
         PasswordHash = newHash;
     }
+
+    public void UpdateProfile(string? currency, decimal? taxPercent)
+    {
+        if (currency is not null)
+        {
+            var normalizedCurrency = currency.ToUpperInvariant().Trim();
+            if (!AuthConstants.SupportedCurrencies.Contains(normalizedCurrency))
+                throw new ArgumentException("Currency is not supported.", nameof(currency));
+
+            Currency = normalizedCurrency;
+        }
+
+        if (taxPercent is not null)
+        {
+            if (taxPercent is < 0 or > 100)
+                throw new ArgumentOutOfRangeException(nameof(taxPercent), "Tax percent must be between 0 and 100.");
+
+            TaxPercent = taxPercent.Value;
+        }
+    }
+
+    public void UpdateLogoUrl(string logoUrl)
+    {
+        if (string.IsNullOrWhiteSpace(logoUrl))
+            throw new ArgumentException("Logo URL is required.", nameof(logoUrl));
+
+        LogoUrl = logoUrl.Trim();
+    }
 }
