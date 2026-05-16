@@ -7,6 +7,9 @@ public interface IAppDbContext
     DbSet<RefreshToken> RefreshTokens { get; }
     DbSet<PasswordResetToken> PasswordResetTokens { get; }
     DbSet<AuditLog> AuditLogs { get; }
+    DbSet<Client> Clients { get; }
+    DbSet<Invoice> Invoices { get; }
+    DbSet<InvoiceItem> InvoiceItems { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken);
 }
