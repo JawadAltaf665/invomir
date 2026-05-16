@@ -1,7 +1,7 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/InvoMir.Application/InvoMir.Application.csproj" />
-    <Project Path="src/Invomir.Domain/Invomir.Domain.csproj" />
+    <Project Path="src/InvoMir.Domain/InvoMir.Domain.csproj" />
     <Project Path="src/InvoMir.Infrastructure/InvoMir.Infrastructure.csproj" />
     <Project Path="src/InvoMir.Shared/InvoMir.Shared.csproj" />
   </Folder>

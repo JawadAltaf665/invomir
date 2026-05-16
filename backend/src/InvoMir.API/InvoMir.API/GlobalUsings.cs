@@ -1,0 +1,10 @@
+global using InvoMir.Application.Features.Auth.Commands.ForgotPassword;
+global using InvoMir.Application.Features.Auth.Commands.Login;
+global using InvoMir.Application.Features.Auth.Commands.Refresh;
+global using InvoMir.Application.Features.Auth.Commands.Register;
+global using InvoMir.Application.Features.Auth.Commands.ResetPassword;
+global using InvoMir.Application.Features.Auth.DTOs;
+global using InvoMir.Shared.Response;
+global using MediatR;
+global using Microsoft.AspNetCore.Authorization;
+global using Microsoft.AspNetCore.Mvc;
