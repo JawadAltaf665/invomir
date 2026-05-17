@@ -9,6 +9,8 @@ namespace InvoMir.API.Controllers;
 [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status401Unauthorized)]
 public sealed class InvoicesController(ISender mediator) : ControllerBase
 {
+    private const string TransparentPixelBase64 = "R0lGODlhAQABAPAAAP///wAAACH5BAAAAAAALAAAAAABAAEAAAICRAEAOw==";
+
     [HttpGet]
     [ProducesResponseType(typeof(ApiResponse<PagedResult<InvoiceListItemDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status422UnprocessableEntity)]
@@ -66,6 +68,46 @@ public sealed class InvoicesController(ISender mediator) : ControllerBase
         }
 
         return File(result.Content, result.ContentType, result.FileName);
+    }
+
+    [HttpPost("{id:guid}/send")]
+    [ProducesResponseType(typeof(ApiResponse<InvoiceSendResultDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status422UnprocessableEntity)]
+    public async Task<IActionResult> Send(
+        Guid id,
+        [FromBody(EmptyBodyBehavior = EmptyBodyBehavior.Allow)] SendInvoiceCommand? command,
+        CancellationToken cancellationToken)
+    {
+        var result = await mediator.Send((command ?? new SendInvoiceCommand()) with { Id = id }, cancellationToken);
+        return Ok(ApiResponse<InvoiceSendResultDto>.Ok(result, "Invoice sent successfully."));
+    }
+
+    [HttpPost("{id:guid}/resend")]
+    [ProducesResponseType(typeof(ApiResponse<InvoiceSendResultDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status422UnprocessableEntity)]
+    public async Task<IActionResult> Resend(
+        Guid id,
+        [FromBody(EmptyBodyBehavior = EmptyBodyBehavior.Allow)] ResendInvoiceCommand? command,
+        CancellationToken cancellationToken)
+    {
+        var result = await mediator.Send((command ?? new ResendInvoiceCommand()) with { Id = id }, cancellationToken);
+        return Ok(ApiResponse<InvoiceSendResultDto>.Ok(result, "Invoice resent successfully."));
+    }
+
+    [AllowAnonymous]
+    [HttpGet("track/{token}")]
+    [Produces("image/gif")]
+    [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK)]
+    public async Task<IActionResult> Track(
+        string token,
+        CancellationToken cancellationToken)
+    {
+        await mediator.Send(new TrackInvoiceViewCommand(token), cancellationToken);
+        return File(Convert.FromBase64String(TransparentPixelBase64), "image/gif");
     }
 
     [HttpPut("{id:guid}")]

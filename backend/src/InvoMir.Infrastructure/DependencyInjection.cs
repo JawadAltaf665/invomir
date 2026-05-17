@@ -28,6 +28,7 @@ public static class DependencyInjection
         services.AddScoped<IEmailService, SendGridEmailService>();
         services.AddScoped<IInvoiceNumberService, InvoiceNumberService>();
         services.AddScoped<IInvoiceReminderJobService, InvoiceReminderJobService>();
+        services.AddScoped<IInvoiceLinkBuilder, InvoiceLinkBuilder>();
         services.AddScoped<IPdfService, DinkToPdfService>();
         services.AddScoped<IUserLogoStorageService, UserLogoStorageService>();
 

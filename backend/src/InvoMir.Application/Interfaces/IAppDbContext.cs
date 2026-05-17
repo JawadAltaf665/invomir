@@ -8,6 +8,7 @@ public interface IAppDbContext
     DbSet<PasswordResetToken> PasswordResetTokens { get; }
     DbSet<EmailVerificationToken> EmailVerificationTokens { get; }
     DbSet<AuditLog> AuditLogs { get; }
+    DbSet<EmailLog> EmailLogs { get; }
     DbSet<Client> Clients { get; }
     DbSet<Invoice> Invoices { get; }
     DbSet<InvoiceItem> InvoiceItems { get; }
