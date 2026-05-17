@@ -1,9 +1,21 @@
+using DinkToPdf;
+using DinkToPdf.Contracts;
 using InvoMir.API.Extensions;
 using InvoMir.API.Middlewares;
 using InvoMir.Application;
 using InvoMir.Infrastructure;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.OpenApi;
+using System.Runtime.InteropServices;
+using System.Runtime.Loader;
+
+var nativePdfLibraryName = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+    ? "libwkhtmltox.dll"
+    : RuntimeInformation.IsOSPlatform(OSPlatform.Linux)
+        ? "libwkhtmltox.so"
+        : throw new PlatformNotSupportedException("DinkToPdf native library is only configured for Windows and Linux.");
+var nativePdfLibraryPath = Path.Combine(AppContext.BaseDirectory, nativePdfLibraryName);
+new CustomAssemblyLoadContext().LoadUnmanagedLibrary(nativePdfLibraryPath);
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -31,6 +43,7 @@ builder.Services.AddEndpointsApiExplorer();
 
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddSingleton(typeof(IConverter), new SynchronizedConverter(new PdfTools()));
 builder.Services.AddJwtAuthentication(builder.Configuration);
 
 builder.Services.AddSwaggerGen(options =>
@@ -85,3 +98,16 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+internal sealed class CustomAssemblyLoadContext : AssemblyLoadContext
+{
+    public IntPtr LoadUnmanagedLibrary(string absolutePath)
+    {
+        return LoadUnmanagedDll(absolutePath);
+    }
+
+    protected override IntPtr LoadUnmanagedDll(string unmanagedDllName)
+    {
+        return LoadUnmanagedDllFromPath(unmanagedDllName);
+    }
+}

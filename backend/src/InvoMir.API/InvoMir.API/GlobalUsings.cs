@@ -18,6 +18,7 @@ global using InvoMir.Application.Features.Invoices.Commands.DeleteInvoice;
 global using InvoMir.Application.Features.Invoices.Commands.DuplicateInvoice;
 global using InvoMir.Application.Features.Invoices.Commands.UpdateInvoice;
 global using InvoMir.Application.Features.Invoices.DTOs;
+global using InvoMir.Application.Features.Invoices.Queries.GenerateInvoicePdf;
 global using InvoMir.Application.Features.Invoices.Queries.GetInvoice;
 global using InvoMir.Application.Features.Invoices.Queries.ListInvoices;
 global using InvoMir.Application.Features.Users.Commands.ChangeCurrentUserPassword;

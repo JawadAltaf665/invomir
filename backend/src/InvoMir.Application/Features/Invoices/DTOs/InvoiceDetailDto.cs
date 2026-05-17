@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace InvoMir.Application.Features.Invoices.DTOs;
 
 public sealed record InvoiceDetailDto(
@@ -18,4 +20,6 @@ public sealed record InvoiceDetailDto(
     DateTime? SentAt,
     DateTime? ViewedAt,
     DateTime? PaidAt,
-    DateTime? CancelledAt);
+    DateTime? CancelledAt,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    InvoiceIssuerDto? Issuer = null);

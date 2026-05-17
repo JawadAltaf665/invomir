@@ -47,6 +47,27 @@ public sealed class InvoicesController(ISender mediator) : ControllerBase
         return Ok(ApiResponse<InvoiceDetailDto>.Ok(result));
     }
 
+    [HttpGet("{id:guid}/pdf")]
+    [Produces("application/pdf")]
+    [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DownloadPdf(
+        Guid id,
+        [FromQuery] bool preview,
+        CancellationToken cancellationToken)
+    {
+        var result = await mediator.Send(new GenerateInvoicePdfQuery(id), cancellationToken);
+        Response.Headers["X-PDF-Generated-At"] = result.GeneratedAtUtc.ToString("O");
+
+        if (preview)
+        {
+            Response.Headers["Content-Disposition"] = $"inline; filename=\"{result.FileName}\"";
+            return File(result.Content, result.ContentType);
+        }
+
+        return File(result.Content, result.ContentType, result.FileName);
+    }
+
     [HttpPut("{id:guid}")]
     [ProducesResponseType(typeof(ApiResponse<InvoiceDetailDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]

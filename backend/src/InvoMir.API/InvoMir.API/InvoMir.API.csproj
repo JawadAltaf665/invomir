@@ -25,4 +25,13 @@
     <ProjectReference Include="..\..\InvoMir.Shared\InvoMir.Shared.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Include="libwkhtmltox.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="libwkhtmltox.so">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>

@@ -4,6 +4,7 @@ global using System.Net.Http.Headers;
 global using System.Security.Claims;
 global using System.Text;
 global using System.Text.Json;
+global using InvoMir.Application.Features.Invoices.DTOs;
 global using InvoMir.Application.Interfaces;
 global using InvoMir.Domain.Entities;
 global using InvoMir.Infrastructure.Identity;
