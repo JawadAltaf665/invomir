@@ -19,6 +19,7 @@ public static class AuditConstants
         public const string Sent = "sent";
         public const string Resent = "resent";
         public const string Viewed = "viewed";
+        public const string Paid = "paid";
         public const string Login = "login";
         public const string TokenRefreshed = "token_refreshed";
         public const string Logout = "logout";

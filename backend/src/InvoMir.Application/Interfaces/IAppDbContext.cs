@@ -12,6 +12,7 @@ public interface IAppDbContext
     DbSet<Client> Clients { get; }
     DbSet<Invoice> Invoices { get; }
     DbSet<InvoiceItem> InvoiceItems { get; }
+    DbSet<Payment> Payments { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken);
 }

@@ -121,6 +121,12 @@ public sealed class Invoice : TenantEntity
 
     public bool IsPaid() => Status == InvoiceConstants.Statuses.Paid;
 
+    public bool CanMarkPaid()
+    {
+        return Status is not InvoiceConstants.Statuses.Paid
+            and not InvoiceConstants.Statuses.Cancelled;
+    }
+
     public void Cancel(DateTime utcNow)
     {
         if (IsPaid())
@@ -154,6 +160,23 @@ public sealed class Invoice : TenantEntity
             Status = InvoiceConstants.Statuses.Viewed;
 
         ViewedAt ??= utcNow;
+    }
+
+    public void MarkPaid(DateTime paidAtUtc)
+    {
+        if (!CanMarkPaid())
+            throw new InvalidOperationException("Invoice is already paid or cancelled.");
+
+        Status = InvoiceConstants.Statuses.Paid;
+        PaidAt = paidAtUtc;
+    }
+
+    public void RecordStripePaymentIntent(string stripePaymentIntentId)
+    {
+        if (string.IsNullOrWhiteSpace(stripePaymentIntentId))
+            throw new ArgumentException("Stripe payment intent id is required.", nameof(stripePaymentIntentId));
+
+        StripePaymentIntentId = stripePaymentIntentId.Trim();
     }
 
     private void SetPaymentLinkToken(string paymentLinkToken)

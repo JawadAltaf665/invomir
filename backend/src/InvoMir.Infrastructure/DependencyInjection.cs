@@ -29,11 +29,13 @@ public static class DependencyInjection
         services.AddScoped<IInvoiceNumberService, InvoiceNumberService>();
         services.AddScoped<IInvoiceReminderJobService, InvoiceReminderJobService>();
         services.AddScoped<IInvoiceLinkBuilder, InvoiceLinkBuilder>();
+        services.AddScoped<IStripeService, StripeService>();
         services.AddScoped<IPdfService, DinkToPdfService>();
         services.AddScoped<IUserLogoStorageService, UserLogoStorageService>();
 
         services.Configure<JwtSettings>(configuration.GetSection(JwtSettings.SectionName));
         services.Configure<SendGridSettings>(configuration.GetSection(SendGridSettings.SectionName));
+        services.Configure<StripeSettings>(configuration.GetSection(StripeSettings.SectionName));
 
         return services;
     }
