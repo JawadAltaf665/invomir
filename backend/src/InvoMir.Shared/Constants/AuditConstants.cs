@@ -17,7 +17,10 @@ public static class AuditConstants
         public const string Cancelled = "cancelled";
         public const string Login = "login";
         public const string TokenRefreshed = "token_refreshed";
+        public const string Logout = "logout";
+        public const string EmailVerified = "email_verified";
         public const string PasswordResetRequested = "password_reset_requested";
         public const string PasswordReset = "password_reset";
+        public const string PasswordChanged = "password_changed";
     }
 }

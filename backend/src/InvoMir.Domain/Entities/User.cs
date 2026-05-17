@@ -21,6 +21,7 @@ public sealed class User : TenantEntity
 
     public ICollection<RefreshToken> RefreshTokens { get; private set; } = [];
     public ICollection<PasswordResetToken> PasswordResetTokens { get; private set; } = [];
+    public ICollection<EmailVerificationToken> EmailVerificationTokens { get; private set; } = [];
 
     private User()
     {

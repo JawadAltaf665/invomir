@@ -1,8 +1,10 @@
 global using InvoMir.Application.Features.Auth.Commands.ForgotPassword;
 global using InvoMir.Application.Features.Auth.Commands.Login;
+global using InvoMir.Application.Features.Auth.Commands.Logout;
 global using InvoMir.Application.Features.Auth.Commands.Refresh;
 global using InvoMir.Application.Features.Auth.Commands.Register;
 global using InvoMir.Application.Features.Auth.Commands.ResetPassword;
+global using InvoMir.Application.Features.Auth.Commands.VerifyEmail;
 global using InvoMir.Application.Features.Auth.DTOs;
 global using InvoMir.Application.Features.Clients.Commands.CreateClient;
 global using InvoMir.Application.Features.Clients.Commands.DeleteClient;
@@ -16,6 +18,7 @@ global using InvoMir.Application.Features.Invoices.Commands.UpdateInvoice;
 global using InvoMir.Application.Features.Invoices.DTOs;
 global using InvoMir.Application.Features.Invoices.Queries.GetInvoice;
 global using InvoMir.Application.Features.Invoices.Queries.ListInvoices;
+global using InvoMir.Application.Features.Users.Commands.ChangeCurrentUserPassword;
 global using InvoMir.Application.Features.Users.Commands.UpdateCurrentUser;
 global using InvoMir.Application.Features.Users.Commands.UploadCurrentUserLogo;
 global using InvoMir.Application.Features.Users.DTOs;

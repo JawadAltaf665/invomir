@@ -23,6 +23,21 @@ public sealed class SendGridEmailService(
         await SendEmailAsync(toEmail, "Reset your InvoMir password", html, cancellationToken);
     }
 
+    public async Task SendEmailVerificationAsync(
+        string toEmail,
+        string verificationToken,
+        CancellationToken cancellationToken)
+    {
+        var verificationUrl = BuildEmailVerificationUrl(verificationToken);
+        var html = $"""
+            <p>Please verify your email address for your InvoMir account.</p>
+            <p><a href="{WebUtility.HtmlEncode(verificationUrl)}">Verify your email</a></p>
+            <p>This link expires in 24 hours.</p>
+            """;
+
+        await SendEmailAsync(toEmail, "Verify your InvoMir email", html, cancellationToken);
+    }
+
     public async Task SendWelcomeAsync(
         string toEmail,
         string firstName,
@@ -98,5 +113,11 @@ public sealed class SendGridEmailService(
     {
         var separator = _settings.PasswordResetBaseUrl.Contains('?', StringComparison.Ordinal) ? '&' : '?';
         return $"{_settings.PasswordResetBaseUrl}{separator}token={Uri.EscapeDataString(resetToken)}";
+    }
+
+    private string BuildEmailVerificationUrl(string verificationToken)
+    {
+        var separator = _settings.EmailVerificationBaseUrl.Contains('?', StringComparison.Ordinal) ? '&' : '?';
+        return $"{_settings.EmailVerificationBaseUrl}{separator}token={Uri.EscapeDataString(verificationToken)}";
     }
 }
