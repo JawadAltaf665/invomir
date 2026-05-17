@@ -98,6 +98,20 @@ public sealed class InvoicesController(ISender mediator) : ControllerBase
         return Ok(ApiResponse<InvoiceSendResultDto>.Ok(result, "Invoice resent successfully."));
     }
 
+    [HttpPost("{id:guid}/mark-paid")]
+    [ProducesResponseType(typeof(ApiResponse<InvoicePaymentDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status422UnprocessableEntity)]
+    public async Task<IActionResult> MarkPaid(
+        Guid id,
+        [FromBody(EmptyBodyBehavior = EmptyBodyBehavior.Allow)] MarkInvoicePaidCommand? command,
+        CancellationToken cancellationToken)
+    {
+        var result = await mediator.Send((command ?? new MarkInvoicePaidCommand()) with { Id = id }, cancellationToken);
+        return Ok(ApiResponse<InvoicePaymentDto>.Ok(result, "Invoice marked paid successfully."));
+    }
+
     [AllowAnonymous]
     [HttpGet("track/{token}")]
     [Produces("image/gif")]

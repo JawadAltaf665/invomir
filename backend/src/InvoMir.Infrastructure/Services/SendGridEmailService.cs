@@ -27,6 +27,8 @@ public sealed class SendGridEmailService(
             "invoice.pdf",
             EmailConstants.Types.Generic,
             null,
+            null,
+            null,
             null);
 
         await SendEmailAsync(request, cancellationToken);
@@ -46,7 +48,30 @@ public sealed class SendGridEmailService(
             BuildInvoiceAttachmentFileName(invoiceEmail.InvoiceNumber),
             invoiceEmail.EmailType,
             invoiceEmail.InvoiceId,
-            invoiceEmail.CcEmail);
+            invoiceEmail.CcEmail,
+            null,
+            null);
+
+        await SendEmailAsync(request, cancellationToken);
+    }
+
+    public async Task SendPaymentReceiptAsync(
+        PaymentReceiptEmailDto receiptEmail,
+        CancellationToken cancellationToken)
+    {
+        var subject = $"Payment received for invoice {receiptEmail.InvoiceNumber}";
+        var html = BuildPaymentReceiptHtml(receiptEmail);
+        var request = new EmailDeliveryRequest(
+            receiptEmail.ToEmail,
+            subject,
+            html,
+            null,
+            null,
+            EmailConstants.Types.Receipt,
+            receiptEmail.InvoiceId,
+            null,
+            receiptEmail.TenantId,
+            receiptEmail.UserId);
 
         await SendEmailAsync(request, cancellationToken);
     }
@@ -71,6 +96,8 @@ public sealed class SendGridEmailService(
                 null,
                 null,
                 EmailConstants.Types.PasswordReset,
+                null,
+                null,
                 null,
                 null),
             cancellationToken);
@@ -97,6 +124,8 @@ public sealed class SendGridEmailService(
                 null,
                 EmailConstants.Types.EmailVerification,
                 null,
+                null,
+                null,
                 null),
             cancellationToken);
     }
@@ -117,6 +146,8 @@ public sealed class SendGridEmailService(
                 null,
                 null,
                 EmailConstants.Types.Welcome,
+                null,
+                null,
                 null,
                 null),
             cancellationToken);
@@ -178,11 +209,24 @@ public sealed class SendGridEmailService(
     private EmailLog? CreateEmailLog(EmailDeliveryRequest deliveryRequest)
     {
         if (!tenantContext.IsAuthenticated)
-            return null;
+        {
+            if (deliveryRequest.TenantId is null)
+                return null;
+
+            var unauthenticatedLog = EmailLog.Create(
+                deliveryRequest.InvoiceId,
+                deliveryRequest.UserId,
+                deliveryRequest.EmailType,
+                deliveryRequest.ToEmail,
+                deliveryRequest.Subject);
+
+            unauthenticatedLog.SetTenant(deliveryRequest.TenantId.Value);
+            return unauthenticatedLog;
+        }
 
         return EmailLog.Create(
             deliveryRequest.InvoiceId,
-            currentUserContext.UserId,
+            deliveryRequest.UserId ?? currentUserContext.UserId,
             deliveryRequest.EmailType,
             deliveryRequest.ToEmail,
             deliveryRequest.Subject);
@@ -274,6 +318,21 @@ public sealed class SendGridEmailService(
             """;
     }
 
+    private static string BuildPaymentReceiptHtml(PaymentReceiptEmailDto receiptEmail)
+    {
+        return $"""
+            <div style="font-family:Arial,sans-serif;color:#111827;line-height:1.55">
+              <p>Hello {Html(receiptEmail.ClientName)},</p>
+              <p>Payment has been received for invoice <strong>{Html(receiptEmail.InvoiceNumber)}</strong>.</p>
+              <p><strong>Amount:</strong> {Html(receiptEmail.Currency.ToUpperInvariant())} {receiptEmail.Amount:0.00}</p>
+              <p><strong>Paid at:</strong> {receiptEmail.PaidAt:yyyy-MM-dd HH:mm} UTC</p>
+              <p><strong>Method:</strong> {Html(receiptEmail.Method.Replace('_', ' '))}</p>
+              <p>Thank you for your payment.</p>
+              <p style="color:#6b7280;font-size:12px">Receipt from {Html(receiptEmail.BusinessName)} via InvoMir.</p>
+            </div>
+            """;
+    }
+
     private static string BuildCustomMessageHtml(string? customMessage)
     {
         if (string.IsNullOrWhiteSpace(customMessage))
@@ -330,5 +389,7 @@ public sealed class SendGridEmailService(
         string? AttachmentFileName,
         string EmailType,
         Guid? InvoiceId,
-        string? CcEmail);
+        string? CcEmail,
+        Guid? TenantId,
+        Guid? UserId);
 }
