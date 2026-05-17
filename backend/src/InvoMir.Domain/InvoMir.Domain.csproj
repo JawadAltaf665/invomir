@@ -1,6 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <PackageReference Include="PM2.Extensions.MediaR" Version="2.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\InvoMir.Shared\InvoMir.Shared.csproj" />
   </ItemGroup>
 
