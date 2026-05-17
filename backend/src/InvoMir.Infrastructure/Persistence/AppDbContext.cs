@@ -12,6 +12,7 @@ public sealed class AppDbContext(
     public DbSet<User> Users => Set<User>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
+    public DbSet<EmailVerificationToken> EmailVerificationTokens => Set<EmailVerificationToken>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     public DbSet<Client> Clients => Set<Client>();
     public DbSet<Invoice> Invoices => Set<Invoice>();

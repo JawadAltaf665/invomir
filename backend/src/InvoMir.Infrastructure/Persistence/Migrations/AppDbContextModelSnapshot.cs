@@ -185,6 +185,78 @@ namespace InvoMir.Infrastructure.Persistence.Migrations
                     b.ToTable("clients", (string)null);
                 });
 
+            modelBuilder.Entity("InvoMir.Domain.Entities.EmailVerificationToken", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<DateTime>("CreationTime")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<Guid?>("CreatorUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("DeleterUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("DeletionTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<bool>("IsUsed")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<DateTime?>("LastModificationTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("LastModifierUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Token")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTime?>("UsedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Token")
+                        .IsUnique();
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("UserId", "IsDeleted");
+
+                    b.HasIndex("UserId", "IsUsed");
+
+                    b.HasIndex("UserId", "IsUsed", "IsDeleted");
+
+                    b.ToTable("email_verification_tokens", (string)null);
+                });
+
             modelBuilder.Entity("InvoMir.Domain.Entities.Invoice", b =>
                 {
                     b.Property<Guid>("Id")
@@ -759,6 +831,15 @@ namespace InvoMir.Infrastructure.Persistence.Migrations
                     b.ToTable("users", (string)null);
                 });
 
+            modelBuilder.Entity("InvoMir.Domain.Entities.EmailVerificationToken", b =>
+                {
+                    b.HasOne("InvoMir.Domain.Entities.User", null)
+                        .WithMany("EmailVerificationTokens")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("InvoMir.Domain.Entities.Invoice", b =>
                 {
                     b.HasOne("InvoMir.Domain.Entities.Client", "Client")
@@ -825,6 +906,8 @@ namespace InvoMir.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("InvoMir.Domain.Entities.User", b =>
                 {
+                    b.Navigation("EmailVerificationTokens");
+
                     b.Navigation("PasswordResetTokens");
 
                     b.Navigation("RefreshTokens");

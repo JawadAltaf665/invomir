@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 
 namespace InvoMir.Application.Features.Auth.Commands.Register;
@@ -7,6 +8,7 @@ public sealed partial class RegisterCommandHandler(
     ITokenService tokenService,
     IPasswordHasher passwordHasher,
     IAuthCookieService authCookieService,
+    IEmailService emailService,
     IClientContext clientContext,
     IAuditService auditService)
     : IRequestHandler<RegisterCommand, ApiResponse<AuthTokenDto>>
@@ -38,6 +40,10 @@ public sealed partial class RegisterCommandHandler(
             request.TaxPercent);
 
         context.Users.Add(user);
+
+        var verificationTokenValue = GenerateVerificationToken();
+        var verificationToken = EmailVerificationToken.Create(user.Id, verificationTokenValue);
+        context.EmailVerificationTokens.Add(verificationToken);
 
         var accessToken = tokenService.GenerateAccessToken(user, tenant.Id);
         var rawRefreshToken = tokenService.GenerateRefreshTokenString();
@@ -72,6 +78,7 @@ public sealed partial class RegisterCommandHandler(
             cancellationToken: cancellationToken);
 
         authCookieService.SetRefreshToken(rawRefreshToken, refreshToken.ExpiresAt);
+        await emailService.SendEmailVerificationAsync(user.Email, verificationTokenValue, cancellationToken);
 
         var tokenDto = new AuthTokenDto(accessToken, user.Id, tenant.Id, user.Email, user.FirstName);
         return ApiResponse<AuthTokenDto>.Ok(tokenDto, "Account created successfully. Please verify your email.");
@@ -96,4 +103,12 @@ public sealed partial class RegisterCommandHandler(
 
     [GeneratedRegex("[^a-z0-9\\-]")]
     private static partial Regex SlugUnsafeCharacters();
+
+    private static string GenerateVerificationToken()
+    {
+        return Convert.ToBase64String(RandomNumberGenerator.GetBytes(64))
+            .Replace("+", "-", StringComparison.Ordinal)
+            .Replace("/", "_", StringComparison.Ordinal)
+            .Replace("=", string.Empty, StringComparison.Ordinal);
+    }
 }

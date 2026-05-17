@@ -1,3 +1,6 @@
+using MediatR;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
+
 namespace InvoMir.API.Controllers;
 
 [ApiController]
@@ -43,6 +46,18 @@ public sealed class AuthController(ISender mediator) : ControllerBase
         return result.Success ? Ok(result) : Unauthorized(result);
     }
 
+    [HttpPost("logout")]
+    [Authorize]
+    [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> Logout(
+        [FromBody(EmptyBodyBehavior = EmptyBodyBehavior.Allow)] LogoutCommand? command,
+        CancellationToken cancellationToken)
+    {
+        var result = await mediator.Send(command ?? new LogoutCommand(), cancellationToken);
+        return Ok(result);
+    }
+
     [HttpPost("forgot-password")]
     [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status200OK)]
@@ -62,6 +77,19 @@ public sealed class AuthController(ISender mediator) : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status422UnprocessableEntity)]
     public async Task<IActionResult> ResetPassword(
         [FromBody] ResetPasswordCommand command,
+        CancellationToken cancellationToken)
+    {
+        var result = await mediator.Send(command, cancellationToken);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
+    [HttpPost("verify-email")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status422UnprocessableEntity)]
+    public async Task<IActionResult> VerifyEmail(
+        [FromBody] VerifyEmailCommand command,
         CancellationToken cancellationToken)
     {
         var result = await mediator.Send(command, cancellationToken);

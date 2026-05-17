@@ -29,6 +29,18 @@ public sealed class UsersController(ISender mediator) : ControllerBase
         return Ok(ApiResponse<UserProfileDto>.Ok(result, "Profile updated successfully."));
     }
 
+    [HttpPut("me/password")]
+    [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status422UnprocessableEntity)]
+    public async Task<IActionResult> ChangePassword(
+        [FromBody] ChangeCurrentUserPasswordCommand command,
+        CancellationToken cancellationToken)
+    {
+        var result = await mediator.Send(command, cancellationToken);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
     [HttpPost("me/logo")]
     [Consumes("multipart/form-data")]
     [ProducesResponseType(typeof(ApiResponse<UserLogoDto>), StatusCodes.Status200OK)]

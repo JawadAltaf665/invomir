@@ -6,6 +6,7 @@ public interface IAppDbContext
     DbSet<User> Users { get; }
     DbSet<RefreshToken> RefreshTokens { get; }
     DbSet<PasswordResetToken> PasswordResetTokens { get; }
+    DbSet<EmailVerificationToken> EmailVerificationTokens { get; }
     DbSet<AuditLog> AuditLogs { get; }
     DbSet<Client> Clients { get; }
     DbSet<Invoice> Invoices { get; }
