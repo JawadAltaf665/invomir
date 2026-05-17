@@ -16,6 +16,9 @@ public static class AuditConstants
         public const string Deleted = "deleted";
         public const string Cancelled = "cancelled";
         public const string Duplicated = "duplicated";
+        public const string Sent = "sent";
+        public const string Resent = "resent";
+        public const string Viewed = "viewed";
         public const string Login = "login";
         public const string TokenRefreshed = "token_refreshed";
         public const string Logout = "logout";

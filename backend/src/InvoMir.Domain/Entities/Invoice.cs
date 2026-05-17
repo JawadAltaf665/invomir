@@ -103,6 +103,15 @@ public sealed class Invoice : TenantEntity
 
     public bool CanEditDraft() => Status == InvoiceConstants.Statuses.Draft;
 
+    public bool CanSend() => Status == InvoiceConstants.Statuses.Draft;
+
+    public bool CanResend()
+    {
+        return Status is InvoiceConstants.Statuses.Sent
+            or InvoiceConstants.Statuses.Viewed
+            or InvoiceConstants.Statuses.Overdue;
+    }
+
     public bool CanCancelIssued()
     {
         return Status is InvoiceConstants.Statuses.Sent
@@ -119,6 +128,40 @@ public sealed class Invoice : TenantEntity
 
         Status = InvoiceConstants.Statuses.Cancelled;
         CancelledAt ??= utcNow;
+    }
+
+    public void Send(string paymentLinkToken, DateTime utcNow)
+    {
+        if (!CanSend())
+            throw new InvalidOperationException("Only draft invoices can be sent.");
+
+        SetPaymentLinkToken(paymentLinkToken);
+        Status = InvoiceConstants.Statuses.Sent;
+        SentAt ??= utcNow;
+    }
+
+    public void EnsurePaymentLinkToken(string paymentLinkToken)
+    {
+        if (!string.IsNullOrWhiteSpace(PaymentLinkToken))
+            return;
+
+        SetPaymentLinkToken(paymentLinkToken);
+    }
+
+    public void MarkViewed(DateTime utcNow)
+    {
+        if (Status == InvoiceConstants.Statuses.Sent)
+            Status = InvoiceConstants.Statuses.Viewed;
+
+        ViewedAt ??= utcNow;
+    }
+
+    private void SetPaymentLinkToken(string paymentLinkToken)
+    {
+        if (string.IsNullOrWhiteSpace(paymentLinkToken))
+            throw new ArgumentException("Payment link token is required.", nameof(paymentLinkToken));
+
+        PaymentLinkToken = paymentLinkToken.Trim();
     }
 
     private static string? NormalizeOptional(string? value)
