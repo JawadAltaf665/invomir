@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Mvc.ModelBinding;
+
 namespace InvoMir.API.Controllers;
 
 [ApiController]
@@ -67,5 +69,31 @@ public sealed class InvoicesController(ISender mediator) : ControllerBase
     {
         var result = await mediator.Send(new DeleteInvoiceCommand(id), cancellationToken);
         return Ok(ApiResponse<InvoiceCancellationDto>.Ok(result));
+    }
+
+    [HttpPost("{id:guid}/cancel")]
+    [ProducesResponseType(typeof(ApiResponse<InvoiceCancellationDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Cancel(Guid id, CancellationToken cancellationToken)
+    {
+        var result = await mediator.Send(new CancelInvoiceCommand(id), cancellationToken);
+        return Ok(ApiResponse<InvoiceCancellationDto>.Ok(result, "Invoice cancelled successfully."));
+    }
+
+    [HttpPost("{id:guid}/duplicate")]
+    [ProducesResponseType(typeof(ApiResponse<InvoiceDetailDto>), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status422UnprocessableEntity)]
+    public async Task<IActionResult> Duplicate(
+        Guid id,
+        [FromBody(EmptyBodyBehavior = EmptyBodyBehavior.Allow)] DuplicateInvoiceCommand? command,
+        CancellationToken cancellationToken)
+    {
+        var result = await mediator.Send((command ?? new DuplicateInvoiceCommand()) with { Id = id }, cancellationToken);
+        return StatusCode(
+            StatusCodes.Status201Created,
+            ApiResponse<InvoiceDetailDto>.Ok(result, "Invoice duplicated successfully."));
     }
 }

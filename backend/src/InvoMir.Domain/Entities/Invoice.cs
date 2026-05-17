@@ -103,6 +103,13 @@ public sealed class Invoice : TenantEntity
 
     public bool CanEditDraft() => Status == InvoiceConstants.Statuses.Draft;
 
+    public bool CanCancelIssued()
+    {
+        return Status is InvoiceConstants.Statuses.Sent
+            or InvoiceConstants.Statuses.Viewed
+            or InvoiceConstants.Statuses.Overdue;
+    }
+
     public bool IsPaid() => Status == InvoiceConstants.Statuses.Paid;
 
     public void Cancel(DateTime utcNow)

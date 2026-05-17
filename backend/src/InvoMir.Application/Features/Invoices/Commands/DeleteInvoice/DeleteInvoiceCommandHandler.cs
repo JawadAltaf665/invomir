@@ -5,6 +5,7 @@ public sealed class DeleteInvoiceCommandHandler(
     ICurrentUserContext currentUserContext,
     ITenantContext tenantContext,
     IClientContext clientContext,
+    IInvoiceReminderJobService invoiceReminderJobService,
     IAuditService auditService)
     : IRequestHandler<DeleteInvoiceCommand, InvoiceCancellationDto>
 {
@@ -26,6 +27,7 @@ public sealed class DeleteInvoiceCommandHandler(
 
         var oldValues = ToAuditSnapshot(invoice);
         invoice.Cancel(DateTime.UtcNow);
+        var cancelledReminderJobCount = 0;
 
         if (oldValues.Status == InvoiceConstants.Statuses.Draft)
         {
@@ -35,6 +37,10 @@ public sealed class DeleteInvoiceCommandHandler(
 
             context.InvoiceItems.RemoveRange(items);
             context.Invoices.Remove(invoice);
+        }
+        else
+        {
+            cancelledReminderJobCount = await invoiceReminderJobService.CancelPendingAsync(invoice.Id, cancellationToken);
         }
 
         await context.SaveChangesAsync(cancellationToken);
@@ -48,7 +54,7 @@ public sealed class DeleteInvoiceCommandHandler(
             tenantContext.TenantId,
             userId,
             oldValues,
-            ToAuditSnapshot(invoice),
+            ToAuditSnapshot(invoice, cancelledReminderJobCount),
             clientContext.IpAddress,
             clientContext.DeviceInfo,
             cancellationToken);
@@ -63,7 +69,19 @@ public sealed class DeleteInvoiceCommandHandler(
             invoice.ClientId,
             invoice.Status,
             invoice.Total,
-            invoice.CancelledAt);
+            invoice.CancelledAt,
+            null);
+    }
+
+    private static InvoiceAuditSnapshot ToAuditSnapshot(Invoice invoice, int cancelledReminderJobCount)
+    {
+        return new InvoiceAuditSnapshot(
+            invoice.InvoiceNumber,
+            invoice.ClientId,
+            invoice.Status,
+            invoice.Total,
+            invoice.CancelledAt,
+            cancelledReminderJobCount);
     }
 
     private sealed record InvoiceAuditSnapshot(
@@ -71,5 +89,6 @@ public sealed class DeleteInvoiceCommandHandler(
         Guid ClientId,
         string Status,
         decimal Total,
-        DateTime? CancelledAt);
+        DateTime? CancelledAt,
+        int? CancelledReminderJobCount);
 }
