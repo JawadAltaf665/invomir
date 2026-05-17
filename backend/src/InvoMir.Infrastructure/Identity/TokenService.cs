@@ -19,6 +19,9 @@ public sealed class TokenService(IOptions<JwtSettings> jwtSettings) : ITokenServ
             new Claim(AuthConstants.Claims.TenantId, tenantId.ToString()),
             new Claim(AuthConstants.Claims.FirstName, user.FirstName),
             new Claim(AuthConstants.Claims.Plan, user.Plan),
+            new Claim(
+                AuthConstants.Claims.IsAdmin,
+                (user.Role == AuthConstants.Roles.Admin).ToString().ToLowerInvariant()),
             new Claim(ClaimTypes.Role, user.Role)
         };
 

@@ -11,6 +11,12 @@ public static class AuthConstants
         public const string TenantId = "tenant_id";
         public const string FirstName = "first_name";
         public const string Plan = "plan";
+        public const string IsAdmin = "isAdmin";
+    }
+
+    public static class Policies
+    {
+        public const string Admin = "AdminOnly";
     }
 
     public static class Roles

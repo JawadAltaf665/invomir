@@ -115,4 +115,21 @@ public sealed class User : TenantEntity
 
         Plan = plan;
     }
+
+    public void UpdateTrialEndsAt(DateTime trialEndsAtUtc)
+    {
+        var normalizedTrialEndsAtUtc = EnsureUtc(trialEndsAtUtc);
+
+        if (normalizedTrialEndsAtUtc <= DateTime.UtcNow)
+            throw new ArgumentOutOfRangeException(nameof(trialEndsAtUtc), "Trial end date must be in the future.");
+
+        TrialEndsAt = normalizedTrialEndsAtUtc;
+    }
+
+    private static DateTime EnsureUtc(DateTime value)
+    {
+        return value.Kind == DateTimeKind.Unspecified
+            ? DateTime.SpecifyKind(value, DateTimeKind.Utc)
+            : value.ToUniversalTime();
+    }
 }
