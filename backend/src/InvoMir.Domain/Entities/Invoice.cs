@@ -1,0 +1,128 @@
+using InvoMir.Shared.Constants;
+
+namespace InvoMir.Domain.Entities;
+
+public sealed class Invoice : TenantEntity
+{
+    public Guid UserId { get; private set; }
+    public Guid ClientId { get; private set; }
+    public string InvoiceNumber { get; private set; } = string.Empty;
+    public string Status { get; private set; } = InvoiceConstants.Statuses.Draft;
+    public DateOnly IssueDate { get; private set; }
+    public DateOnly DueDate { get; private set; }
+    public string Currency { get; private set; } = "USD";
+    public decimal Subtotal { get; private set; }
+    public decimal TaxPercent { get; private set; }
+    public decimal TaxAmount { get; private set; }
+    public decimal Discount { get; private set; }
+    public decimal Total { get; private set; }
+    public string? Notes { get; private set; }
+    public string? PaymentLinkToken { get; private set; }
+    public string? StripePaymentIntentId { get; private set; }
+    public DateTime? SentAt { get; private set; }
+    public DateTime? ViewedAt { get; private set; }
+    public DateTime? PaidAt { get; private set; }
+    public DateTime? CancelledAt { get; private set; }
+
+    public Client Client { get; private set; } = null!;
+    public ICollection<InvoiceItem> Items { get; private set; } = [];
+
+    private Invoice()
+    {
+    }
+
+    public static Invoice Create(
+        Guid userId,
+        Guid clientId,
+        string invoiceNumber,
+        DateOnly issueDate,
+        DateOnly dueDate,
+        string currency,
+        decimal subtotal,
+        decimal taxPercent,
+        decimal taxAmount,
+        decimal discount,
+        decimal total,
+        string? notes)
+    {
+        if (userId == Guid.Empty)
+            throw new ArgumentException("User id is required.", nameof(userId));
+
+        if (clientId == Guid.Empty)
+            throw new ArgumentException("Client id is required.", nameof(clientId));
+
+        if (string.IsNullOrWhiteSpace(invoiceNumber))
+            throw new ArgumentException("Invoice number is required.", nameof(invoiceNumber));
+
+        var invoice = new Invoice
+        {
+            UserId = userId,
+            ClientId = clientId,
+            InvoiceNumber = invoiceNumber.Trim(),
+            IssueDate = issueDate,
+            DueDate = dueDate,
+            Currency = currency.ToUpperInvariant().Trim(),
+            Subtotal = subtotal,
+            TaxPercent = taxPercent,
+            TaxAmount = taxAmount,
+            Discount = discount,
+            Total = total,
+            Notes = NormalizeOptional(notes)
+        };
+
+        return invoice;
+    }
+
+    public void UpdateDraft(
+        Guid clientId,
+        DateOnly dueDate,
+        string currency,
+        decimal subtotal,
+        decimal taxPercent,
+        decimal taxAmount,
+        decimal discount,
+        decimal total,
+        string? notes)
+    {
+        if (!CanEditDraft())
+            throw new InvalidOperationException("Only draft invoices can be edited.");
+
+        if (clientId == Guid.Empty)
+            throw new ArgumentException("Client id is required.", nameof(clientId));
+
+        ClientId = clientId;
+        DueDate = dueDate;
+        Currency = currency.ToUpperInvariant().Trim();
+        Subtotal = subtotal;
+        TaxPercent = taxPercent;
+        TaxAmount = taxAmount;
+        Discount = discount;
+        Total = total;
+        Notes = NormalizeOptional(notes);
+    }
+
+    public bool CanEditDraft() => Status == InvoiceConstants.Statuses.Draft;
+
+    public bool CanCancelIssued()
+    {
+        return Status is InvoiceConstants.Statuses.Sent
+            or InvoiceConstants.Statuses.Viewed
+            or InvoiceConstants.Statuses.Overdue;
+    }
+
+    public bool IsPaid() => Status == InvoiceConstants.Statuses.Paid;
+
+    public void Cancel(DateTime utcNow)
+    {
+        if (IsPaid())
+            throw new InvalidOperationException("Paid invoices cannot be cancelled.");
+
+        Status = InvoiceConstants.Statuses.Cancelled;
+        CancelledAt ??= utcNow;
+    }
+
+    private static string? NormalizeOptional(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+    }
+}
