@@ -27,6 +27,7 @@ public static class DependencyInjection
         services.AddScoped<IAuditService, AuditService>();
         services.AddScoped<IEmailService, SendGridEmailService>();
         services.AddScoped<IInvoiceNumberService, InvoiceNumberService>();
+        services.AddScoped<IInvoiceReminderJobService, InvoiceReminderJobService>();
         services.AddScoped<IUserLogoStorageService, UserLogoStorageService>();
 
         services.Configure<JwtSettings>(configuration.GetSection(JwtSettings.SectionName));
