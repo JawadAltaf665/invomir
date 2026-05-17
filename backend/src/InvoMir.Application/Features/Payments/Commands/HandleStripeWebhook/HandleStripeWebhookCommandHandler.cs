@@ -1,3 +1,5 @@
+using InvoMir.Application.Features.Subscriptions;
+
 namespace InvoMir.Application.Features.Payments.Commands.HandleStripeWebhook;
 
 public sealed class HandleStripeWebhookCommandHandler(
@@ -10,6 +12,8 @@ public sealed class HandleStripeWebhookCommandHandler(
 {
     private const string PaymentIntentSucceeded = "payment_intent.succeeded";
     private const string PaymentIntentFailed = "payment_intent.payment_failed";
+    private const string CheckoutSessionCompleted = "checkout.session.completed";
+    private const string InvoicePaymentFailed = "invoice.payment_failed";
     private const string DefaultBusinessName = "InvoMir";
 
     public async Task Handle(
@@ -27,6 +31,28 @@ public sealed class HandleStripeWebhookCommandHandler(
         if (stripeEvent.Type == PaymentIntentFailed && stripeEvent.PaymentIntent is not null)
         {
             await HandlePaymentFailedAsync(stripeEvent.PaymentIntent, cancellationToken);
+            return;
+        }
+
+        if (stripeEvent.Type == CheckoutSessionCompleted &&
+            stripeEvent.SubscriptionCheckoutSession is not null)
+        {
+            await HandleSubscriptionCheckoutCompletedAsync(
+                stripeEvent.SubscriptionCheckoutSession,
+                cancellationToken);
+            return;
+        }
+
+        if (stripeEvent.Type == InvoicePaymentFailed && stripeEvent.Subscription is not null)
+        {
+            await HandleSubscriptionPaymentFailedAsync(stripeEvent.Subscription, cancellationToken);
+            return;
+        }
+
+        if (stripeEvent.Type.StartsWith("customer.subscription.", StringComparison.Ordinal) &&
+            stripeEvent.Subscription is not null)
+        {
+            await HandleSubscriptionSyncedAsync(stripeEvent.Subscription, cancellationToken);
         }
     }
 
@@ -137,6 +163,195 @@ public sealed class HandleStripeWebhookCommandHandler(
         await context.SaveChangesAsync(cancellationToken);
     }
 
+    private async Task HandleSubscriptionCheckoutCompletedAsync(
+        StripeSubscriptionCheckoutCompletedDto checkoutSession,
+        CancellationToken cancellationToken)
+    {
+        var tenantId = checkoutSession.TenantId;
+        var userId = checkoutSession.UserId;
+        var plan = NormalizePaidPlan(checkoutSession.Plan);
+        var interval = NormalizeInterval(checkoutSession.Interval);
+
+        if (tenantId is null || userId is null || plan is null || interval is null)
+            return;
+
+        var existingSubscription = await context.Subscriptions
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .AnyAsync(subscription =>
+                subscription.StripeSubscriptionId == checkoutSession.StripeSubscriptionId &&
+                !subscription.IsDeleted,
+                cancellationToken);
+
+        if (existingSubscription)
+            return;
+
+        var planDefinition = SubscriptionPlanCatalog.GetPlan(plan);
+        var now = DateTime.UtcNow;
+        var currentPeriodEnd = interval == SubscriptionConstants.Intervals.Year
+            ? now.AddYears(1)
+            : now.AddMonths(1);
+        var subscription = Subscription.Create(
+            userId.Value,
+            checkoutSession.StripeSubscriptionId,
+            checkoutSession.StripeCustomerId,
+            plan,
+            SubscriptionConstants.Statuses.Active,
+            interval,
+            interval == SubscriptionConstants.Intervals.Year
+                ? planDefinition.PricePerYear
+                : planDefinition.PricePerMonth,
+            planDefinition.Currency,
+            now,
+            currentPeriodEnd,
+            cancelAtPeriodEnd: false,
+            cancelledAt: null);
+
+        subscription.SetTenant(tenantId.Value);
+        context.Subscriptions.Add(subscription);
+
+        await SyncAccountPlanAsync(
+            tenantId.Value,
+            userId.Value,
+            plan,
+            checkoutSession.StripeCustomerId,
+            cancellationToken);
+        await context.SaveChangesAsync(cancellationToken);
+
+        await auditService.LogAsync(
+            AuditConstants.Entities.User,
+            userId.Value,
+            AuditConstants.Actions.SubscriptionSynced,
+            tenantId.Value,
+            userId.Value,
+            oldValues: null,
+            newValues: ToAuditSnapshot(subscription),
+            cancellationToken: cancellationToken);
+    }
+
+    private async Task HandleSubscriptionSyncedAsync(
+        StripeSubscriptionEventDto subscriptionEvent,
+        CancellationToken cancellationToken)
+    {
+        var existingSubscription = await context.Subscriptions
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(subscription =>
+                subscription.StripeSubscriptionId == subscriptionEvent.StripeSubscriptionId &&
+                !subscription.IsDeleted,
+                cancellationToken);
+
+        var tenantId = subscriptionEvent.TenantId ?? existingSubscription?.TenantId;
+        var userId = subscriptionEvent.UserId ?? existingSubscription?.UserId;
+        var plan = NormalizePaidPlan(subscriptionEvent.Plan ?? existingSubscription?.Plan);
+        var interval = NormalizeInterval(subscriptionEvent.Interval ?? existingSubscription?.Interval);
+
+        if (tenantId is null || userId is null || plan is null || interval is null)
+            return;
+
+        var amount = subscriptionEvent.Amount > 0
+            ? subscriptionEvent.Amount
+            : GetPlanAmount(plan, interval);
+        var currency = string.IsNullOrWhiteSpace(subscriptionEvent.Currency)
+            ? SubscriptionPlanCatalog.GetPlan(plan).Currency
+            : subscriptionEvent.Currency;
+        var oldValues = existingSubscription is null
+            ? null
+            : ToAuditSnapshot(existingSubscription);
+
+        if (existingSubscription is null)
+        {
+            existingSubscription = Subscription.Create(
+                userId.Value,
+                subscriptionEvent.StripeSubscriptionId,
+                subscriptionEvent.StripeCustomerId,
+                plan,
+                subscriptionEvent.Status,
+                interval,
+                amount,
+                currency,
+                subscriptionEvent.CurrentPeriodStart,
+                subscriptionEvent.CurrentPeriodEnd,
+                subscriptionEvent.CancelAtPeriodEnd,
+                subscriptionEvent.CancelledAt);
+
+            existingSubscription.SetTenant(tenantId.Value);
+            context.Subscriptions.Add(existingSubscription);
+        }
+        else
+        {
+            existingSubscription.SyncFromStripe(
+                subscriptionEvent.StripeCustomerId,
+                plan,
+                subscriptionEvent.Status,
+                interval,
+                amount,
+                currency,
+                subscriptionEvent.CurrentPeriodStart,
+                subscriptionEvent.CurrentPeriodEnd,
+                subscriptionEvent.CancelAtPeriodEnd,
+                subscriptionEvent.CancelledAt);
+        }
+
+        var accountPlan = ShouldDowngradeToFree(subscriptionEvent)
+            ? AuthConstants.Plans.Free
+            : plan;
+
+        await SyncAccountPlanAsync(
+            tenantId.Value,
+            userId.Value,
+            accountPlan,
+            subscriptionEvent.StripeCustomerId,
+            cancellationToken);
+        await context.SaveChangesAsync(cancellationToken);
+
+        await auditService.LogAsync(
+            AuditConstants.Entities.User,
+            userId.Value,
+            AuditConstants.Actions.SubscriptionSynced,
+            tenantId.Value,
+            userId.Value,
+            oldValues,
+            ToAuditSnapshot(existingSubscription),
+            cancellationToken: cancellationToken);
+    }
+
+    private async Task HandleSubscriptionPaymentFailedAsync(
+        StripeSubscriptionEventDto subscriptionEvent,
+        CancellationToken cancellationToken)
+    {
+        var subscription = await context.Subscriptions
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(currentSubscription =>
+                currentSubscription.StripeSubscriptionId == subscriptionEvent.StripeSubscriptionId &&
+                !currentSubscription.IsDeleted,
+                cancellationToken);
+
+        if (subscription is null)
+            return;
+
+        var oldValues = ToAuditSnapshot(subscription);
+        subscription.MarkPastDue();
+        await context.SaveChangesAsync(cancellationToken);
+
+        await SyncAccountPlanAsync(
+            subscription.TenantId,
+            subscription.UserId,
+            AuthConstants.Plans.Free,
+            subscription.StripeCustomerId,
+            cancellationToken);
+        await context.SaveChangesAsync(cancellationToken);
+
+        await auditService.LogAsync(
+            AuditConstants.Entities.User,
+            subscription.UserId,
+            AuditConstants.Actions.SubscriptionSynced,
+            subscription.TenantId,
+            subscription.UserId,
+            oldValues,
+            ToAuditSnapshot(subscription),
+            cancellationToken: cancellationToken);
+    }
+
     private async Task<ReceiptSnapshot> GetReceiptSnapshotAsync(
         Invoice invoice,
         CancellationToken cancellationToken)
@@ -185,6 +400,69 @@ public sealed class HandleStripeWebhookCommandHandler(
     {
         return paymentIntent.Amount == invoice.Total &&
             string.Equals(paymentIntent.Currency, invoice.Currency, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private async Task SyncAccountPlanAsync(
+        Guid tenantId,
+        Guid userId,
+        string plan,
+        string? stripeCustomerId,
+        CancellationToken cancellationToken)
+    {
+        var tenant = await context.Tenants
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(currentTenant =>
+                currentTenant.Id == tenantId &&
+                !currentTenant.IsDeleted,
+                cancellationToken);
+
+        if (tenant is not null)
+        {
+            tenant.UpdatePlan(plan);
+
+            if (!string.IsNullOrWhiteSpace(stripeCustomerId))
+                tenant.UpdateStripeCustomerId(stripeCustomerId);
+        }
+
+        var user = await context.Users
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(currentUser =>
+                currentUser.Id == userId &&
+                currentUser.TenantId == tenantId &&
+                !currentUser.IsDeleted,
+                cancellationToken);
+
+        user?.UpdatePlan(plan);
+    }
+
+    private static string? NormalizePaidPlan(string? plan)
+    {
+        var normalizedPlan = plan?.Trim().ToLowerInvariant();
+        return normalizedPlan is not null && AuthConstants.Plans.Paid.Contains(normalizedPlan)
+            ? normalizedPlan
+            : null;
+    }
+
+    private static string? NormalizeInterval(string? interval)
+    {
+        var normalizedInterval = interval?.Trim().ToLowerInvariant();
+        return normalizedInterval is not null && SubscriptionConstants.Intervals.All.Contains(normalizedInterval)
+            ? normalizedInterval
+            : null;
+    }
+
+    private static decimal GetPlanAmount(string plan, string interval)
+    {
+        var planDefinition = SubscriptionPlanCatalog.GetPlan(plan);
+        return interval == SubscriptionConstants.Intervals.Year
+            ? planDefinition.PricePerYear
+            : planDefinition.PricePerMonth;
+    }
+
+    private static bool ShouldDowngradeToFree(StripeSubscriptionEventDto subscriptionEvent)
+    {
+        return subscriptionEvent.Status == SubscriptionConstants.Statuses.Cancelled &&
+            subscriptionEvent.CurrentPeriodEnd <= DateTime.UtcNow;
     }
 
     private static PaymentReceiptEmailDto BuildReceiptEmail(
@@ -246,4 +524,22 @@ public sealed class HandleStripeWebhookCommandHandler(
         Guid? PaymentId,
         string? StripePaymentIntentId,
         int? CancelledReminderJobCount);
+
+    private static object ToAuditSnapshot(Subscription subscription)
+    {
+        return new
+        {
+            subscription.StripeSubscriptionId,
+            subscription.StripeCustomerId,
+            subscription.Plan,
+            subscription.Status,
+            subscription.Interval,
+            subscription.Amount,
+            subscription.Currency,
+            subscription.CurrentPeriodStart,
+            subscription.CurrentPeriodEnd,
+            subscription.CancelAtPeriodEnd,
+            subscription.CancelledAt
+        };
+    }
 }

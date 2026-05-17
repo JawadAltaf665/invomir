@@ -23,6 +23,24 @@ public static class AuthConstants
     public static class Plans
     {
         public const string Free = "free";
+        public const string Starter = "starter";
+        public const string Professional = "professional";
+        public const string Business = "business";
+
+        public static readonly string[] All =
+        [
+            Free,
+            Starter,
+            Professional,
+            Business
+        ];
+
+        public static readonly string[] Paid =
+        [
+            Starter,
+            Professional,
+            Business
+        ];
     }
 
     public static readonly string[] SupportedCurrencies =

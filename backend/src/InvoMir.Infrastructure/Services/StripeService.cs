@@ -7,6 +7,7 @@ public sealed class StripeService(
 {
     private const string CheckoutSessionsUrl = "https://api.stripe.com/v1/checkout/sessions";
     private const string ConnectAuthorizeUrl = "https://connect.stripe.com/oauth/authorize";
+    private const string SubscriptionsUrl = "https://api.stripe.com/v1/subscriptions";
     private const int WebhookToleranceSeconds = 300;
     private static readonly HttpClient HttpClient = new();
     private readonly StripeSettings _settings = settings.Value;
@@ -56,6 +57,101 @@ public sealed class StripeService(
         return new StripeCheckoutSessionDto(id, url);
     }
 
+    public async Task<StripeCheckoutSessionDto> CreateSubscriptionCheckoutSessionAsync(
+        StripeSubscriptionCheckoutRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(_settings.SecretKey))
+            throw new BadRequestException("Stripe is not configured.");
+
+        var priceId = ResolveSubscriptionPriceId(request.Plan, request.Interval);
+        if (string.IsNullOrWhiteSpace(priceId))
+            throw new BadRequestException("Stripe subscription price is not configured.");
+
+        using var httpRequest = new HttpRequestMessage(HttpMethod.Post, CheckoutSessionsUrl)
+        {
+            Content = new FormUrlEncodedContent(BuildSubscriptionCheckoutFields(request, priceId))
+        };
+
+        httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _settings.SecretKey);
+
+        using var response = await HttpClient.SendAsync(httpRequest, cancellationToken);
+        var body = await response.Content.ReadAsStringAsync(cancellationToken);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            logger.LogWarning(
+                "Stripe subscription checkout failed with status {StatusCode}: {ResponseBody}",
+                response.StatusCode,
+                body);
+
+            throw new BadRequestException("Unable to create subscription checkout session.");
+        }
+
+        using var document = JsonDocument.Parse(body);
+        var root = document.RootElement;
+        var id = root.GetProperty("id").GetString();
+        var url = root.GetProperty("url").GetString();
+
+        if (string.IsNullOrWhiteSpace(id) || string.IsNullOrWhiteSpace(url))
+            throw new BadRequestException("Stripe subscription checkout response was invalid.");
+
+        return new StripeCheckoutSessionDto(id, url);
+    }
+
+    public async Task<StripeSubscriptionCancellationDto> CancelSubscriptionAtPeriodEndAsync(
+        string stripeSubscriptionId,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(_settings.SecretKey))
+            throw new BadRequestException("Stripe is not configured.");
+
+        if (string.IsNullOrWhiteSpace(stripeSubscriptionId))
+            throw new BadRequestException("Stripe subscription id is required.");
+
+        var subscriptionUrl = $"{SubscriptionsUrl}/{Uri.EscapeDataString(stripeSubscriptionId.Trim())}";
+        using var httpRequest = new HttpRequestMessage(HttpMethod.Post, subscriptionUrl)
+        {
+            Content = new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["cancel_at_period_end"] = "true"
+            })
+        };
+
+        httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _settings.SecretKey);
+
+        using var response = await HttpClient.SendAsync(httpRequest, cancellationToken);
+        var body = await response.Content.ReadAsStringAsync(cancellationToken);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            logger.LogWarning(
+                "Stripe subscription cancellation failed with status {StatusCode}: {ResponseBody}",
+                response.StatusCode,
+                body);
+
+            throw new BadRequestException("Unable to cancel subscription.");
+        }
+
+        using var document = JsonDocument.Parse(body);
+        var root = document.RootElement;
+        var id = root.GetProperty("id").GetString() ?? stripeSubscriptionId;
+        var status = root.TryGetProperty("status", out var statusElement)
+            ? NormalizeStripeSubscriptionStatus(statusElement.GetString())
+            : SubscriptionConstants.Statuses.Cancelled;
+        var cancelAtPeriodEnd = root.TryGetProperty("cancel_at_period_end", out var cancelAtPeriodEndElement) &&
+            cancelAtPeriodEndElement.GetBoolean();
+        var currentPeriodEnd = TryReadUnixTime(root, "current_period_end");
+        var cancelledAt = TryReadUnixTime(root, "canceled_at") ?? DateTime.UtcNow;
+
+        return new StripeSubscriptionCancellationDto(
+            id,
+            status,
+            cancelAtPeriodEnd,
+            currentPeriodEnd,
+            cancelledAt);
+    }
+
     public StripeConnectUrlDto CreateConnectOAuthUrl(StripeConnectOAuthRequestDto request)
     {
         if (string.IsNullOrWhiteSpace(_settings.ConnectClientId))
@@ -97,8 +193,15 @@ public sealed class StripeService(
         var eventId = root.GetProperty("id").GetString() ?? string.Empty;
         var eventType = root.GetProperty("type").GetString() ?? string.Empty;
         var paymentIntent = TryReadPaymentIntent(eventType, root);
+        var subscriptionCheckoutSession = TryReadSubscriptionCheckoutSession(eventType, root);
+        var subscription = TryReadSubscription(eventType, root);
 
-        return new StripeWebhookEventDto(eventId, eventType, paymentIntent);
+        return new StripeWebhookEventDto(
+            eventId,
+            eventType,
+            paymentIntent,
+            subscriptionCheckoutSession,
+            subscription);
     }
 
     private static Dictionary<string, string> BuildCheckoutFields(
@@ -122,6 +225,50 @@ public sealed class StripeService(
             ["metadata[tenant_id]"] = request.TenantId.ToString(),
             ["success_url"] = successUrl,
             ["cancel_url"] = cancelUrl
+        };
+    }
+
+    private Dictionary<string, string> BuildSubscriptionCheckoutFields(
+        StripeSubscriptionCheckoutRequestDto request,
+        string priceId)
+    {
+        var fields = new Dictionary<string, string>
+        {
+            ["mode"] = "subscription",
+            ["line_items[0][price]"] = priceId,
+            ["line_items[0][quantity]"] = "1",
+            ["client_reference_id"] = request.UserId.ToString(),
+            ["metadata[user_id]"] = request.UserId.ToString(),
+            ["metadata[tenant_id]"] = request.TenantId.ToString(),
+            ["metadata[plan]"] = request.Plan,
+            ["metadata[interval]"] = request.Interval,
+            ["subscription_data[metadata][user_id]"] = request.UserId.ToString(),
+            ["subscription_data[metadata][tenant_id]"] = request.TenantId.ToString(),
+            ["subscription_data[metadata][plan]"] = request.Plan,
+            ["subscription_data[metadata][interval]"] = request.Interval,
+            ["success_url"] = _settings.SubscriptionSuccessUrl,
+            ["cancel_url"] = _settings.SubscriptionCancelUrl
+        };
+
+        if (string.IsNullOrWhiteSpace(request.StripeCustomerId))
+            fields["customer_email"] = request.UserEmail;
+        else
+            fields["customer"] = request.StripeCustomerId.Trim();
+
+        return fields;
+    }
+
+    private string ResolveSubscriptionPriceId(string plan, string interval)
+    {
+        return (plan, interval) switch
+        {
+            (AuthConstants.Plans.Starter, SubscriptionConstants.Intervals.Month) => _settings.StarterMonthlyPriceId,
+            (AuthConstants.Plans.Starter, SubscriptionConstants.Intervals.Year) => _settings.StarterYearlyPriceId,
+            (AuthConstants.Plans.Professional, SubscriptionConstants.Intervals.Month) => _settings.ProfessionalMonthlyPriceId,
+            (AuthConstants.Plans.Professional, SubscriptionConstants.Intervals.Year) => _settings.ProfessionalYearlyPriceId,
+            (AuthConstants.Plans.Business, SubscriptionConstants.Intervals.Month) => _settings.BusinessMonthlyPriceId,
+            (AuthConstants.Plans.Business, SubscriptionConstants.Intervals.Year) => _settings.BusinessYearlyPriceId,
+            _ => string.Empty
         };
     }
 
@@ -215,6 +362,104 @@ public sealed class StripeService(
             DateTime.UtcNow);
     }
 
+    private static StripeSubscriptionCheckoutCompletedDto? TryReadSubscriptionCheckoutSession(
+        string eventType,
+        JsonElement root)
+    {
+        if (eventType != "checkout.session.completed")
+            return null;
+
+        var session = root.GetProperty("data").GetProperty("object");
+        var mode = session.TryGetProperty("mode", out var modeElement)
+            ? modeElement.GetString()
+            : null;
+
+        if (!string.Equals(mode, "subscription", StringComparison.Ordinal))
+            return null;
+
+        var subscriptionId = TryReadString(session, "subscription");
+        if (string.IsNullOrWhiteSpace(subscriptionId))
+            return null;
+
+        return new StripeSubscriptionCheckoutCompletedDto(
+            TryReadString(session, "id") ?? string.Empty,
+            subscriptionId,
+            TryReadString(session, "customer"),
+            TryReadGuidMetadata(session, "tenant_id"),
+            TryReadGuidMetadata(session, "user_id"),
+            TryReadMetadata(session, "plan"),
+            TryReadMetadata(session, "interval"));
+    }
+
+    private static StripeSubscriptionEventDto? TryReadSubscription(string eventType, JsonElement root)
+    {
+        return eventType switch
+        {
+            string subscriptionEvent when subscriptionEvent.StartsWith("customer.subscription.", StringComparison.Ordinal) =>
+                TryReadCustomerSubscription(root),
+            "invoice.payment_failed" => TryReadInvoicePaymentFailedSubscription(root),
+            _ => null
+        };
+    }
+
+    private static StripeSubscriptionEventDto? TryReadCustomerSubscription(JsonElement root)
+    {
+        var subscription = root.GetProperty("data").GetProperty("object");
+        var subscriptionId = TryReadString(subscription, "id");
+
+        if (string.IsNullOrWhiteSpace(subscriptionId))
+            return null;
+
+        var (amount, currency, interval) = TryReadSubscriptionPricing(subscription);
+        var status = NormalizeStripeSubscriptionStatus(TryReadString(subscription, "status"));
+        var periodStart = TryReadUnixTime(subscription, "current_period_start") ?? DateTime.UtcNow;
+        var periodEnd = TryReadUnixTime(subscription, "current_period_end") ??
+            (interval == SubscriptionConstants.Intervals.Year ? periodStart.AddYears(1) : periodStart.AddMonths(1));
+        var cancelAtPeriodEnd = subscription.TryGetProperty("cancel_at_period_end", out var cancelElement) &&
+            cancelElement.ValueKind == JsonValueKind.True;
+
+        return new StripeSubscriptionEventDto(
+            subscriptionId,
+            TryReadString(subscription, "customer"),
+            TryReadGuidMetadata(subscription, "tenant_id"),
+            TryReadGuidMetadata(subscription, "user_id"),
+            TryReadMetadata(subscription, "plan"),
+            TryReadMetadata(subscription, "interval") ?? interval,
+            status,
+            amount,
+            currency,
+            periodStart,
+            periodEnd,
+            cancelAtPeriodEnd,
+            TryReadUnixTime(subscription, "canceled_at"));
+    }
+
+    private static StripeSubscriptionEventDto? TryReadInvoicePaymentFailedSubscription(JsonElement root)
+    {
+        var invoice = root.GetProperty("data").GetProperty("object");
+        var subscriptionId = TryReadString(invoice, "subscription");
+
+        if (string.IsNullOrWhiteSpace(subscriptionId))
+            return null;
+
+        var periodStart = DateTime.UtcNow;
+
+        return new StripeSubscriptionEventDto(
+            subscriptionId,
+            TryReadString(invoice, "customer"),
+            TryReadGuidMetadata(invoice, "tenant_id"),
+            TryReadGuidMetadata(invoice, "user_id"),
+            TryReadMetadata(invoice, "plan"),
+            TryReadMetadata(invoice, "interval"),
+            SubscriptionConstants.Statuses.PastDue,
+            0,
+            TryReadString(invoice, "currency")?.ToUpperInvariant() ?? "USD",
+            periodStart,
+            periodStart,
+            false,
+            null);
+    }
+
     private static Guid? TryReadInvoiceId(JsonElement paymentIntent)
     {
         if (!paymentIntent.TryGetProperty("metadata", out var metadata) ||
@@ -226,6 +471,104 @@ public sealed class StripeService(
         return Guid.TryParse(invoiceIdElement.GetString(), out var invoiceId)
             ? invoiceId
             : null;
+    }
+
+    private static string? TryReadMetadata(JsonElement root, string propertyName)
+    {
+        if (!root.TryGetProperty("metadata", out var metadata) ||
+            metadata.ValueKind != JsonValueKind.Object ||
+            !metadata.TryGetProperty(propertyName, out var property))
+        {
+            return null;
+        }
+
+        return property.ValueKind == JsonValueKind.String
+            ? property.GetString()
+            : null;
+    }
+
+    private static Guid? TryReadGuidMetadata(JsonElement root, string propertyName)
+    {
+        var value = TryReadMetadata(root, propertyName);
+        return Guid.TryParse(value, out var guid) ? guid : null;
+    }
+
+    private static string? TryReadString(JsonElement root, string propertyName)
+    {
+        if (!root.TryGetProperty(propertyName, out var property) ||
+            property.ValueKind is JsonValueKind.Null or JsonValueKind.Undefined)
+        {
+            return null;
+        }
+
+        return property.ValueKind == JsonValueKind.String
+            ? property.GetString()
+            : null;
+    }
+
+    private static (decimal Amount, string Currency, string Interval) TryReadSubscriptionPricing(JsonElement subscription)
+    {
+        if (!subscription.TryGetProperty("items", out var items) ||
+            !items.TryGetProperty("data", out var data) ||
+            data.ValueKind != JsonValueKind.Array)
+        {
+            return (0, "USD", SubscriptionConstants.Intervals.Month);
+        }
+
+        var item = data.EnumerateArray().FirstOrDefault();
+        if (item.ValueKind == JsonValueKind.Undefined ||
+            !item.TryGetProperty("price", out var price))
+        {
+            return (0, "USD", SubscriptionConstants.Intervals.Month);
+        }
+
+        var amount = price.TryGetProperty("unit_amount", out var amountElement) &&
+            amountElement.TryGetInt64(out var unitAmount)
+            ? unitAmount / 100m
+            : 0;
+        var currency = TryReadString(price, "currency")?.ToUpperInvariant() ?? "USD";
+        var interval = SubscriptionConstants.Intervals.Month;
+
+        if (price.TryGetProperty("recurring", out var recurring))
+        {
+            interval = NormalizeSubscriptionInterval(TryReadString(recurring, "interval"));
+        }
+
+        return (amount, currency, interval);
+    }
+
+    private static DateTime? TryReadUnixTime(JsonElement root, string propertyName)
+    {
+        if (!root.TryGetProperty(propertyName, out var value) ||
+            value.ValueKind is JsonValueKind.Null or JsonValueKind.Undefined)
+        {
+            return null;
+        }
+
+        return value.TryGetInt64(out var unixTime)
+            ? DateTimeOffset.FromUnixTimeSeconds(unixTime).UtcDateTime
+            : null;
+    }
+
+    private static string NormalizeStripeSubscriptionStatus(string? status)
+    {
+        return status switch
+        {
+            "active" => SubscriptionConstants.Statuses.Active,
+            "trialing" => SubscriptionConstants.Statuses.Trialing,
+            "past_due" or "unpaid" or "incomplete" or "incomplete_expired" => SubscriptionConstants.Statuses.PastDue,
+            "canceled" or "cancelled" => SubscriptionConstants.Statuses.Cancelled,
+            _ => SubscriptionConstants.Statuses.PastDue
+        };
+    }
+
+    private static string NormalizeSubscriptionInterval(string? interval)
+    {
+        return interval switch
+        {
+            SubscriptionConstants.Intervals.Year => SubscriptionConstants.Intervals.Year,
+            _ => SubscriptionConstants.Intervals.Month
+        };
     }
 
     private static string? TryReadFailureReason(JsonElement paymentIntent)
