@@ -20,6 +20,7 @@ public static class AuditConstants
         public const string Resent = "resent";
         public const string Viewed = "viewed";
         public const string Paid = "paid";
+        public const string RemindersUpdated = "reminders_updated";
         public const string Login = "login";
         public const string TokenRefreshed = "token_refreshed";
         public const string Logout = "logout";
@@ -27,5 +28,6 @@ public static class AuditConstants
         public const string PasswordResetRequested = "password_reset_requested";
         public const string PasswordReset = "password_reset";
         public const string PasswordChanged = "password_changed";
+        public const string StripeConnectStarted = "stripe_connect_started";
     }
 }

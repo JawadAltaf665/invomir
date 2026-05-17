@@ -24,5 +24,12 @@ public static class PaymentConstants
         public const string Completed = "completed";
         public const string Failed = "failed";
         public const string Refunded = "refunded";
+
+        public static readonly string[] All =
+        [
+            Completed,
+            Failed,
+            Refunded
+        ];
     }
 }

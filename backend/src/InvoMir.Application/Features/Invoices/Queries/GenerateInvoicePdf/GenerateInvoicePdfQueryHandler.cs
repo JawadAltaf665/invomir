@@ -51,7 +51,8 @@ public sealed class GenerateInvoicePdfQueryHandler(
                     invoice.SentAt,
                     invoice.ViewedAt,
                     invoice.PaidAt,
-                    invoice.CancelledAt)))
+                    invoice.CancelledAt,
+                    invoice.RemindersEnabled)))
             .FirstOrDefaultAsync(cancellationToken);
 
         if (snapshot is null)

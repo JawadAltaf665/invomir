@@ -23,6 +23,7 @@ public sealed class InvoiceConfiguration : IEntityTypeConfiguration<Invoice>
         builder.Property(invoice => invoice.Notes);
         builder.Property(invoice => invoice.PaymentLinkToken).HasMaxLength(128);
         builder.Property(invoice => invoice.StripePaymentIntentId).HasMaxLength(128);
+        builder.Property(invoice => invoice.RemindersEnabled).IsRequired().HasDefaultValue(true);
         builder.Property(invoice => invoice.SentAt);
         builder.Property(invoice => invoice.ViewedAt);
         builder.Property(invoice => invoice.PaidAt);
@@ -35,6 +36,7 @@ public sealed class InvoiceConfiguration : IEntityTypeConfiguration<Invoice>
         builder.HasIndex(invoice => new { invoice.TenantId, invoice.IssueDate });
         builder.HasIndex(invoice => new { invoice.TenantId, invoice.DueDate });
         builder.HasIndex(invoice => new { invoice.TenantId, invoice.CreationTime });
+        builder.HasIndex(invoice => new { invoice.TenantId, invoice.RemindersEnabled });
         builder.HasIndex(invoice => invoice.PaymentLinkToken).IsUnique();
 
         builder.HasOne(invoice => invoice.Client)

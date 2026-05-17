@@ -44,7 +44,8 @@ public sealed class GetInvoiceQueryHandler(IAppDbContext context)
                 currentInvoice.SentAt,
                 currentInvoice.ViewedAt,
                 currentInvoice.PaidAt,
-                currentInvoice.CancelledAt))
+                currentInvoice.CancelledAt,
+                currentInvoice.RemindersEnabled))
             .FirstOrDefaultAsync(cancellationToken);
 
         return invoice ?? throw new NotFoundException(nameof(Invoice), request.Id);
