@@ -29,5 +29,8 @@ public static class AuditConstants
         public const string PasswordReset = "password_reset";
         public const string PasswordChanged = "password_changed";
         public const string StripeConnectStarted = "stripe_connect_started";
+        public const string SubscriptionCheckoutStarted = "subscription_checkout_started";
+        public const string SubscriptionCancelled = "subscription_cancelled";
+        public const string SubscriptionSynced = "subscription_synced";
     }
 }

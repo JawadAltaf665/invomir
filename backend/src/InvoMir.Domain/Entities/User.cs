@@ -107,4 +107,12 @@ public sealed class User : TenantEntity
 
         LogoUrl = logoUrl.Trim();
     }
+
+    public void UpdatePlan(string plan)
+    {
+        if (!AuthConstants.Plans.All.Contains(plan))
+            throw new ArgumentException("Plan is not supported.", nameof(plan));
+
+        Plan = plan;
+    }
 }

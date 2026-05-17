@@ -41,4 +41,20 @@ public sealed class Tenant : SoftDeleteEntity
 
         Name = name.Trim();
     }
+
+    public void UpdatePlan(string plan)
+    {
+        if (!AuthConstants.Plans.All.Contains(plan))
+            throw new ArgumentException("Plan is not supported.", nameof(plan));
+
+        Plan = plan;
+    }
+
+    public void UpdateStripeCustomerId(string stripeCustomerId)
+    {
+        if (string.IsNullOrWhiteSpace(stripeCustomerId))
+            throw new ArgumentException("Stripe customer id is required.", nameof(stripeCustomerId));
+
+        StripeCustomerId = stripeCustomerId.Trim();
+    }
 }
