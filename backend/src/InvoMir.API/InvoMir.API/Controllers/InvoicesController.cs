@@ -112,6 +112,20 @@ public sealed class InvoicesController(ISender mediator) : ControllerBase
         return Ok(ApiResponse<InvoicePaymentDto>.Ok(result, "Invoice marked paid successfully."));
     }
 
+    [HttpPatch("{id:guid}/reminders")]
+    [ProducesResponseType(typeof(ApiResponse<InvoiceReminderSettingsDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status422UnprocessableEntity)]
+    public async Task<IActionResult> UpdateReminders(
+        Guid id,
+        [FromBody] UpdateInvoiceRemindersCommand command,
+        CancellationToken cancellationToken)
+    {
+        var result = await mediator.Send(command with { Id = id }, cancellationToken);
+        return Ok(ApiResponse<InvoiceReminderSettingsDto>.Ok(result, "Invoice reminder settings updated successfully."));
+    }
+
     [AllowAnonymous]
     [HttpGet("track/{token}")]
     [Produces("image/gif")]

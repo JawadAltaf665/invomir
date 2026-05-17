@@ -6,5 +6,7 @@ public interface IStripeService
         StripeCheckoutSessionRequestDto request,
         CancellationToken cancellationToken);
 
+    StripeConnectUrlDto CreateConnectOAuthUrl(StripeConnectOAuthRequestDto request);
+
     StripeWebhookEventDto ConstructWebhookEvent(string payload, string signatureHeader);
 }

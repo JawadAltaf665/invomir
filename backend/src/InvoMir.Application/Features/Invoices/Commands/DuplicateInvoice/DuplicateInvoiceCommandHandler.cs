@@ -192,7 +192,8 @@ public sealed class DuplicateInvoiceCommandHandler(
             invoice.SentAt,
             invoice.ViewedAt,
             invoice.PaidAt,
-            invoice.CancelledAt);
+            invoice.CancelledAt,
+            invoice.RemindersEnabled);
     }
 
     private static object ToAuditSnapshot(Guid duplicatedFrom, Invoice invoice)

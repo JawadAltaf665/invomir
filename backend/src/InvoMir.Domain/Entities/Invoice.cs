@@ -19,6 +19,7 @@ public sealed class Invoice : TenantEntity
     public string? Notes { get; private set; }
     public string? PaymentLinkToken { get; private set; }
     public string? StripePaymentIntentId { get; private set; }
+    public bool RemindersEnabled { get; private set; } = true;
     public DateTime? SentAt { get; private set; }
     public DateTime? ViewedAt { get; private set; }
     public DateTime? PaidAt { get; private set; }
@@ -125,6 +126,28 @@ public sealed class Invoice : TenantEntity
     {
         return Status is not InvoiceConstants.Statuses.Paid
             and not InvoiceConstants.Statuses.Cancelled;
+    }
+
+    public bool CanUseReminders()
+    {
+        return Status is not InvoiceConstants.Statuses.Paid
+            and not InvoiceConstants.Statuses.Cancelled;
+    }
+
+    public bool CanScheduleReminders()
+    {
+        return RemindersEnabled &&
+            (Status is InvoiceConstants.Statuses.Sent
+                or InvoiceConstants.Statuses.Viewed
+                or InvoiceConstants.Statuses.Overdue);
+    }
+
+    public void SetRemindersEnabled(bool enabled)
+    {
+        if (!CanUseReminders())
+            throw new InvalidOperationException("Invoice is paid or cancelled.");
+
+        RemindersEnabled = enabled;
     }
 
     public void Cancel(DateTime utcNow)

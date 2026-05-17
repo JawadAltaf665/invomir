@@ -21,5 +21,6 @@ public sealed record InvoiceDetailDto(
     DateTime? ViewedAt,
     DateTime? PaidAt,
     DateTime? CancelledAt,
+    bool RemindersEnabled = true,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     InvoiceIssuerDto? Issuer = null);

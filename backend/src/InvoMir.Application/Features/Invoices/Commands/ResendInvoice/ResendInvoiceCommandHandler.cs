@@ -112,7 +112,8 @@ public sealed class ResendInvoiceCommandHandler(
                 currentInvoice.SentAt,
                 currentInvoice.ViewedAt,
                 currentInvoice.PaidAt,
-                currentInvoice.CancelledAt))
+                currentInvoice.CancelledAt,
+                currentInvoice.RemindersEnabled))
             .FirstOrDefaultAsync(cancellationToken);
 
         if (invoice is null)

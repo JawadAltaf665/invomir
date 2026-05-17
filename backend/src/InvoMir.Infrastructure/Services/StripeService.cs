@@ -6,6 +6,7 @@ public sealed class StripeService(
     : IStripeService
 {
     private const string CheckoutSessionsUrl = "https://api.stripe.com/v1/checkout/sessions";
+    private const string ConnectAuthorizeUrl = "https://connect.stripe.com/oauth/authorize";
     private const int WebhookToleranceSeconds = 300;
     private static readonly HttpClient HttpClient = new();
     private readonly StripeSettings _settings = settings.Value;
@@ -55,6 +56,29 @@ public sealed class StripeService(
         return new StripeCheckoutSessionDto(id, url);
     }
 
+    public StripeConnectUrlDto CreateConnectOAuthUrl(StripeConnectOAuthRequestDto request)
+    {
+        if (string.IsNullOrWhiteSpace(_settings.ConnectClientId))
+            throw new BadRequestException("Stripe Connect is not configured.");
+
+        if (string.IsNullOrWhiteSpace(request.State))
+            throw new BadRequestException("Stripe Connect state is required.");
+
+        var fields = new Dictionary<string, string>
+        {
+            ["response_type"] = "code",
+            ["client_id"] = _settings.ConnectClientId.Trim(),
+            ["scope"] = "read_write",
+            ["state"] = request.State
+        };
+
+        if (!string.IsNullOrWhiteSpace(_settings.ConnectRedirectUrl))
+            fields["redirect_uri"] = _settings.ConnectRedirectUrl.Trim();
+
+        var oauthUrl = $"{ConnectAuthorizeUrl}?{BuildQueryString(fields)}";
+        return new StripeConnectUrlDto(oauthUrl, request.State);
+    }
+
     public StripeWebhookEventDto ConstructWebhookEvent(string payload, string signatureHeader)
     {
         if (string.IsNullOrWhiteSpace(_settings.WebhookSecret))
@@ -99,6 +123,14 @@ public sealed class StripeService(
             ["success_url"] = successUrl,
             ["cancel_url"] = cancelUrl
         };
+    }
+
+    private static string BuildQueryString(IReadOnlyDictionary<string, string> fields)
+    {
+        return string.Join(
+            "&",
+            fields.Select(field =>
+                $"{Uri.EscapeDataString(field.Key)}={Uri.EscapeDataString(field.Value)}"));
     }
 
     private static long ConvertToMinorUnits(decimal amount)

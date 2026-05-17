@@ -429,6 +429,11 @@ namespace InvoMir.Infrastructure.Persistence.Migrations
                         .HasMaxLength(128)
                         .HasColumnType("character varying(128)");
 
+                    b.Property<bool>("RemindersEnabled")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
                     b.Property<DateTime?>("SentAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -483,6 +488,8 @@ namespace InvoMir.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.HasIndex("TenantId", "IssueDate");
+
+                    b.HasIndex("TenantId", "RemindersEnabled");
 
                     b.HasIndex("TenantId", "Status");
 
