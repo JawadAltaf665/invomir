@@ -32,5 +32,7 @@ public static class AuditConstants
         public const string SubscriptionCheckoutStarted = "subscription_checkout_started";
         public const string SubscriptionCancelled = "subscription_cancelled";
         public const string SubscriptionSynced = "subscription_synced";
+        public const string PlanOverridden = "plan_overridden";
+        public const string TrialExtended = "trial_extended";
     }
 }

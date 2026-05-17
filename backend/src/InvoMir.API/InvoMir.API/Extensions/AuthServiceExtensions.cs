@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.Json;
 using InvoMir.Infrastructure.Settings;
+using InvoMir.Shared.Constants;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 
@@ -65,7 +66,14 @@ public static class AuthServiceExtensions
                 };
             });
 
-        services.AddAuthorization();
+        services.AddAuthorization(options =>
+        {
+            options.AddPolicy(
+                AuthConstants.Policies.Admin,
+                policy => policy
+                    .RequireAuthenticatedUser()
+                    .RequireClaim(AuthConstants.Claims.IsAdmin, "true"));
+        });
 
         return services;
     }
