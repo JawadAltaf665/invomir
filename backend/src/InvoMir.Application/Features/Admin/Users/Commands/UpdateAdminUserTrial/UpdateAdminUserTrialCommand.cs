@@ -7,7 +7,5 @@ public sealed record UpdateAdminUserTrialCommand : IRequest<AdminUserTrialUpdate
 {
     [JsonIgnore]
     public Guid Id { get; init; }
-
-    [JsonPropertyName("trialEndsAt")]
     public DateTime TrialEndsAt { get; init; }
 }

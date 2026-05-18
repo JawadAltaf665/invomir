@@ -7,7 +7,5 @@ public sealed record UpdateAdminUserPlanCommand : IRequest<AdminUserPlanUpdateDt
 {
     [JsonIgnore]
     public Guid Id { get; init; }
-
-    [JsonPropertyName("plan")]
     public string Plan { get; init; } = string.Empty;
 }

@@ -1,7 +1,5 @@
-using System.Text.Json.Serialization;
-
 namespace InvoMir.Application.Features.Payments.DTOs;
 
 public sealed record StripeConnectUrlDto(
-    [property: JsonPropertyName("oauthUrl")] string OAuthUrl,
-    [property: JsonPropertyName("state")] string State);
+    string OAuthUrl,
+    string State);

@@ -16,7 +16,7 @@ public sealed class InvoicesController(ISender mediator) : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status422UnprocessableEntity)]
     public async Task<IActionResult> List(
         [FromQuery] string? status,
-        [FromQuery(Name = "client_id")] Guid? clientId,
+        [FromQuery] Guid? clientId,
         [FromQuery] DateOnly? from,
         [FromQuery] DateOnly? to,
         [FromQuery] int page,
