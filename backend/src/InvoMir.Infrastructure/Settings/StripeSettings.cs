@@ -8,6 +8,7 @@ public sealed class StripeSettings
     public string WebhookSecret { get; init; } = string.Empty;
     public string ConnectClientId { get; init; } = string.Empty;
     public string ConnectRedirectUrl { get; init; } = string.Empty;
+    public string ConnectSuccessRedirectUrl { get; init; } = "https://invomir.com/settings?stripe=connected";
     public string CheckoutSuccessUrl { get; init; } = "http://localhost:4200/pay/success?session_id={CHECKOUT_SESSION_ID}";
     public string CheckoutCancelUrl { get; init; } = "http://localhost:4200/pay/{TOKEN}";
     public string SubscriptionSuccessUrl { get; init; } = "http://localhost:4200/billing/success?session_id={CHECKOUT_SESSION_ID}";

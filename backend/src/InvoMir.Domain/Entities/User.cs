@@ -108,6 +108,14 @@ public sealed class User : TenantEntity
         LogoUrl = logoUrl.Trim();
     }
 
+    public void UpdateStripeAccountId(string stripeAccountId)
+    {
+        if (string.IsNullOrWhiteSpace(stripeAccountId))
+            throw new ArgumentException("Stripe account id is required.", nameof(stripeAccountId));
+
+        StripeAccountId = stripeAccountId.Trim();
+    }
+
     public void UpdatePlan(string plan)
     {
         if (!AuthConstants.Plans.All.Contains(plan))

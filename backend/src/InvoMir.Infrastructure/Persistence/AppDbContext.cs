@@ -13,6 +13,7 @@ public sealed class AppDbContext(
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
     public DbSet<EmailVerificationToken> EmailVerificationTokens => Set<EmailVerificationToken>();
+    public DbSet<StripeConnectState> StripeConnectStates => Set<StripeConnectState>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     public DbSet<EmailLog> EmailLogs => Set<EmailLog>();
     public DbSet<Client> Clients => Set<Client>();

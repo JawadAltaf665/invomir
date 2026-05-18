@@ -16,5 +16,11 @@ public interface IStripeService
 
     StripeConnectUrlDto CreateConnectOAuthUrl(StripeConnectOAuthRequestDto request);
 
+    Task<StripeConnectAccountDto> ExchangeConnectAuthorizationCodeAsync(
+        string code,
+        CancellationToken cancellationToken);
+
+    string GetConnectSuccessRedirectUrl();
+
     StripeWebhookEventDto ConstructWebhookEvent(string payload, string signatureHeader);
 }

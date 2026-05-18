@@ -13,6 +13,7 @@ public sealed class TenantConfiguration : IEntityTypeConfiguration<Tenant>
         builder.Property(tenant => tenant.Plan).HasMaxLength(30).IsRequired().HasDefaultValue(AuthConstants.Plans.Free);
         builder.Property(tenant => tenant.TrialEndsAt);
         builder.Property(tenant => tenant.StripeCustomerId).HasMaxLength(100);
+        builder.Property(tenant => tenant.StripeAccountId).HasMaxLength(100);
         builder.Property(tenant => tenant.IsActive).IsRequired().HasDefaultValue(true);
 
         builder.HasIndex(tenant => tenant.Slug).IsUnique();

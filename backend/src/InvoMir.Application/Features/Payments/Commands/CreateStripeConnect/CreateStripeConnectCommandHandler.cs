@@ -35,10 +35,14 @@ public sealed class CreateStripeConnectCommandHandler(
             throw new BadRequestException("Stripe account is already connected.");
 
         var state = GenerateState();
+        var connectState = StripeConnectState.Create(user.Id, tenantContext.TenantId, state);
         var result = stripeService.CreateConnectOAuthUrl(new StripeConnectOAuthRequestDto(
             user.Id,
             tenantContext.TenantId,
             state));
+
+        context.StripeConnectStates.Add(connectState);
+        await context.SaveChangesAsync(cancellationToken);
 
         await auditService.LogAsync(
             AuditConstants.Entities.User,
@@ -47,7 +51,11 @@ public sealed class CreateStripeConnectCommandHandler(
             tenantContext.TenantId,
             user.Id,
             oldValues: null,
-            newValues: new { stripeConnectStarted = true },
+            newValues: new
+            {
+                stripeConnectStarted = true,
+                stateExpiresAt = connectState.ExpiresAt
+            },
             ipAddress: clientContext.IpAddress,
             userAgent: clientContext.DeviceInfo,
             cancellationToken: cancellationToken);

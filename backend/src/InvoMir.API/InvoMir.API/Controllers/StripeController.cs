@@ -19,6 +19,22 @@ public sealed class StripeController(ISender mediator) : ControllerBase
     }
 
     [AllowAnonymous]
+    [HttpGet("connect/callback")]
+    [ProducesResponseType(StatusCodes.Status302Found)]
+    [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ConnectCallback(
+        [FromQuery] string? code,
+        [FromQuery] string? state,
+        CancellationToken cancellationToken)
+    {
+        var result = await mediator.Send(
+            new CompleteStripeConnectCallbackCommand(code, state),
+            cancellationToken);
+
+        return Redirect(result.RedirectUrl);
+    }
+
+    [AllowAnonymous]
     [HttpPost("webhook")]
     [Produces("application/json")]
     [ProducesResponseType(StatusCodes.Status200OK)]
