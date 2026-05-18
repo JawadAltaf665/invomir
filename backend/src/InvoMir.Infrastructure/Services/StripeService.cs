@@ -7,6 +7,7 @@ public sealed class StripeService(
 {
     private const string CheckoutSessionsUrl = "https://api.stripe.com/v1/checkout/sessions";
     private const string ConnectAuthorizeUrl = "https://connect.stripe.com/oauth/authorize";
+    private const string ConnectOAuthTokenUrl = "https://connect.stripe.com/oauth/token";
     private const string SubscriptionsUrl = "https://api.stripe.com/v1/subscriptions";
     private const int WebhookToleranceSeconds = 300;
     private static readonly HttpClient HttpClient = new();
@@ -173,6 +174,57 @@ public sealed class StripeService(
 
         var oauthUrl = $"{ConnectAuthorizeUrl}?{BuildQueryString(fields)}";
         return new StripeConnectUrlDto(oauthUrl, request.State);
+    }
+
+    public async Task<StripeConnectAccountDto> ExchangeConnectAuthorizationCodeAsync(
+        string code,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(_settings.SecretKey))
+            throw new BadRequestException("Stripe is not configured.");
+
+        if (string.IsNullOrWhiteSpace(code))
+            throw new BadRequestException("Stripe authorization code is required.");
+
+        using var httpRequest = new HttpRequestMessage(HttpMethod.Post, ConnectOAuthTokenUrl)
+        {
+            Content = new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["client_secret"] = _settings.SecretKey.Trim(),
+                ["code"] = code.Trim(),
+                ["grant_type"] = "authorization_code"
+            })
+        };
+
+        using var response = await HttpClient.SendAsync(httpRequest, cancellationToken);
+        var body = await response.Content.ReadAsStringAsync(cancellationToken);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            logger.LogWarning(
+                "Stripe Connect OAuth exchange failed with status {StatusCode}: {ResponseBody}",
+                response.StatusCode,
+                body);
+
+            throw new BadRequestException("Unable to complete Stripe Connect authorization.");
+        }
+
+        using var document = JsonDocument.Parse(body);
+        var stripeAccountId = document.RootElement.TryGetProperty("stripe_user_id", out var accountElement)
+            ? accountElement.GetString()
+            : null;
+
+        if (string.IsNullOrWhiteSpace(stripeAccountId))
+            throw new BadRequestException("Stripe Connect response was invalid.");
+
+        return new StripeConnectAccountDto(stripeAccountId);
+    }
+
+    public string GetConnectSuccessRedirectUrl()
+    {
+        return string.IsNullOrWhiteSpace(_settings.ConnectSuccessRedirectUrl)
+            ? "https://invomir.com/settings?stripe=connected"
+            : _settings.ConnectSuccessRedirectUrl.Trim();
     }
 
     public StripeWebhookEventDto ConstructWebhookEvent(string payload, string signatureHeader)
