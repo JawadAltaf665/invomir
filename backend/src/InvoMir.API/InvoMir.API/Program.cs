@@ -1,9 +1,25 @@
+using DinkToPdf;
+using DinkToPdf.Contracts;
 using InvoMir.API.Extensions;
+using InvoMir.API.HealthChecks;
 using InvoMir.API.Middlewares;
 using InvoMir.Application;
 using InvoMir.Infrastructure;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.OpenApi;
+using System.Runtime.InteropServices;
+using System.Runtime.Loader;
+using System.Text.Json;
+
+var nativePdfLibraryName = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+    ? "libwkhtmltox.dll"
+    : RuntimeInformation.IsOSPlatform(OSPlatform.Linux)
+        ? "libwkhtmltox.so"
+        : throw new PlatformNotSupportedException("DinkToPdf native library is only configured for Windows and Linux.");
+var nativePdfLibraryPath = Path.Combine(AppContext.BaseDirectory, nativePdfLibraryName);
+new CustomAssemblyLoadContext().LoadUnmanagedLibrary(nativePdfLibraryPath);
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,11 +42,20 @@ if (builder.Environment.IsDevelopment())
         .PersistKeysToFileSystem(new DirectoryInfo(dataProtectionKeysPath));
 }
 
-builder.Services.AddControllers();
+builder.Services
+    .AddControllers()
+    .AddJsonOptions(options =>
+        options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase);
 builder.Services.AddEndpointsApiExplorer();
+builder.Services
+    .AddHealthChecks()
+    .AddCheck("self", () => HealthCheckResult.Healthy(), tags: ["live"])
+    .AddCheck<DatabaseHealthCheck>("database", tags: ["ready"])
+    .AddCheck<RedisHealthCheck>("redis", tags: ["ready"]);
 
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddSingleton(typeof(IConverter), new SynchronizedConverter(new PdfTools()));
 builder.Services.AddJwtAuthentication(builder.Configuration);
 
 builder.Services.AddSwaggerGen(options =>
@@ -82,6 +107,51 @@ app.UseStaticFiles();
 app.UseCors("InvoMirPolicy");
 app.UseAuthentication();
 app.UseAuthorization();
+app.MapHealthChecks("/health", new HealthCheckOptions
+{
+    Predicate = registration => registration.Tags.Contains("live"),
+    ResponseWriter = WriteHealthResponseAsync
+});
+app.MapHealthChecks("/health/ready", new HealthCheckOptions
+{
+    Predicate = registration => registration.Tags.Contains("ready"),
+    ResponseWriter = WriteHealthResponseAsync
+});
 app.MapControllers();
 
 app.Run();
+
+static async Task WriteHealthResponseAsync(HttpContext context, HealthReport report)
+{
+    context.Response.ContentType = "application/json";
+
+    var response = new
+    {
+        status = report.Status.ToString(),
+        checks = report.Entries.Select(entry => new
+        {
+            name = entry.Key,
+            status = entry.Value.Status.ToString(),
+            description = entry.Value.Description
+        }),
+        durationMs = report.TotalDuration.TotalMilliseconds
+    };
+
+    await JsonSerializer.SerializeAsync(
+        context.Response.Body,
+        response,
+        cancellationToken: context.RequestAborted);
+}
+
+internal sealed class CustomAssemblyLoadContext : AssemblyLoadContext
+{
+    public IntPtr LoadUnmanagedLibrary(string absolutePath)
+    {
+        return LoadUnmanagedDll(absolutePath);
+    }
+
+    protected override IntPtr LoadUnmanagedDll(string unmanagedDllName)
+    {
+        return LoadUnmanagedDllFromPath(unmanagedDllName);
+    }
+}

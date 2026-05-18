@@ -17,7 +17,11 @@ public sealed class GetInvoiceQueryHandler(IAppDbContext context)
                 new InvoiceClientDto(
                     currentInvoice.Client.Id,
                     currentInvoice.Client.Name,
-                    currentInvoice.Client.Email),
+                    currentInvoice.Client.Email,
+                    currentInvoice.Client.Phone,
+                    currentInvoice.Client.Address,
+                    currentInvoice.Client.Company,
+                    currentInvoice.Client.TaxId),
                 currentInvoice.Items
                     .OrderBy(item => item.SortOrder)
                     .Select(item => new InvoiceItemDto(
@@ -40,7 +44,8 @@ public sealed class GetInvoiceQueryHandler(IAppDbContext context)
                 currentInvoice.SentAt,
                 currentInvoice.ViewedAt,
                 currentInvoice.PaidAt,
-                currentInvoice.CancelledAt))
+                currentInvoice.CancelledAt,
+                currentInvoice.RemindersEnabled))
             .FirstOrDefaultAsync(cancellationToken);
 
         return invoice ?? throw new NotFoundException(nameof(Invoice), request.Id);

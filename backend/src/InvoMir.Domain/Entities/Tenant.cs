@@ -9,6 +9,7 @@ public sealed class Tenant : SoftDeleteEntity
     public string Plan { get; private set; } = AuthConstants.Plans.Free;
     public DateTime? TrialEndsAt { get; private set; }
     public string? StripeCustomerId { get; private set; }
+    public string? StripeAccountId { get; private set; }
     public bool IsActive { get; private set; } = true;
 
     public ICollection<User> Users { get; private set; } = [];
@@ -40,5 +41,46 @@ public sealed class Tenant : SoftDeleteEntity
             throw new ArgumentException("Tenant name is required.", nameof(name));
 
         Name = name.Trim();
+    }
+
+    public void UpdatePlan(string plan)
+    {
+        if (!AuthConstants.Plans.All.Contains(plan))
+            throw new ArgumentException("Plan is not supported.", nameof(plan));
+
+        Plan = plan;
+    }
+
+    public void UpdateStripeCustomerId(string stripeCustomerId)
+    {
+        if (string.IsNullOrWhiteSpace(stripeCustomerId))
+            throw new ArgumentException("Stripe customer id is required.", nameof(stripeCustomerId));
+
+        StripeCustomerId = stripeCustomerId.Trim();
+    }
+
+    public void UpdateStripeAccountId(string stripeAccountId)
+    {
+        if (string.IsNullOrWhiteSpace(stripeAccountId))
+            throw new ArgumentException("Stripe account id is required.", nameof(stripeAccountId));
+
+        StripeAccountId = stripeAccountId.Trim();
+    }
+
+    public void UpdateTrialEndsAt(DateTime trialEndsAtUtc)
+    {
+        var normalizedTrialEndsAtUtc = EnsureUtc(trialEndsAtUtc);
+
+        if (normalizedTrialEndsAtUtc <= DateTime.UtcNow)
+            throw new ArgumentOutOfRangeException(nameof(trialEndsAtUtc), "Trial end date must be in the future.");
+
+        TrialEndsAt = normalizedTrialEndsAtUtc;
+    }
+
+    private static DateTime EnsureUtc(DateTime value)
+    {
+        return value.Kind == DateTimeKind.Unspecified
+            ? DateTime.SpecifyKind(value, DateTimeKind.Utc)
+            : value.ToUniversalTime();
     }
 }

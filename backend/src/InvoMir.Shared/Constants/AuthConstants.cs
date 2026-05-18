@@ -11,6 +11,12 @@ public static class AuthConstants
         public const string TenantId = "tenant_id";
         public const string FirstName = "first_name";
         public const string Plan = "plan";
+        public const string IsAdmin = "isAdmin";
+    }
+
+    public static class Policies
+    {
+        public const string Admin = "AdminOnly";
     }
 
     public static class Roles
@@ -23,6 +29,24 @@ public static class AuthConstants
     public static class Plans
     {
         public const string Free = "free";
+        public const string Starter = "starter";
+        public const string Professional = "professional";
+        public const string Business = "business";
+
+        public static readonly string[] All =
+        [
+            Free,
+            Starter,
+            Professional,
+            Business
+        ];
+
+        public static readonly string[] Paid =
+        [
+            Starter,
+            Professional,
+            Business
+        ];
     }
 
     public static readonly string[] SupportedCurrencies =

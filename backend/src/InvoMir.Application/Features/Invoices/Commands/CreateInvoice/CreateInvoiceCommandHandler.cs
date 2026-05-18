@@ -131,7 +131,8 @@ public sealed class CreateInvoiceCommandHandler(
             invoice.SentAt,
             invoice.ViewedAt,
             invoice.PaidAt,
-            invoice.CancelledAt);
+            invoice.CancelledAt,
+            invoice.RemindersEnabled);
     }
 
     private static object ToAuditSnapshot(Invoice invoice)

@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Invoice {{InvoiceNumber}}</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: #172033;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 13px;
+      line-height: 1.45;
+      background: #ffffff;
+    }
+    .page { padding: 24px; }
+    .header {
+      display: table;
+      width: 100%;
+      padding-bottom: 24px;
+      border-bottom: 2px solid #172033;
+    }
+    .brand, .invoice-meta {
+      display: table-cell;
+      vertical-align: top;
+      width: 50%;
+    }
+    .invoice-meta { text-align: right; }
+    .brand-row {
+      display: table;
+      width: 100%;
+    }
+    .brand-logo-wrap, .brand-copy {
+      display: table-cell;
+      vertical-align: middle;
+    }
+    .brand-logo-wrap { width: 74px; }
+    .brand-logo {
+      max-width: 58px;
+      max-height: 58px;
+      object-fit: contain;
+    }
+    .brand-mark {
+      width: 58px;
+      height: 58px;
+      border-radius: 8px;
+      background: #172033;
+      color: #ffffff;
+      font-size: 20px;
+      font-weight: 700;
+      line-height: 58px;
+      text-align: center;
+    }
+    .business-name {
+      margin: 0;
+      color: #172033;
+      font-size: 22px;
+      font-weight: 700;
+    }
+    .business-email {
+      margin-top: 4px;
+      color: #5d6b82;
+    }
+    .invoice-title {
+      margin: 0 0 8px;
+      color: #172033;
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: 0;
+    }
+    .invoice-number {
+      color: #5d6b82;
+      font-size: 13px;
+    }
+    .status-badge {
+      display: inline-block;
+      margin-top: 10px;
+      padding: 5px 9px;
+      border-radius: 6px;
+      background: #e8f7ef;
+      color: #176b3a;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .summary {
+      display: table;
+      width: 100%;
+      margin: 28px 0;
+    }
+    .summary-block {
+      display: table-cell;
+      width: 50%;
+      vertical-align: top;
+    }
+    .summary-block:last-child { text-align: right; }
+    .label {
+      margin: 0 0 6px;
+      color: #5d6b82;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .value {
+      color: #172033;
+      font-size: 14px;
+      font-weight: 700;
+    }
+    .muted { color: #5d6b82; }
+    .dates {
+      display: inline-table;
+      min-width: 230px;
+      border-collapse: collapse;
+    }
+    .dates td {
+      padding: 4px 0;
+      color: #5d6b82;
+    }
+    .dates td:last-child {
+      color: #172033;
+      font-weight: 700;
+      text-align: right;
+    }
+    table.items {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+    }
+    .items th {
+      padding: 11px 10px;
+      color: #5d6b82;
+      font-size: 11px;
+      text-align: left;
+      text-transform: uppercase;
+      border-bottom: 1px solid #d9dee8;
+      background: #f6f8fb;
+    }
+    .items td {
+      padding: 13px 10px;
+      border-bottom: 1px solid #edf0f5;
+      vertical-align: top;
+    }
+    .item-description { width: 46%; }
+    .numeric { text-align: right; white-space: nowrap; }
+    .strong { font-weight: 700; }
+    .totals {
+      width: 320px;
+      margin: 24px 0 0 auto;
+      border-collapse: collapse;
+    }
+    .totals td {
+      padding: 7px 0;
+      color: #5d6b82;
+      border-bottom: 1px solid #edf0f5;
+    }
+    .totals td:last-child {
+      color: #172033;
+      font-weight: 700;
+      text-align: right;
+    }
+    .totals .grand-total td {
+      padding-top: 13px;
+      color: #172033;
+      font-size: 18px;
+      border-bottom: 0;
+    }
+    .notes {
+      margin-top: 34px;
+      padding: 16px;
+      border: 1px solid #d9dee8;
+      border-radius: 8px;
+      background: #fbfcfe;
+    }
+    .footer {
+      margin-top: 34px;
+      padding-top: 14px;
+      color: #7b8798;
+      font-size: 11px;
+      border-top: 1px solid #edf0f5;
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="header">
+      <div class="brand">
+        <div class="brand-row">
+          <div class="brand-logo-wrap">{{LogoHtml}}</div>
+          <div class="brand-copy">
+            <h1 class="business-name">{{BusinessName}}</h1>
+            <div class="business-email">{{BusinessEmail}}</div>
+          </div>
+        </div>
+      </div>
+      <div class="invoice-meta">
+        <h2 class="invoice-title">Invoice</h2>
+        <div class="invoice-number">{{InvoiceNumber}}</div>
+        <div class="status-badge">{{InvoiceStatus}}</div>
+      </div>
+    </div>
+
+    <div class="summary">
+      <div class="summary-block">
+        <p class="label">Bill To</p>
+        <div class="value">{{ClientName}}</div>
+        <div class="muted">{{ClientDetails}}</div>
+      </div>
+      <div class="summary-block">
+        <table class="dates">
+          <tr><td>Issue Date</td><td>{{IssueDate}}</td></tr>
+          <tr><td>Due Date</td><td>{{DueDate}}</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <table class="items">
+      <thead>
+        <tr>
+          <th>Description</th>
+          <th class="numeric">Qty</th>
+          <th class="numeric">Unit Price</th>
+          <th class="numeric">Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{LineItems}}
+      </tbody>
+    </table>
+
+    <table class="totals">
+      <tr><td>Subtotal</td><td>{{Subtotal}}</td></tr>
+      <tr><td>Discount</td><td>{{Discount}}</td></tr>
+      <tr><td>{{TaxLabel}}</td><td>{{TaxAmount}}</td></tr>
+      <tr class="grand-total"><td>Total</td><td>{{Total}}</td></tr>
+    </table>
+
+    <div class="notes">
+      <p class="label">Notes</p>
+      <div>{{Notes}}</div>
+    </div>
+
+    <div class="footer">
+      Generated by InvoMir on {{GeneratedAt}}
+    </div>
+  </div>
+</body>
+</html>

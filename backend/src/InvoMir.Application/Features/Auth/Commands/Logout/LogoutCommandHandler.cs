@@ -16,7 +16,13 @@ public sealed class LogoutCommandHandler(
         var userId = currentUserContext.UserId
             ?? throw new UnauthorizedAccessException("User context is not available.");
 
-        var rawRefreshToken = authCookieService.GetRefreshToken();
+        var rawRefreshToken = string.IsNullOrWhiteSpace(request.RefreshToken)
+            ? authCookieService.GetRefreshToken()
+            : request.RefreshToken.Trim();
+
+        if (!request.AllDevices && string.IsNullOrWhiteSpace(rawRefreshToken))
+            return ApiResponse<string>.Fail("No refresh token provided.");
+
         var revokedCount = request.AllDevices
             ? await RevokeAllSessionsAsync(userId, tenantContext.TenantId, cancellationToken)
             : await RevokeCurrentSessionAsync(userId, rawRefreshToken, cancellationToken);

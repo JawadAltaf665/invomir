@@ -7,9 +7,10 @@ public sealed class TokenService(IOptions<JwtSettings> jwtSettings) : ITokenServ
 {
     private readonly JwtSettings _settings = jwtSettings.Value;
 
-    public string GenerateAccessToken(User user, Guid tenantId)
+    public (string Token, DateTime ExpiresAt) GenerateAccessToken(User user, Guid tenantId)
     {
         var credentials = new SigningCredentials(GetSigningKey(), SecurityAlgorithms.HmacSha256);
+        var expiresAt = DateTime.UtcNow.AddMinutes(_settings.AccessTokenExpiryMinutes);
         var claims = new[]
         {
             new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
@@ -19,6 +20,9 @@ public sealed class TokenService(IOptions<JwtSettings> jwtSettings) : ITokenServ
             new Claim(AuthConstants.Claims.TenantId, tenantId.ToString()),
             new Claim(AuthConstants.Claims.FirstName, user.FirstName),
             new Claim(AuthConstants.Claims.Plan, user.Plan),
+            new Claim(
+                AuthConstants.Claims.IsAdmin,
+                (user.Role == AuthConstants.Roles.Admin).ToString().ToLowerInvariant()),
             new Claim(ClaimTypes.Role, user.Role)
         };
 
@@ -26,10 +30,10 @@ public sealed class TokenService(IOptions<JwtSettings> jwtSettings) : ITokenServ
             issuer: _settings.Issuer,
             audience: _settings.Audience,
             claims: claims,
-            expires: DateTime.UtcNow.AddMinutes(_settings.AccessTokenExpiryMinutes),
+            expires: expiresAt,
             signingCredentials: credentials);
 
-        return new JwtSecurityTokenHandler().WriteToken(token);
+        return (new JwtSecurityTokenHandler().WriteToken(token), expiresAt);
     }
 
     public string GenerateRefreshTokenString()
