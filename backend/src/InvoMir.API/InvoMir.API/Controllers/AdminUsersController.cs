@@ -2,6 +2,7 @@ namespace InvoMir.API.Controllers;
 
 [ApiController]
 [Authorize(Policy = AuthConstants.Policies.Admin)]
+[EnableRateLimiting(RateLimitPolicies.AdminEndpoints)]
 [Route("api/admin/users")]
 [Produces("application/json")]
 [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status401Unauthorized)]

@@ -10,6 +10,7 @@ public sealed class AuthController(ISender mediator) : ControllerBase
 {
     [HttpPost("register")]
     [AllowAnonymous]
+    [EnableRateLimiting(RateLimitPolicies.AuthStrict)]
     [ProducesResponseType(typeof(ApiResponse<AuthTokenDto>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiResponse<AuthTokenDto>), StatusCodes.Status409Conflict)]
     [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status422UnprocessableEntity)]
@@ -25,6 +26,7 @@ public sealed class AuthController(ISender mediator) : ControllerBase
 
     [HttpPost("login")]
     [AllowAnonymous]
+    [EnableRateLimiting(RateLimitPolicies.AuthStrict)]
     [ProducesResponseType(typeof(ApiResponse<AuthTokenDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<AuthTokenDto>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status422UnprocessableEntity)]
@@ -38,6 +40,7 @@ public sealed class AuthController(ISender mediator) : ControllerBase
 
     [HttpPost("refresh")]
     [AllowAnonymous]
+    [EnableRateLimiting(RateLimitPolicies.AuthToken)]
     [ProducesResponseType(typeof(ApiResponse<AuthTokenDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<AuthTokenDto>), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Refresh(
@@ -50,6 +53,7 @@ public sealed class AuthController(ISender mediator) : ControllerBase
 
     [HttpPost("logout")]
     [Authorize]
+    [EnableRateLimiting(RateLimitPolicies.AuthToken)]
     [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status401Unauthorized)]
@@ -63,6 +67,7 @@ public sealed class AuthController(ISender mediator) : ControllerBase
 
     [HttpPost("forgot-password")]
     [AllowAnonymous]
+    [EnableRateLimiting(RateLimitPolicies.AuthStrict)]
     [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status422UnprocessableEntity)]
     public async Task<IActionResult> ForgotPassword(
@@ -75,6 +80,7 @@ public sealed class AuthController(ISender mediator) : ControllerBase
 
     [HttpPost("reset-password")]
     [AllowAnonymous]
+    [EnableRateLimiting(RateLimitPolicies.AuthStrict)]
     [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status422UnprocessableEntity)]
@@ -88,6 +94,7 @@ public sealed class AuthController(ISender mediator) : ControllerBase
 
     [HttpPost("verify-email")]
     [AllowAnonymous]
+    [EnableRateLimiting(RateLimitPolicies.AuthStrict)]
     [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status422UnprocessableEntity)]
