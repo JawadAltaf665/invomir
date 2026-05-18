@@ -40,22 +40,25 @@ public sealed class AuthController(ISender mediator) : ControllerBase
     [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<AuthTokenDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<AuthTokenDto>), StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> Refresh(CancellationToken cancellationToken)
+    public async Task<IActionResult> Refresh(
+        [FromBody(EmptyBodyBehavior = EmptyBodyBehavior.Allow)] RefreshTokenCommand? command,
+        CancellationToken cancellationToken)
     {
-        var result = await mediator.Send(new RefreshTokenCommand(), cancellationToken);
+        var result = await mediator.Send(command ?? new RefreshTokenCommand(), cancellationToken);
         return result.Success ? Ok(result) : Unauthorized(result);
     }
 
     [HttpPost("logout")]
     [Authorize]
     [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Logout(
         [FromBody(EmptyBodyBehavior = EmptyBodyBehavior.Allow)] LogoutCommand? command,
         CancellationToken cancellationToken)
     {
         var result = await mediator.Send(command ?? new LogoutCommand(), cancellationToken);
-        return Ok(result);
+        return result.Success ? Ok(result) : BadRequest(result);
     }
 
     [HttpPost("forgot-password")]

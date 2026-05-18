@@ -80,7 +80,16 @@ public sealed partial class RegisterCommandHandler(
         authCookieService.SetRefreshToken(rawRefreshToken, refreshToken.ExpiresAt);
         await emailService.SendEmailVerificationAsync(user.Email, verificationTokenValue, cancellationToken);
 
-        var tokenDto = new AuthTokenDto(accessToken, user.Id, tenant.Id, user.Email, user.FirstName);
+        var tokenDto = new AuthTokenDto(
+            accessToken.Token,
+            rawRefreshToken,
+            accessToken.ExpiresAt,
+            user.Id,
+            tenant.Id,
+            user.Email,
+            user.FirstName,
+            user.TrialEndsAt,
+            user.Plan);
         return ApiResponse<AuthTokenDto>.Ok(tokenDto, "Account created successfully. Please verify your email.");
     }
 

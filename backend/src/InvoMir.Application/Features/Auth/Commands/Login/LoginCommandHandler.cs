@@ -42,15 +42,6 @@ public sealed class LoginCommandHandler(
 
         user.RecordLogin();
 
-        var now = DateTime.UtcNow;
-        var oldTokens = await context.RefreshTokens
-            .IgnoreQueryFilters()
-            .Where(token => token.UserId == user.Id && !token.IsRevoked && !token.IsDeleted && token.ExpiresAt > now)
-            .ToListAsync(cancellationToken);
-
-        foreach (var oldToken in oldTokens)
-            oldToken.Revoke();
-
         var accessToken = tokenService.GenerateAccessToken(user, user.TenantId);
         var rawRefreshToken = tokenService.GenerateRefreshTokenString();
         var refreshToken = RefreshToken.Create(
@@ -80,7 +71,16 @@ public sealed class LoginCommandHandler(
 
         authCookieService.SetRefreshToken(rawRefreshToken, refreshToken.ExpiresAt);
 
-        var tokenDto = new AuthTokenDto(accessToken, user.Id, user.TenantId, user.Email, user.FirstName);
+        var tokenDto = new AuthTokenDto(
+            accessToken.Token,
+            rawRefreshToken,
+            accessToken.ExpiresAt,
+            user.Id,
+            user.TenantId,
+            user.Email,
+            user.FirstName,
+            user.TrialEndsAt,
+            user.Plan);
         return ApiResponse<AuthTokenDto>.Ok(tokenDto);
     }
 }
