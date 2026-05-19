@@ -9,6 +9,7 @@ namespace InvoMir.API.Controllers;
 public sealed class StripeController(ISender mediator) : ControllerBase
 {
     [HttpPost("connect")]
+    [RequirePermission(Permissions.Payment.Manage)]
     [EnableRateLimiting(RateLimitPolicies.Subscriptions)]
     [ProducesResponseType(typeof(ApiResponse<StripeConnectUrlDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]

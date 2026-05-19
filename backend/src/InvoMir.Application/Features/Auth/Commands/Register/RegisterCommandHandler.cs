@@ -89,7 +89,9 @@ public sealed partial class RegisterCommandHandler(
             user.Email,
             user.FirstName,
             user.TrialEndsAt,
-            user.Plan);
+            user.Plan,
+            user.Role,
+            accessToken.Permissions);
         return ApiResponse<AuthTokenDto>.Ok(tokenDto, "Account created successfully. Please verify your email.");
     }
 

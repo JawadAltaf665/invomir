@@ -9,6 +9,7 @@ namespace InvoMir.API.Controllers;
 public sealed class PaymentsController(ISender mediator) : ControllerBase
 {
     [HttpGet]
+    [RequirePermission(Permissions.Payment.View)]
     [ProducesResponseType(typeof(ApiResponse<PaymentHistoryDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status422UnprocessableEntity)]
     public async Task<IActionResult> List(
