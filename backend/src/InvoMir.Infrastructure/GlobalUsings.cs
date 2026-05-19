@@ -12,6 +12,7 @@ global using InvoMir.Application.Interfaces;
 global using InvoMir.Domain.Entities;
 global using InvoMir.Infrastructure.Identity;
 global using InvoMir.Infrastructure.Persistence;
+global using InvoMir.Infrastructure.RateLimiting;
 global using InvoMir.Infrastructure.Services;
 global using InvoMir.Infrastructure.Settings;
 global using InvoMir.Shared.Constants;

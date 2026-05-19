@@ -2,6 +2,7 @@ namespace InvoMir.API.Controllers;
 
 [ApiController]
 [Authorize]
+[EnableRateLimiting(RateLimitPolicies.ApiAuthenticated)]
 [Route("api/users")]
 [Produces("application/json")]
 [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status401Unauthorized)]
@@ -42,6 +43,7 @@ public sealed class UsersController(ISender mediator) : ControllerBase
     }
 
     [HttpPost("me/logo")]
+    [EnableRateLimiting(RateLimitPolicies.InvoiceActions)]
     [Consumes("multipart/form-data")]
     [ProducesResponseType(typeof(ApiResponse<UserLogoDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]

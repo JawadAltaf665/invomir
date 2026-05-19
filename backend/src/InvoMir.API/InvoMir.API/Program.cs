@@ -5,8 +5,10 @@ using InvoMir.API.HealthChecks;
 using InvoMir.API.Middlewares;
 using InvoMir.Application;
 using InvoMir.Infrastructure;
+using InvoMir.Infrastructure.RateLimiting;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.OpenApi;
 using System.Runtime.InteropServices;
@@ -104,19 +106,22 @@ if (!app.Environment.IsDevelopment())
     app.UseHttpsRedirection();
 
 app.UseStaticFiles();
+app.UseRouting();
 app.UseCors("InvoMirPolicy");
 app.UseAuthentication();
+app.UseInvoMirRateLimitRequestEnrichment();
+app.UseRateLimiter();
 app.UseAuthorization();
 app.MapHealthChecks("/health", new HealthCheckOptions
 {
     Predicate = registration => registration.Tags.Contains("live"),
     ResponseWriter = WriteHealthResponseAsync
-});
+}).DisableRateLimiting();
 app.MapHealthChecks("/health/ready", new HealthCheckOptions
 {
     Predicate = registration => registration.Tags.Contains("ready"),
     ResponseWriter = WriteHealthResponseAsync
-});
+}).DisableRateLimiting();
 app.MapControllers();
 
 app.Run();

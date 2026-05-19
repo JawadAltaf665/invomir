@@ -2,6 +2,7 @@ namespace InvoMir.API.Controllers;
 
 [ApiController]
 [Authorize]
+[EnableRateLimiting(RateLimitPolicies.Subscriptions)]
 [Route("api/subscriptions")]
 [Produces("application/json")]
 [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status401Unauthorized)]
@@ -24,6 +25,7 @@ public sealed class SubscriptionsController(ISender mediator) : ControllerBase
     }
 
     [HttpGet("plans")]
+    [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<SubscriptionPlansDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> Plans(CancellationToken cancellationToken)
     {

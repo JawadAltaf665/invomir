@@ -2,6 +2,7 @@ namespace InvoMir.API.Controllers;
 
 [ApiController]
 [AllowAnonymous]
+[EnableRateLimiting(RateLimitPolicies.PublicPaymentPages)]
 [Route("pay")]
 public sealed class PaymentPagesController(ISender mediator) : ControllerBase
 {

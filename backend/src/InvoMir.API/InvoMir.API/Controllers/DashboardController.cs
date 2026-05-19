@@ -2,6 +2,7 @@ namespace InvoMir.API.Controllers;
 
 [ApiController]
 [Authorize]
+[EnableRateLimiting(RateLimitPolicies.ApiAuthenticated)]
 [Route("api/dashboard")]
 [Produces("application/json")]
 [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status401Unauthorized)]
