@@ -1,3 +1,56 @@
-/* You can add global styles to this file, and also import other style files */
-
+@import '@angular/material/prebuilt-themes/azure-blue.css';
 @import 'tailwindcss';
+
+@theme {
+  --color-primary: #2563eb;
+  --color-muted-foreground: #737373;
+}
+
+:root {
+  --color-background: #fafafa;
+  --color-card: #ffffff;
+  --color-text-primary: #171717;
+  --color-text-secondary: #737373;
+  --color-border: #e5e5e5;
+  --color-primary: #2563eb;
+  --font-sans: 'Inter', system-ui, sans-serif;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-background);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.mat-mdc-form-field {
+  width: 100%;
+}
+
+.mat-mdc-text-field-wrapper {
+  border-radius: 12px !important;
+}
+
+.mat-mdc-form-field-subscript-wrapper {
+  font-size: 12px;
+}
+
+.mdc-button {
+  border-radius: 12px !important;
+  font-weight: 500 !important;
+}
+
+.mat-mdc-progress-spinner {
+  --mdc-circular-progress-active-indicator-color: currentColor;
+}
