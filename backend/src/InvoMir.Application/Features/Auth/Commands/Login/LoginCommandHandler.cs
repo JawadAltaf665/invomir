@@ -80,7 +80,9 @@ public sealed class LoginCommandHandler(
             user.Email,
             user.FirstName,
             user.TrialEndsAt,
-            user.Plan);
+            user.Plan,
+            user.Role,
+            accessToken.Permissions);
         return ApiResponse<AuthTokenDto>.Ok(tokenDto);
     }
 }

@@ -1,3 +1,4 @@
+global using InvoMir.API.Authorization;
 global using InvoMir.Application.Features.Auth.Commands.ForgotPassword;
 global using InvoMir.Application.Features.Auth.Commands.Login;
 global using InvoMir.Application.Features.Auth.Commands.Logout;
@@ -55,8 +56,10 @@ global using InvoMir.Application.Features.Users.Commands.UpdateCurrentUser;
 global using InvoMir.Application.Features.Users.Commands.UploadCurrentUserLogo;
 global using InvoMir.Application.Features.Users.DTOs;
 global using InvoMir.Application.Features.Users.Queries.GetCurrentUser;
+global using InvoMir.Application.Features.Users.Queries.GetCurrentUserPermissions;
 global using InvoMir.Shared.Constants;
 global using InvoMir.Shared.Response;
 global using MediatR;
 global using Microsoft.AspNetCore.Authorization;
 global using Microsoft.AspNetCore.Mvc;
+global using Microsoft.AspNetCore.RateLimiting;

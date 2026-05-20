@@ -72,8 +72,11 @@ public static class AuthServiceExtensions
                 AuthConstants.Policies.Admin,
                 policy => policy
                     .RequireAuthenticatedUser()
-                    .RequireClaim(AuthConstants.Claims.IsAdmin, "true"));
+                    .RequireClaim(AuthConstants.Claims.Permission, Permissions.System.Access));
         });
+
+        services.AddSingleton<IAuthorizationPolicyProvider, PermissionAuthorizationPolicyProvider>();
+        services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
 
         return services;
     }

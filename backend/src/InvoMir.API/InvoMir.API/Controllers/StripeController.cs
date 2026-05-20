@@ -9,6 +9,8 @@ namespace InvoMir.API.Controllers;
 public sealed class StripeController(ISender mediator) : ControllerBase
 {
     [HttpPost("connect")]
+    [RequirePermission(Permissions.Payment.Manage)]
+    [EnableRateLimiting(RateLimitPolicies.Subscriptions)]
     [ProducesResponseType(typeof(ApiResponse<StripeConnectUrlDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status401Unauthorized)]
@@ -20,6 +22,7 @@ public sealed class StripeController(ISender mediator) : ControllerBase
 
     [AllowAnonymous]
     [HttpGet("connect/callback")]
+    [EnableRateLimiting(RateLimitPolicies.StripeWebhooks)]
     [ProducesResponseType(StatusCodes.Status302Found)]
     [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> ConnectCallback(
@@ -36,6 +39,7 @@ public sealed class StripeController(ISender mediator) : ControllerBase
 
     [AllowAnonymous]
     [HttpPost("webhook")]
+    [EnableRateLimiting(RateLimitPolicies.StripeWebhooks)]
     [Produces("application/json")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]

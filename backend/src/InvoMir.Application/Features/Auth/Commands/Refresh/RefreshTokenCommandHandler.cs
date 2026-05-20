@@ -78,7 +78,9 @@ public sealed class RefreshTokenCommandHandler(
             user.Email,
             user.FirstName,
             user.TrialEndsAt,
-            user.Plan);
+            user.Plan,
+            user.Role,
+            newAccessToken.Permissions);
         return ApiResponse<AuthTokenDto>.Ok(tokenDto);
     }
 }

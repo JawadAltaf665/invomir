@@ -1,7 +1,8 @@
 namespace InvoMir.API.Controllers;
 
 [ApiController]
-[Authorize(Policy = AuthConstants.Policies.Admin)]
+[Authorize]
+[EnableRateLimiting(RateLimitPolicies.AdminEndpoints)]
 [Route("api/admin/users")]
 [Produces("application/json")]
 [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status401Unauthorized)]
@@ -9,6 +10,7 @@ namespace InvoMir.API.Controllers;
 public sealed class AdminUsersController(ISender mediator) : ControllerBase
 {
     [HttpGet]
+    [RequirePermission(Permissions.System.Users.View)]
     [ProducesResponseType(typeof(ApiResponse<PagedResult<AdminUserListItemDto>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> List(
         [FromQuery] string? q,
@@ -21,6 +23,7 @@ public sealed class AdminUsersController(ISender mediator) : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
+    [RequirePermission(Permissions.System.Users.View)]
     [ProducesResponseType(typeof(ApiResponse<AdminUserDetailDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Get(Guid id, CancellationToken cancellationToken)
@@ -30,6 +33,7 @@ public sealed class AdminUsersController(ISender mediator) : ControllerBase
     }
 
     [HttpPatch("{id:guid}/plan")]
+    [RequirePermission(Permissions.System.Users.Manage)]
     [ProducesResponseType(typeof(ApiResponse<AdminUserPlanUpdateDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status422UnprocessableEntity)]
@@ -43,6 +47,7 @@ public sealed class AdminUsersController(ISender mediator) : ControllerBase
     }
 
     [HttpPatch("{id:guid}/trial")]
+    [RequirePermission(Permissions.System.Users.Manage)]
     [ProducesResponseType(typeof(ApiResponse<AdminUserTrialUpdateDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status422UnprocessableEntity)]
