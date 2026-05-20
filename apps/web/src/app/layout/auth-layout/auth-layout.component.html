@@ -1,0 +1,37 @@
+<main class="min-h-dvh bg-neutral-50 text-neutral-900">
+  <div class="mx-auto grid min-h-dvh max-w-6xl grid-cols-1 lg:grid-cols-[0.9fr_1.1fr]">
+    <section class="hidden border-r border-neutral-200 bg-white px-8 py-12 lg:flex lg:flex-col lg:justify-between">
+      <div class="space-y-8">
+        <div class="flex items-center gap-3">
+          <div class="grid size-10 place-items-center rounded-xl bg-primary text-sm font-semibold text-white">
+            IM
+          </div>
+          <div>
+            <p class="text-base font-semibold text-neutral-900">InvoMir</p>
+            <p class="text-xs text-neutral-500">Invoice workspace</p>
+          </div>
+        </div>
+
+        <div class="max-w-md space-y-4">
+          <p class="text-2xl font-semibold tracking-tight text-neutral-900">
+            Clean invoicing, payments, and client operations.
+          </p>
+          <p class="text-sm leading-6 text-neutral-500">
+            A focused dashboard foundation for businesses that need reliable billing workflows.
+          </p>
+        </div>
+      </div>
+
+      <div class="rounded-2xl border border-neutral-200 bg-neutral-50 p-5">
+        <p class="text-sm font-medium text-neutral-900">Secure by design</p>
+        <p class="mt-2 text-xs leading-5 text-neutral-500">
+          Access tokens, refresh sessions, and permission-aware navigation are handled centrally.
+        </p>
+      </div>
+    </section>
+
+    <section class="flex min-h-dvh items-center justify-center p-6 lg:p-8">
+      <router-outlet />
+    </section>
+  </div>
+</main>
