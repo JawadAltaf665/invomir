@@ -9,4 +9,6 @@ public sealed record AuthTokenDto(
     string Email,
     string FirstName,
     DateTime? TrialEndsAt,
-    string Plan);
+    string Plan,
+    string Role,
+    IReadOnlyCollection<string> Permissions);

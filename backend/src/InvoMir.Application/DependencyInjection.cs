@@ -1,4 +1,5 @@
 using InvoMir.Application.Common.Behaviours;
+using InvoMir.Application.Security;
 
 namespace InvoMir.Application;
 
@@ -11,6 +12,8 @@ public static class DependencyInjection
 
         services.AddApplicationValidators();
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehaviour<,>));
+        services.AddSingleton<IRolePermissionProvider, DefaultRolePermissionProvider>();
+        services.AddSingleton<IPermissionChecker, ClaimsPermissionChecker>();
 
         return services;
     }

@@ -9,6 +9,7 @@ namespace InvoMir.API.Controllers;
 public sealed class ClientsController(ISender mediator) : ControllerBase
 {
     [HttpGet]
+    [RequirePermission(Permissions.Client.View)]
     [ProducesResponseType(typeof(ApiResponse<PagedResult<ClientListItemDto>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> List(
         [FromQuery] string? q,
@@ -21,6 +22,7 @@ public sealed class ClientsController(ISender mediator) : ControllerBase
     }
 
     [HttpPost]
+    [RequirePermission(Permissions.Client.Create)]
     [ProducesResponseType(typeof(ApiResponse<ClientDto>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status422UnprocessableEntity)]
@@ -33,6 +35,7 @@ public sealed class ClientsController(ISender mediator) : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
+    [RequirePermission(Permissions.Client.View)]
     [ProducesResponseType(typeof(ApiResponse<ClientDetailDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Get(
@@ -46,6 +49,7 @@ public sealed class ClientsController(ISender mediator) : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
+    [RequirePermission(Permissions.Client.Update)]
     [ProducesResponseType(typeof(ApiResponse<ClientDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status422UnprocessableEntity)]
@@ -59,6 +63,7 @@ public sealed class ClientsController(ISender mediator) : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
+    [RequirePermission(Permissions.Client.Delete)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status409Conflict)]

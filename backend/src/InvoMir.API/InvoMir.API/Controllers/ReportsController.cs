@@ -9,6 +9,7 @@ namespace InvoMir.API.Controllers;
 public sealed class ReportsController(ISender mediator) : ControllerBase
 {
     [HttpGet("monthly")]
+    [RequirePermission(Permissions.Report.View)]
     [ProducesResponseType(typeof(ApiResponse<MonthlyReportsDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status422UnprocessableEntity)]
     public async Task<IActionResult> Monthly(
@@ -23,6 +24,7 @@ public sealed class ReportsController(ISender mediator) : ControllerBase
     }
 
     [HttpGet("export")]
+    [RequirePermission(Permissions.Report.Export)]
     [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status403Forbidden)]

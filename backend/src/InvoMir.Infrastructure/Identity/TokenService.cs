@@ -3,28 +3,39 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace InvoMir.Infrastructure.Identity;
 
-public sealed class TokenService(IOptions<JwtSettings> jwtSettings) : ITokenService
+public sealed class TokenService(
+    IOptions<JwtSettings> jwtSettings,
+    IRolePermissionProvider rolePermissionProvider)
+    : ITokenService
 {
     private readonly JwtSettings _settings = jwtSettings.Value;
 
-    public (string Token, DateTime ExpiresAt) GenerateAccessToken(User user, Guid tenantId)
+    public (string Token, DateTime ExpiresAt, IReadOnlyCollection<string> Permissions) GenerateAccessToken(
+        User user,
+        Guid tenantId)
     {
         var credentials = new SigningCredentials(GetSigningKey(), SecurityAlgorithms.HmacSha256);
         var expiresAt = DateTime.UtcNow.AddMinutes(_settings.AccessTokenExpiryMinutes);
-        var claims = new[]
+        var permissions = rolePermissionProvider.GetPermissionsForRole(user.Role);
+        var claims = new List<Claim>
         {
             new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
             new Claim(AuthConstants.Claims.UserId, user.Id.ToString()),
             new Claim(JwtRegisteredClaimNames.Email, user.Email),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             new Claim(AuthConstants.Claims.TenantId, tenantId.ToString()),
+            new Claim(AuthConstants.Claims.OrganizationId, tenantId.ToString()),
             new Claim(AuthConstants.Claims.FirstName, user.FirstName),
             new Claim(AuthConstants.Claims.Plan, user.Plan),
+            new Claim(AuthConstants.Claims.Role, user.Role),
             new Claim(
                 AuthConstants.Claims.IsAdmin,
-                (user.Role == AuthConstants.Roles.Admin).ToString().ToLowerInvariant()),
+                IsAdminRole(user.Role).ToString().ToLowerInvariant()),
             new Claim(ClaimTypes.Role, user.Role)
         };
+
+        foreach (var permission in permissions)
+            claims.Add(new Claim(AuthConstants.Claims.Permission, permission));
 
         var token = new JwtSecurityToken(
             issuer: _settings.Issuer,
@@ -33,7 +44,7 @@ public sealed class TokenService(IOptions<JwtSettings> jwtSettings) : ITokenServ
             expires: expiresAt,
             signingCredentials: credentials);
 
-        return (new JwtSecurityTokenHandler().WriteToken(token), expiresAt);
+        return (new JwtSecurityTokenHandler().WriteToken(token), expiresAt, permissions);
     }
 
     public string GenerateRefreshTokenString()
@@ -79,5 +90,11 @@ public sealed class TokenService(IOptions<JwtSettings> jwtSettings) : ITokenServ
             throw new InvalidOperationException("JWT secret must be at least 32 characters.");
 
         return new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_settings.Secret));
+    }
+
+    private static bool IsAdminRole(string role)
+    {
+        return string.Equals(role, AuthConstants.Roles.Admin, StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(role, AuthConstants.Roles.SystemAdmin, StringComparison.OrdinalIgnoreCase);
     }
 }

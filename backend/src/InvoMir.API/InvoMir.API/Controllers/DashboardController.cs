@@ -9,6 +9,7 @@ namespace InvoMir.API.Controllers;
 public sealed class DashboardController(ISender mediator) : ControllerBase
 {
     [HttpGet]
+    [RequirePermission(Permissions.Dashboard.View)]
     [ProducesResponseType(typeof(ApiResponse<DashboardDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> Get(CancellationToken cancellationToken)
     {

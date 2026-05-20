@@ -9,6 +9,7 @@ namespace InvoMir.API.Controllers;
 public sealed class AuditLogsController(ISender mediator) : ControllerBase
 {
     [HttpGet]
+    [RequirePermission(Permissions.AuditLog.View)]
     [ProducesResponseType(typeof(ApiResponse<PagedResult<AuditLogDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status422UnprocessableEntity)]
     public async Task<IActionResult> List(
@@ -29,6 +30,7 @@ public sealed class AuditLogsController(ISender mediator) : ControllerBase
     }
 
     [HttpGet("{entityName}/{entityId:guid}")]
+    [RequirePermission(Permissions.AuditLog.View)]
     [ProducesResponseType(typeof(ApiResponse<PagedResult<AuditLogDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status422UnprocessableEntity)]
     public async Task<IActionResult> GetEntityHistory(

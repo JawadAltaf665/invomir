@@ -13,6 +13,7 @@ public sealed class InvoicesController(ISender mediator) : ControllerBase
     private const string TransparentPixelBase64 = "R0lGODlhAQABAPAAAP///wAAACH5BAAAAAAALAAAAAABAAEAAAICRAEAOw==";
 
     [HttpGet]
+    [RequirePermission(Permissions.Invoice.View)]
     [ProducesResponseType(typeof(ApiResponse<PagedResult<InvoiceListItemDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status422UnprocessableEntity)]
     public async Task<IActionResult> List(
@@ -30,6 +31,7 @@ public sealed class InvoicesController(ISender mediator) : ControllerBase
     }
 
     [HttpPost]
+    [RequirePermission(Permissions.Invoice.Create)]
     [ProducesResponseType(typeof(ApiResponse<InvoiceDetailDto>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status422UnprocessableEntity)]
@@ -42,6 +44,7 @@ public sealed class InvoicesController(ISender mediator) : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
+    [RequirePermission(Permissions.Invoice.View)]
     [ProducesResponseType(typeof(ApiResponse<InvoiceDetailDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Get(Guid id, CancellationToken cancellationToken)
@@ -51,6 +54,7 @@ public sealed class InvoicesController(ISender mediator) : ControllerBase
     }
 
     [HttpGet("{id:guid}/pdf")]
+    [RequirePermission(Permissions.Invoice.View)]
     [EnableRateLimiting(RateLimitPolicies.InvoiceActions)]
     [Produces("application/pdf")]
     [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK)]
@@ -73,6 +77,7 @@ public sealed class InvoicesController(ISender mediator) : ControllerBase
     }
 
     [HttpPost("{id:guid}/send")]
+    [RequirePermission(Permissions.Invoice.Send)]
     [EnableRateLimiting(RateLimitPolicies.InvoiceActions)]
     [ProducesResponseType(typeof(ApiResponse<InvoiceSendResultDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
@@ -88,6 +93,7 @@ public sealed class InvoicesController(ISender mediator) : ControllerBase
     }
 
     [HttpPost("{id:guid}/resend")]
+    [RequirePermission(Permissions.Invoice.Send)]
     [EnableRateLimiting(RateLimitPolicies.InvoiceActions)]
     [ProducesResponseType(typeof(ApiResponse<InvoiceSendResultDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
@@ -103,6 +109,7 @@ public sealed class InvoicesController(ISender mediator) : ControllerBase
     }
 
     [HttpPost("{id:guid}/mark-paid")]
+    [RequirePermission(Permissions.Invoice.MarkPaid)]
     [EnableRateLimiting(RateLimitPolicies.InvoiceActions)]
     [ProducesResponseType(typeof(ApiResponse<InvoicePaymentDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
@@ -118,6 +125,7 @@ public sealed class InvoicesController(ISender mediator) : ControllerBase
     }
 
     [HttpPatch("{id:guid}/reminders")]
+    [RequirePermission(Permissions.Invoice.ManageReminders)]
     [ProducesResponseType(typeof(ApiResponse<InvoiceReminderSettingsDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status404NotFound)]
@@ -145,6 +153,7 @@ public sealed class InvoicesController(ISender mediator) : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
+    [RequirePermission(Permissions.Invoice.Update)]
     [ProducesResponseType(typeof(ApiResponse<InvoiceDetailDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status404NotFound)]
@@ -159,6 +168,7 @@ public sealed class InvoicesController(ISender mediator) : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
+    [RequirePermission(Permissions.Invoice.Delete)]
     [ProducesResponseType(typeof(ApiResponse<InvoiceCancellationDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status404NotFound)]
@@ -169,6 +179,7 @@ public sealed class InvoicesController(ISender mediator) : ControllerBase
     }
 
     [HttpPost("{id:guid}/cancel")]
+    [RequirePermission(Permissions.Invoice.Cancel)]
     [EnableRateLimiting(RateLimitPolicies.InvoiceActions)]
     [ProducesResponseType(typeof(ApiResponse<InvoiceCancellationDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
@@ -180,6 +191,7 @@ public sealed class InvoicesController(ISender mediator) : ControllerBase
     }
 
     [HttpPost("{id:guid}/duplicate")]
+    [RequirePermission(Permissions.Invoice.Duplicate)]
     [EnableRateLimiting(RateLimitPolicies.InvoiceActions)]
     [ProducesResponseType(typeof(ApiResponse<InvoiceDetailDto>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
