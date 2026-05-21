@@ -1,0 +1,31 @@
+<article class="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
+  <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+    <div>
+      <h2 class="text-lg font-semibold text-neutral-900">Revenue trend</h2>
+      <p class="mt-1 text-sm text-neutral-500">{{ changeLabel() }}</p>
+    </div>
+
+    <div class="rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-2">
+      <p class="text-xs font-medium text-neutral-500">All time</p>
+      <p class="mt-1 text-sm font-semibold text-neutral-900">{{ allTimeRevenue() }}</p>
+    </div>
+  </div>
+
+  <div class="mt-8 flex h-32 items-end justify-center gap-12 border-b border-neutral-200 px-6">
+    @for (bar of displayBars(); track bar.id) {
+      <div class="flex h-full flex-col items-center justify-end gap-2">
+        <span class="text-xs font-medium text-neutral-500">{{ bar.valueDisplay }}</span>
+        <div [class]="bar.barClass" [style.height.%]="bar.heightPercentage"></div>
+      </div>
+    }
+  </div>
+
+  <div class="mt-4 grid grid-cols-2 gap-4">
+    @for (bar of displayBars(); track bar.id) {
+      <div class="rounded-xl bg-neutral-50 px-4 py-3">
+        <p class="text-xs font-medium text-neutral-500">{{ bar.label }}</p>
+        <p class="mt-1 text-sm font-semibold text-neutral-900">{{ bar.valueDisplay }}</p>
+      </div>
+    }
+  </div>
+</article>
