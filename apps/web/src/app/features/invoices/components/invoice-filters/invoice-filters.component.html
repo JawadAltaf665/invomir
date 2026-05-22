@@ -1,0 +1,57 @@
+<form
+  class="rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm lg:p-5"
+  [formGroup]="form"
+  (ngSubmit)="applyFilters()"
+>
+  <div class="grid grid-cols-1 gap-4 lg:grid-cols-12">
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="lg:col-span-3">
+      <mat-label>Search current page</mat-label>
+      <input matInput type="search" formControlName="searchTerm" autocomplete="off" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="lg:col-span-2">
+      <mat-label>Status</mat-label>
+      <mat-select formControlName="status">
+        <mat-option value="">All statuses</mat-option>
+        @for (status of statusOptions; track status.value) {
+          <mat-option [value]="status.value">{{ status.label }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    @if (isClientFilterAvailable()) {
+      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="lg:col-span-3">
+        <mat-label>Client</mat-label>
+        <mat-select formControlName="clientId">
+          <mat-option value="">All clients</mat-option>
+          @for (client of clients(); track client.id) {
+            <mat-option [value]="client.id">
+              {{ client.name }} &middot; {{ client.email }}
+            </mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    }
+
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="lg:col-span-2">
+      <mat-label>Issue from</mat-label>
+      <input matInput type="date" formControlName="from" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="lg:col-span-2">
+      <mat-label>Issue to</mat-label>
+      <input matInput type="date" formControlName="to" />
+    </mat-form-field>
+  </div>
+
+  <div class="mt-4 flex flex-col gap-3 sm:flex-row sm:justify-end">
+    <button mat-button type="button" [disabled]="isLoading()" (click)="resetFilters()">
+      <svg lucideRotateCcw class="size-4" aria-hidden="true"></svg>
+      Reset
+    </button>
+    <button mat-flat-button color="primary" type="submit" [disabled]="isLoading()">
+      <svg lucideSearch class="size-4" aria-hidden="true"></svg>
+      Apply filters
+    </button>
+  </div>
+</form>
