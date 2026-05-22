@@ -7,6 +7,7 @@ global using Microsoft.Extensions.DependencyInjection;
 global using InvoMir.Application.Features.Auth.DTOs;
 global using InvoMir.Application.Features.Clients.DTOs;
 global using InvoMir.Application.Features.Invoices.DTOs;
+global using InvoMir.Application.Features.Lookups.DTOs;
 global using InvoMir.Application.Features.Payments.DTOs;
 global using InvoMir.Application.Features.Users.DTOs;
 global using InvoMir.Application.Interfaces;

@@ -1,0 +1,87 @@
+<section class="mx-auto max-w-7xl p-6 lg:p-8">
+  <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+    <div>
+      <p class="text-xs font-medium uppercase tracking-normal text-neutral-500">
+        Workspace clients
+      </p>
+      <h1 class="mt-2 text-2xl font-semibold tracking-tight text-neutral-900">Clients</h1>
+      <p class="mt-2 text-sm text-neutral-500">
+        Manage billing contacts, invoice relationships, and client revenue history.
+      </p>
+    </div>
+
+    <div class="flex flex-col gap-3 sm:flex-row">
+      <button
+        mat-stroked-button
+        type="button"
+        [disabled]="clientStore.isLoading()"
+        (click)="refresh()"
+      >
+        <svg lucideRefreshCcw class="size-4" aria-hidden="true"></svg>
+        Refresh
+      </button>
+
+      @if (canCreateClient()) {
+        <button mat-flat-button color="primary" type="button" (click)="createClient()">
+          <svg lucideUserPlus class="size-4" aria-hidden="true"></svg>
+          New client
+        </button>
+      }
+    </div>
+  </div>
+
+  @if (clientStore.errorMessages().length > 0) {
+    <div class="mt-6 rounded-2xl border border-red-200 bg-red-50 p-5 shadow-sm">
+      <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+        <div>
+          <p class="text-sm font-medium text-red-800">Clients could not be loaded</p>
+          <div class="mt-2 space-y-1">
+            @for (error of clientStore.errorMessages(); track error) {
+              <p class="text-xs text-red-600">{{ error }}</p>
+            }
+          </div>
+        </div>
+
+        <button mat-button type="button" [disabled]="clientStore.isLoading()" (click)="refresh()">
+          Retry
+        </button>
+      </div>
+    </div>
+  }
+
+  @if (actionErrorMessages().length > 0) {
+    <div class="mt-6 rounded-2xl border border-red-200 bg-red-50 p-5 shadow-sm">
+      <p class="text-sm font-medium text-red-800">Client action could not be completed</p>
+      <div class="mt-2 space-y-1">
+        @for (error of actionErrorMessages(); track error) {
+          <p class="text-xs text-red-600">{{ error }}</p>
+        }
+      </div>
+    </div>
+  }
+
+  <div class="mt-6 flex flex-col gap-6">
+    <app-client-search
+      [filters]="clientStore.filters()"
+      [isLoading]="clientStore.isLoading()"
+      (filtersChange)="applyFilters($event)"
+      (resetRequested)="resetFilters()"
+    />
+
+    <app-client-table
+      [rows]="clientStore.rows()"
+      [isLoading]="clientStore.isLoading() || isDeleting()"
+      [currentPage]="clientStore.pageInfo().page"
+      [pageSize]="clientStore.pageInfo().pageSize"
+      [totalPages]="clientStore.pageInfo().totalPages"
+      [totalCount]="clientStore.pageInfo().totalCount"
+      [canCreate]="canCreateClient()"
+      [canUpdate]="canUpdateClient()"
+      [canDelete]="canDeleteClient()"
+      (pageRequested)="changePage($event)"
+      (pageSizeRequested)="changePageSize($event)"
+      (createRequested)="createClient()"
+      (deleteRequested)="deleteClient($event)"
+    />
+  </div>
+</section>

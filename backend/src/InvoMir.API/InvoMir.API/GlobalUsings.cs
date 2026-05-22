@@ -37,6 +37,8 @@ global using InvoMir.Application.Features.Invoices.DTOs;
 global using InvoMir.Application.Features.Invoices.Queries.GenerateInvoicePdf;
 global using InvoMir.Application.Features.Invoices.Queries.GetInvoice;
 global using InvoMir.Application.Features.Invoices.Queries.ListInvoices;
+global using InvoMir.Application.Features.Lookups.DTOs;
+global using InvoMir.Application.Features.Lookups.Queries.ListCallingCountries;
 global using InvoMir.Application.Features.Payments.Commands.HandleStripeWebhook;
 global using InvoMir.Application.Features.Payments.Commands.CompleteStripeConnectCallback;
 global using InvoMir.Application.Features.Payments.Commands.CreateStripeConnect;
