@@ -3,6 +3,8 @@ import { Routes } from '@angular/router';
 import { authChildGuard, authGuard } from './core/guards/auth.guard';
 import { permissionGuard } from './core/guards/permission.guard';
 import { permissions } from './core/permissions/permissions';
+import { dashboardRoutes } from './features/dashboard/dashboard.routes';
+import { invoiceRoutes } from './features/invoices/invoice.routes';
 
 export const routes: Routes = [
   {
@@ -68,8 +70,15 @@ export const routes: Routes = [
         data: {
           permissions: [permissions.dashboard.view],
         },
-        loadChildren: () =>
-          import('./features/dashboard/dashboard.routes').then((routes) => routes.dashboardRoutes),
+        children: dashboardRoutes,
+      },
+      {
+        path: 'invoices',
+        canActivate: [permissionGuard],
+        data: {
+          permissions: [permissions.invoice.view],
+        },
+        children: invoiceRoutes,
       },
     ],
   },

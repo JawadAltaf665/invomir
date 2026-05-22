@@ -88,7 +88,6 @@ export class DashboardLayoutComponent {
       route: '/app/invoices',
       icon: 'invoices',
       permissions: [permissions.invoice.view],
-      disabled: true,
     },
     {
       label: 'Clients',

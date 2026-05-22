@@ -1,0 +1,280 @@
+<section class="mx-auto max-w-7xl p-6 lg:p-8">
+  <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+    <div>
+      <a
+        routerLink="/app/invoices"
+        class="inline-flex items-center text-sm font-medium text-neutral-500 transition hover:text-neutral-900"
+      >
+        <svg lucideArrowLeft class="mr-2 size-4" aria-hidden="true"></svg>
+        Invoices
+      </a>
+
+      @if (invoice(); as invoice) {
+        <div class="mt-4 flex flex-wrap items-center gap-3">
+          <h1 class="text-2xl font-semibold tracking-tight text-neutral-900">
+            {{ invoice.invoiceNumber }}
+          </h1>
+          <app-invoice-status-badge [status]="invoice.status" />
+        </div>
+        <p class="mt-2 text-sm text-neutral-500">
+          {{ invoice.client.name }} &middot; Due {{ formatDate(invoice.dueDate) }}
+        </p>
+      } @else {
+        <h1 class="mt-4 text-2xl font-semibold tracking-tight text-neutral-900">Invoice</h1>
+      }
+    </div>
+
+    <div class="flex flex-wrap gap-3">
+      <button mat-stroked-button type="button" [disabled]="isLoading()" (click)="refresh()">
+        <svg lucideRefreshCcw class="size-4" aria-hidden="true"></svg>
+        Refresh
+      </button>
+      @if (invoice(); as invoice) {
+        <button mat-stroked-button type="button" [disabled]="isMutating()" (click)="previewPdf()">
+          <svg lucideEye class="size-4" aria-hidden="true"></svg>
+          Preview
+        </button>
+        <button mat-stroked-button type="button" [disabled]="isMutating()" (click)="downloadPdf()">
+          <svg lucideDownload class="size-4" aria-hidden="true"></svg>
+          PDF
+        </button>
+        @if (hasMoreActions()) {
+          <button
+            mat-stroked-button
+            type="button"
+            [disabled]="isMutating()"
+            [matMenuTriggerFor]="invoiceActionsMenu"
+            aria-label="More invoice actions"
+          >
+            More actions
+            <svg lucideChevronDown class="size-4" aria-hidden="true"></svg>
+          </button>
+
+          <mat-menu #invoiceActionsMenu="matMenu" xPosition="before" yPosition="below">
+            @if (canEdit()) {
+              <a mat-menu-item [routerLink]="['/app/invoices', invoice.id, 'edit']">
+                <svg lucideEdit3 class="size-4" aria-hidden="true"></svg>
+                <span>Edit invoice</span>
+              </a>
+            }
+            @if (canSend()) {
+              <button mat-menu-item type="button" (click)="sendInvoice()">
+                <svg lucideSend class="size-4" aria-hidden="true"></svg>
+                <span>Send invoice</span>
+              </button>
+            }
+            @if (canResend()) {
+              <button mat-menu-item type="button" (click)="resendInvoice()">
+                <svg lucideSend class="size-4" aria-hidden="true"></svg>
+                <span>Resend invoice</span>
+              </button>
+            }
+            @if (canMarkPaid()) {
+              <button mat-menu-item type="button" (click)="markPaid()">
+                <svg lucideBanknote class="size-4" aria-hidden="true"></svg>
+                <span>Mark paid</span>
+              </button>
+            }
+            @if (canDuplicate()) {
+              <button mat-menu-item type="button" (click)="duplicateInvoice()">
+                <svg lucideCopy class="size-4" aria-hidden="true"></svg>
+                <span>Duplicate</span>
+              </button>
+            }
+            @if (canCancel()) {
+              <button mat-menu-item type="button" (click)="cancelInvoice()">
+                <svg lucideBan class="size-4" aria-hidden="true"></svg>
+                <span>Cancel invoice</span>
+              </button>
+            }
+            @if (canDelete()) {
+              @if (hasNonDestructiveActions()) {
+                <mat-divider />
+              }
+              <button mat-menu-item type="button" class="text-red-700" (click)="deleteInvoice()">
+                <svg lucideTrash2 class="size-4" aria-hidden="true"></svg>
+                <span>Delete invoice</span>
+              </button>
+            }
+          </mat-menu>
+        }
+      }
+    </div>
+  </div>
+
+  @if (errorMessages().length > 0) {
+    <div class="mt-6 rounded-2xl border border-red-200 bg-red-50 p-5 shadow-sm">
+      <p class="text-sm font-medium text-red-800">Invoice action could not be completed</p>
+      <div class="mt-2 space-y-1">
+        @for (error of errorMessages(); track error) {
+          <p class="text-xs text-red-600">{{ error }}</p>
+        }
+      </div>
+    </div>
+  }
+
+  @if (isLoading() && !invoice()) {
+    <div class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
+      <div class="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm lg:col-span-2">
+        <div class="h-5 w-40 animate-pulse rounded-xl bg-neutral-100"></div>
+        <div class="mt-6 space-y-4">
+          <div class="h-16 animate-pulse rounded-xl bg-neutral-100"></div>
+          <div class="h-16 animate-pulse rounded-xl bg-neutral-100"></div>
+          <div class="h-16 animate-pulse rounded-xl bg-neutral-100"></div>
+        </div>
+      </div>
+      <div class="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
+        <div class="h-5 w-32 animate-pulse rounded-xl bg-neutral-100"></div>
+        <div class="mt-6 h-40 animate-pulse rounded-xl bg-neutral-100"></div>
+      </div>
+    </div>
+  } @else if (invoice(); as invoice) {
+    <div class="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-3">
+      <div class="space-y-6 xl:col-span-2">
+        <article class="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
+          <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+            <div>
+              <h2 class="text-lg font-semibold text-neutral-900">Line items</h2>
+              <p class="mt-1 text-sm text-neutral-500">{{ invoice.items.length }} invoice rows</p>
+            </div>
+            <div class="text-left md:text-right">
+              <p class="text-sm font-medium text-neutral-900">{{ invoice.currency }}</p>
+              <p class="mt-1 text-xs text-neutral-500">Tax {{ invoice.taxPercent }}%</p>
+            </div>
+          </div>
+
+          <div class="mt-6 overflow-x-auto">
+            <table class="w-full min-w-[560px] table-fixed text-sm">
+              <colgroup>
+                <col class="w-[46%]" />
+                <col class="w-[12%]" />
+                <col class="w-[20%]" />
+                <col class="w-[22%]" />
+              </colgroup>
+              <thead>
+                <tr class="border-b border-neutral-200">
+                  <th class="px-4 py-3 text-left font-medium text-neutral-600">Description</th>
+                  <th class="px-4 py-3 text-right font-medium text-neutral-600">Qty</th>
+                  <th class="px-4 py-3 text-right font-medium text-neutral-600">Unit price</th>
+                  <th class="px-4 py-3 text-right font-medium text-neutral-600">Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of invoice.items; track item.id) {
+                  <tr class="border-b border-neutral-100 last:border-0">
+                    <td class="px-4 py-4 font-medium text-neutral-900">{{ item.description }}</td>
+                    <td class="px-4 py-4 text-right text-neutral-600">{{ item.quantity }}</td>
+                    <td
+                      class="break-words px-4 py-4 text-right text-neutral-600 [overflow-wrap:anywhere]"
+                    >
+                      {{ formatCurrency(item.unitPrice, invoice.currency) }}
+                    </td>
+                    <td
+                      class="break-words px-4 py-4 text-right font-semibold text-neutral-900 [overflow-wrap:anywhere]"
+                    >
+                      {{ formatCurrency(item.amount, invoice.currency) }}
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </article>
+
+        <article class="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
+          <h2 class="text-lg font-semibold text-neutral-900">Client</h2>
+          <div class="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div>
+              <p class="text-xs font-medium uppercase tracking-normal text-neutral-500">Name</p>
+              <p class="mt-1 text-sm font-semibold text-neutral-900">{{ invoice.client.name }}</p>
+            </div>
+            <div>
+              <p class="text-xs font-medium uppercase tracking-normal text-neutral-500">Email</p>
+              <p class="mt-1 text-sm text-neutral-700">{{ invoice.client.email }}</p>
+            </div>
+            @if (invoice.client.company) {
+              <div>
+                <p class="text-xs font-medium uppercase tracking-normal text-neutral-500">
+                  Company
+                </p>
+                <p class="mt-1 text-sm text-neutral-700">{{ invoice.client.company }}</p>
+              </div>
+            }
+            @if (invoice.client.taxId) {
+              <div>
+                <p class="text-xs font-medium uppercase tracking-normal text-neutral-500">Tax ID</p>
+                <p class="mt-1 text-sm text-neutral-700">{{ invoice.client.taxId }}</p>
+              </div>
+            }
+          </div>
+        </article>
+
+        @if (invoice.notes) {
+          <article class="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
+            <h2 class="text-lg font-semibold text-neutral-900">Notes</h2>
+            <p class="mt-4 whitespace-pre-line text-sm leading-6 text-neutral-600">
+              {{ invoice.notes }}
+            </p>
+          </article>
+        }
+      </div>
+
+      <aside class="space-y-6">
+        <app-invoice-totals-summary
+          [currency]="invoice.currency"
+          [totals]="{
+            subtotal: invoice.subtotal,
+            discountAmount: invoice.discountAmount,
+            taxAmount: invoice.taxAmount,
+            total: invoice.total,
+          }"
+        />
+
+        <article class="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
+          <h2 class="text-lg font-semibold text-neutral-900">Lifecycle</h2>
+          <dl class="mt-5 space-y-4 text-sm">
+            <div class="flex justify-between gap-4">
+              <dt class="text-neutral-500">Issued</dt>
+              <dd class="font-medium text-neutral-900">{{ formatDate(invoice.issueDate) }}</dd>
+            </div>
+            <div class="flex justify-between gap-4">
+              <dt class="text-neutral-500">Due</dt>
+              <dd class="font-medium text-neutral-900">{{ formatDate(invoice.dueDate) }}</dd>
+            </div>
+            <div class="flex justify-between gap-4">
+              <dt class="text-neutral-500">Sent</dt>
+              <dd class="text-right font-medium text-neutral-900">
+                {{ formatDateTime(invoice.sentAt) }}
+              </dd>
+            </div>
+            <div class="flex justify-between gap-4">
+              <dt class="text-neutral-500">Viewed</dt>
+              <dd class="text-right font-medium text-neutral-900">
+                {{ formatDateTime(invoice.viewedAt) }}
+              </dd>
+            </div>
+            <div class="flex justify-between gap-4">
+              <dt class="text-neutral-500">Paid</dt>
+              <dd class="text-right font-medium text-neutral-900">
+                {{ formatDateTime(invoice.paidAt) }}
+              </dd>
+            </div>
+          </dl>
+
+          @if (canUseReminders()) {
+            <div class="mt-5 border-t border-neutral-200 pt-5">
+              <mat-slide-toggle
+                color="primary"
+                [checked]="invoice.remindersEnabled"
+                [disabled]="isMutating()"
+                (change)="updateReminders($event.checked)"
+              >
+                Reminders
+              </mat-slide-toggle>
+            </div>
+          }
+        </article>
+      </aside>
+    </div>
+  }
+</section>

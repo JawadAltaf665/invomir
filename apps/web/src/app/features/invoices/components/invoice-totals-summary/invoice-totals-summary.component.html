@@ -1,0 +1,40 @@
+<div class="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
+  <h2 class="text-lg font-semibold text-neutral-900">Totals</h2>
+
+  <dl class="mt-5 space-y-3 text-sm">
+    <div class="grid grid-cols-[minmax(0,0.75fr)_minmax(0,1.25fr)] items-start gap-4">
+      <dt class="min-w-0 text-neutral-500">Subtotal</dt>
+      <dd
+        class="min-w-0 max-w-full break-words text-right font-medium leading-snug text-neutral-900 [overflow-wrap:anywhere]"
+      >
+        {{ subtotal() }}
+      </dd>
+    </div>
+    <div class="grid grid-cols-[minmax(0,0.75fr)_minmax(0,1.25fr)] items-start gap-4">
+      <dt class="min-w-0 text-neutral-500">Discount</dt>
+      <dd
+        class="min-w-0 max-w-full break-words text-right font-medium leading-snug text-neutral-900 [overflow-wrap:anywhere]"
+      >
+        {{ discount() }}
+      </dd>
+    </div>
+    <div class="grid grid-cols-[minmax(0,0.75fr)_minmax(0,1.25fr)] items-start gap-4">
+      <dt class="min-w-0 text-neutral-500">Tax</dt>
+      <dd
+        class="min-w-0 max-w-full break-words text-right font-medium leading-snug text-neutral-900 [overflow-wrap:anywhere]"
+      >
+        {{ tax() }}
+      </dd>
+    </div>
+    <div class="border-t border-neutral-200 pt-4">
+      <div class="grid grid-cols-[minmax(0,0.75fr)_minmax(0,1.25fr)] items-start gap-4">
+        <dt class="min-w-0 text-sm font-semibold text-neutral-900">Total</dt>
+        <dd
+          class="min-w-0 max-w-full break-words text-right text-lg font-semibold leading-snug text-neutral-900 [overflow-wrap:anywhere] sm:text-xl"
+        >
+          {{ total() }}
+        </dd>
+      </div>
+    </div>
+  </dl>
+</div>

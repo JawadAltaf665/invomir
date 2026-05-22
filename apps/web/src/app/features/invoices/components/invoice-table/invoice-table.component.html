@@ -1,0 +1,104 @@
+<article class="rounded-2xl border border-neutral-200 bg-white shadow-sm">
+  @if (isLoading() && rows().length === 0) {
+    <div class="p-5">
+      <div class="h-5 w-36 animate-pulse rounded-xl bg-neutral-100"></div>
+      <div class="mt-6 space-y-4">
+        @for (row of skeletonRows; track row) {
+          <div class="h-14 animate-pulse rounded-xl bg-neutral-100"></div>
+        }
+      </div>
+    </div>
+  } @else if (rows().length > 0) {
+    <div class="overflow-x-auto">
+      <table class="w-full min-w-[820px] text-sm">
+        <thead>
+          <tr class="border-b border-neutral-200">
+            <th class="px-5 py-3 text-left font-medium text-neutral-600">Invoice</th>
+            <th class="px-5 py-3 text-left font-medium text-neutral-600">Client</th>
+            <th class="px-5 py-3 text-left font-medium text-neutral-600">Status</th>
+            <th class="px-5 py-3 text-left font-medium text-neutral-600">Due</th>
+            <th class="px-5 py-3 text-left font-medium text-neutral-600">Sent</th>
+            <th class="px-5 py-3 text-right font-medium text-neutral-600">Total</th>
+            <th class="px-5 py-3 text-right font-medium text-neutral-600">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (invoice of rows(); track invoice.id) {
+            <tr class="border-b border-neutral-100 transition last:border-0 hover:bg-neutral-50">
+              <td class="px-5 py-4">
+                <a
+                  class="font-semibold text-neutral-900 transition hover:text-primary"
+                  [routerLink]="['/app/invoices', invoice.id]"
+                >
+                  {{ invoice.invoiceNumber }}
+                </a>
+              </td>
+              <td class="px-5 py-4 text-neutral-600">{{ invoice.clientName }}</td>
+              <td class="px-5 py-4">
+                <app-invoice-status-badge [status]="invoice.status" />
+              </td>
+              <td class="px-5 py-4 text-neutral-600">{{ invoice.dueDateDisplay }}</td>
+              <td class="px-5 py-4 text-neutral-600">{{ invoice.sentAtDisplay }}</td>
+              <td class="px-5 py-4 text-right font-semibold text-neutral-900">
+                {{ invoice.totalDisplay }}
+              </td>
+              <td class="px-5 py-4">
+                <div class="flex justify-end gap-2">
+                  <a
+                    mat-icon-button
+                    [routerLink]="['/app/invoices', invoice.id]"
+                    aria-label="View invoice"
+                  >
+                    <svg lucideEye class="size-4" aria-hidden="true"></svg>
+                  </a>
+                  @if (invoice.status === 'draft') {
+                    <a
+                      *appHasPermission="permissions.invoice.update"
+                      mat-icon-button
+                      [routerLink]="['/app/invoices', invoice.id, 'edit']"
+                      aria-label="Edit invoice"
+                    >
+                      <svg lucideEdit3 class="size-4" aria-hidden="true"></svg>
+                    </a>
+                  }
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <app-pagination
+      itemLabel="invoices"
+      [page]="currentPage()"
+      [pageSize]="pageSize()"
+      [totalCount]="totalCount()"
+      [totalPages]="totalPages()"
+      [isLoading]="isLoading()"
+      (pageChange)="pageRequested.emit($event)"
+      (pageSizeChange)="pageSizeRequested.emit($event)"
+    />
+  } @else {
+    <div class="flex flex-col items-center justify-center px-6 py-24 text-center">
+      <div class="grid size-12 place-items-center rounded-2xl bg-primary/10 text-primary">
+        <svg lucideFilePlus2 class="size-5" aria-hidden="true"></svg>
+      </div>
+      <h3 class="mt-5 text-base font-semibold text-neutral-900">No invoices yet</h3>
+      <p class="mt-2 max-w-sm text-sm text-neutral-500">
+        Create your first invoice to start tracking receivables.
+      </p>
+      @if (canCreate()) {
+        <button
+          mat-flat-button
+          color="primary"
+          type="button"
+          class="mt-6"
+          (click)="createRequested.emit()"
+        >
+          Create invoice
+        </button>
+      }
+    </div>
+  }
+</article>
