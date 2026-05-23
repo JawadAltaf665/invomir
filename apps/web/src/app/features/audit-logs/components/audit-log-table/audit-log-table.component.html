@@ -1,0 +1,137 @@
+<article class="rounded-2xl border border-neutral-200 bg-white shadow-sm">
+  @if (isLoading() && rows().length === 0) {
+    <div class="p-5">
+      <div class="h-5 w-44 animate-pulse rounded-xl bg-neutral-100"></div>
+      <div class="mt-6 space-y-4">
+        @for (row of skeletonRows; track row) {
+          <div class="h-16 animate-pulse rounded-xl bg-neutral-100"></div>
+        }
+      </div>
+    </div>
+  } @else if (rows().length > 0) {
+    <div class="overflow-x-auto">
+      <table class="w-full min-w-[1120px] table-fixed text-sm">
+        <colgroup>
+          <col class="w-[18%]" />
+          <col class="w-[16%]" />
+          <col class="w-[14%]" />
+          <col class="w-[20%]" />
+          <col class="w-[14%]" />
+          <col class="w-[18%]" />
+        </colgroup>
+        <thead>
+          <tr class="border-b border-neutral-200">
+            <th class="px-5 py-3 text-left font-medium text-neutral-600">Time</th>
+            <th class="px-5 py-3 text-left font-medium text-neutral-600">Actor</th>
+            <th class="px-5 py-3 text-left font-medium text-neutral-600">Action</th>
+            <th class="px-5 py-3 text-left font-medium text-neutral-600">Entity</th>
+            <th class="px-5 py-3 text-left font-medium text-neutral-600">Network</th>
+            <th class="px-5 py-3 text-left font-medium text-neutral-600">Details</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (auditLog of rows(); track auditLog.id) {
+            <tr
+              class="border-b border-neutral-100 align-top transition last:border-0 hover:bg-neutral-50"
+            >
+              <td class="px-5 py-4">
+                <p class="font-medium text-neutral-900">{{ auditLog.createdAtDisplay }}</p>
+                <p class="mt-1 text-xs text-neutral-500">{{ auditLog.createdAtRelative }}</p>
+              </td>
+              <td class="px-5 py-4">
+                <p class="break-words font-medium text-neutral-900 [overflow-wrap:anywhere]">
+                  {{ auditLog.actorName }}
+                </p>
+                <p class="mt-1 break-words text-xs text-neutral-500 [overflow-wrap:anywhere]">
+                  {{ auditLog.actorMeta }}
+                </p>
+              </td>
+              <td class="px-5 py-4">
+                <app-audit-action-badge
+                  [label]="auditLog.actionLabel"
+                  [tone]="auditLog.actionTone"
+                />
+              </td>
+              <td class="px-5 py-4">
+                @if (auditLog.entityLink) {
+                  <a
+                    class="font-semibold text-neutral-900 transition hover:text-primary"
+                    [routerLink]="auditLog.entityLink"
+                  >
+                    {{ auditLog.entityLabel }}
+                  </a>
+                } @else {
+                  <p class="font-semibold text-neutral-900">{{ auditLog.entityLabel }}</p>
+                }
+                @if (auditLog.entityId) {
+                  <p class="mt-1 break-words text-xs text-neutral-500 [overflow-wrap:anywhere]">
+                    {{ auditLog.entityId }}
+                  </p>
+                }
+              </td>
+              <td class="px-5 py-4">
+                <p class="break-words text-neutral-700 [overflow-wrap:anywhere]">
+                  {{ auditLog.ipAddressDisplay }}
+                </p>
+                <p
+                  class="mt-1 line-clamp-2 break-words text-xs text-neutral-500 [overflow-wrap:anywhere]"
+                >
+                  {{ auditLog.userAgentDisplay }}
+                </p>
+              </td>
+              <td class="px-5 py-4">
+                <p class="text-neutral-700">{{ auditLog.summary }}</p>
+                <details class="mt-3 rounded-xl border border-neutral-200 bg-white p-3">
+                  <summary class="cursor-pointer text-xs font-medium text-neutral-600">
+                    Recorded values
+                  </summary>
+                  <div class="mt-3 grid grid-cols-1 gap-3">
+                    <div>
+                      <p class="text-xs font-medium uppercase tracking-normal text-neutral-500">
+                        Before
+                      </p>
+                      <pre
+                        class="mt-2 max-h-40 overflow-auto rounded-xl bg-neutral-50 p-3 text-xs text-neutral-700"
+                        >{{ auditLog.oldValuesDisplay }}</pre
+                      >
+                    </div>
+                    <div>
+                      <p class="text-xs font-medium uppercase tracking-normal text-neutral-500">
+                        After
+                      </p>
+                      <pre
+                        class="mt-2 max-h-40 overflow-auto rounded-xl bg-neutral-50 p-3 text-xs text-neutral-700"
+                        >{{ auditLog.newValuesDisplay }}</pre
+                      >
+                    </div>
+                  </div>
+                </details>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <app-pagination
+      itemLabel="audit logs"
+      [page]="currentPage()"
+      [pageSize]="pageSize()"
+      [totalCount]="totalCount()"
+      [totalPages]="totalPages()"
+      [isLoading]="isLoading()"
+      (pageChange)="pageRequested.emit($event)"
+      (pageSizeChange)="pageSizeRequested.emit($event)"
+    />
+  } @else {
+    <div class="flex flex-col items-center justify-center px-6 py-24 text-center">
+      <div class="grid size-12 place-items-center rounded-2xl bg-primary/10 text-primary">
+        <svg lucideHistory class="size-5" aria-hidden="true"></svg>
+      </div>
+      <h3 class="mt-5 text-base font-semibold text-neutral-900">No audit activity found</h3>
+      <p class="mt-2 max-w-sm text-sm text-neutral-500">
+        Activity will appear here after users create, update, send, or manage workspace records.
+      </p>
+    </div>
+  }
+</article>
