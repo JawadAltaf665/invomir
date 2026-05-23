@@ -12,6 +12,7 @@ public static class EmailConstants
         public const string Welcome = "welcome";
         public const string PasswordReset = "reset";
         public const string EmailVerification = "email_verification";
+        public const string TeamInvitation = "team_invitation";
     }
 
     public static class Statuses
