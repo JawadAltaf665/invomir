@@ -8,6 +8,7 @@ import { dashboardRoutes } from './features/dashboard/dashboard.routes';
 import { invoiceRoutes } from './features/invoices/invoice.routes';
 import { paymentRoutes } from './features/payments/payment.routes';
 import { reportRoutes } from './features/reports/report.routes';
+import { settingsRoutes } from './features/settings/settings.routes';
 
 export const routes: Routes = [
   {
@@ -106,6 +107,14 @@ export const routes: Routes = [
           permissions: [permissions.report.view],
         },
         children: reportRoutes,
+      },
+      {
+        path: 'settings',
+        canActivate: [permissionGuard],
+        data: {
+          permissions: [permissions.settings.manage],
+        },
+        children: settingsRoutes,
       },
     ],
   },

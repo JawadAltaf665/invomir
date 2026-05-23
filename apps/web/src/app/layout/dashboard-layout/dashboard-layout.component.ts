@@ -122,7 +122,6 @@ export class DashboardLayoutComponent {
       route: '/app/settings',
       icon: 'settings',
       permissions: [permissions.settings.manage],
-      disabled: true,
     },
     {
       label: 'Admin',

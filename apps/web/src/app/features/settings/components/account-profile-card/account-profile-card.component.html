@@ -1,0 +1,67 @@
+<article class="h-full rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
+  @if (isLoading()) {
+    <div class="h-5 w-40 animate-pulse rounded-xl bg-neutral-100"></div>
+    <div class="mt-6 space-y-4">
+      <div class="h-16 animate-pulse rounded-xl bg-neutral-100"></div>
+      <div class="h-16 animate-pulse rounded-xl bg-neutral-100"></div>
+      <div class="h-16 animate-pulse rounded-xl bg-neutral-100"></div>
+    </div>
+  } @else if (profile(); as currentProfile) {
+    <div class="flex items-start gap-4">
+      <div class="grid size-11 place-items-center rounded-2xl bg-primary/10 text-primary">
+        <svg lucideUsers class="size-5" aria-hidden="true"></svg>
+      </div>
+      <div class="min-w-0">
+        <h2 class="text-lg font-semibold text-neutral-900">Account profile</h2>
+        <p class="mt-1 text-sm text-neutral-500">
+          {{ formatProfileName(currentProfile.firstName, currentProfile.lastName) }}
+        </p>
+      </div>
+    </div>
+
+    <dl class="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
+      <div class="rounded-2xl bg-neutral-50 p-4">
+        <dt class="text-xs font-medium uppercase tracking-normal text-neutral-500">Email</dt>
+        <dd class="mt-2 min-w-0 truncate text-sm font-medium text-neutral-900">
+          {{ currentProfile.email }}
+        </dd>
+      </div>
+
+      <div class="rounded-2xl bg-neutral-50 p-4">
+        <dt class="text-xs font-medium uppercase tracking-normal text-neutral-500">Role</dt>
+        <dd class="mt-2 text-sm font-medium text-neutral-900">
+          {{ formatSettingsLabel(currentProfile.role) }}
+        </dd>
+      </div>
+
+      <div class="rounded-2xl bg-neutral-50 p-4">
+        <dt class="text-xs font-medium uppercase tracking-normal text-neutral-500">Plan</dt>
+        <dd class="mt-2 text-sm font-medium text-neutral-900">
+          {{ formatSettingsLabel(currentProfile.plan) }}
+        </dd>
+      </div>
+
+      <div class="rounded-2xl bg-neutral-50 p-4">
+        <dt class="text-xs font-medium uppercase tracking-normal text-neutral-500">Email status</dt>
+        <dd class="mt-2 inline-flex items-center gap-2 text-sm font-medium text-neutral-900">
+          <svg lucideShieldCheck class="size-4 text-primary" aria-hidden="true"></svg>
+          {{ currentProfile.emailVerified ? 'Verified' : 'Pending' }}
+        </dd>
+      </div>
+
+      <div class="rounded-2xl bg-neutral-50 p-4">
+        <dt class="text-xs font-medium uppercase tracking-normal text-neutral-500">Last login</dt>
+        <dd class="mt-2 text-sm font-medium text-neutral-900">
+          {{ formatSettingsDateTime(currentProfile.lastLoginAt) }}
+        </dd>
+      </div>
+
+      <div class="rounded-2xl bg-neutral-50 p-4">
+        <dt class="text-xs font-medium uppercase tracking-normal text-neutral-500">Trial ends</dt>
+        <dd class="mt-2 text-sm font-medium text-neutral-900">
+          {{ formatSettingsDate(currentProfile.trialEndsAt) }}
+        </dd>
+      </div>
+    </dl>
+  }
+</article>
