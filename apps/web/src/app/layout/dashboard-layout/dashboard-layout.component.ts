@@ -100,7 +100,6 @@ export class DashboardLayoutComponent {
       route: '/app/payments',
       icon: 'payments',
       permissions: [permissions.payment.view],
-      disabled: true,
     },
     {
       label: 'Reports',

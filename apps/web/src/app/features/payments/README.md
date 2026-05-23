@@ -1,5 +1,13 @@
 # Payments Feature
 
-Backend alignment: `/api/payments` and public `/pay` flows.
+Backend alignment:
 
-Owns payment history, public payment return states, Stripe checkout result handling, payment table components, and payment status models.
+- `GET /api/payments`
+- `POST /api/stripe/connect`
+
+Owns authenticated payment history, status filtering, backend pagination, invoice/client payment links, Stripe Connect start flow, and payment status models.
+
+Permissions:
+
+- `payment.view` for route access and payment history.
+- `payment.manage` for the Stripe Connect CTA.

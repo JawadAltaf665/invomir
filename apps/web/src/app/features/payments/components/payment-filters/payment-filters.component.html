@@ -1,0 +1,44 @@
+<form
+  class="rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm lg:p-5"
+  [formGroup]="form"
+  (ngSubmit)="applySearch()"
+>
+  <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+    <div class="min-w-0 flex-1">
+      <p class="text-sm font-medium text-neutral-900">Status</p>
+      <div class="mt-3 flex flex-wrap gap-2">
+        @for (status of statusOptions; track status.value) {
+          <button
+            type="button"
+            [class]="
+              filters().status === status.value
+                ? 'h-10 rounded-xl border border-primary bg-primary px-4 text-sm font-medium text-white transition'
+                : 'h-10 rounded-xl border border-neutral-200 bg-white px-4 text-sm font-medium text-neutral-700 transition hover:border-neutral-300 hover:bg-neutral-50'
+            "
+            [disabled]="isLoading()"
+            (click)="selectStatus(status.value)"
+          >
+            {{ status.label }}
+          </button>
+        }
+      </div>
+    </div>
+
+    <div class="flex w-full flex-col gap-3 sm:flex-row lg:w-auto">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-full sm:w-72">
+        <mat-label>Search current page</mat-label>
+        <input matInput type="search" formControlName="searchTerm" autocomplete="off" />
+      </mat-form-field>
+
+      <button mat-button type="button" [disabled]="isLoading()" (click)="resetFilters()">
+        <svg lucideRotateCcw class="size-4" aria-hidden="true"></svg>
+        Reset
+      </button>
+
+      <button mat-flat-button color="primary" type="submit" [disabled]="isLoading()">
+        <svg lucideSearch class="size-4" aria-hidden="true"></svg>
+        Search
+      </button>
+    </div>
+  </div>
+</form>
