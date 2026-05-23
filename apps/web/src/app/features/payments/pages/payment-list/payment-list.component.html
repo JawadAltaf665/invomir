@@ -1,0 +1,69 @@
+<section class="mx-auto max-w-7xl p-6 lg:p-8">
+  <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+    <div>
+      <p class="text-xs font-medium uppercase tracking-normal text-neutral-500">
+        Workspace payments
+      </p>
+      <h1 class="mt-2 text-2xl font-semibold tracking-tight text-neutral-900">Payments</h1>
+      <p class="mt-2 text-sm text-neutral-500">
+        Review invoice payment history, status outcomes, and Stripe collection readiness.
+      </p>
+    </div>
+
+    <button
+      mat-stroked-button
+      type="button"
+      [disabled]="paymentStore.isLoading()"
+      (click)="refresh()"
+    >
+      <svg lucideRefreshCcw class="size-4" aria-hidden="true"></svg>
+      Refresh
+    </button>
+  </div>
+
+  @if (paymentStore.errorMessages().length > 0) {
+    <div class="mt-6 rounded-2xl border border-red-200 bg-red-50 p-5 shadow-sm">
+      <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+        <div>
+          <p class="text-sm font-medium text-red-800">Payments could not be loaded</p>
+          <div class="mt-2 space-y-1">
+            @for (error of paymentStore.errorMessages(); track error) {
+              <p class="text-xs text-red-600">{{ error }}</p>
+            }
+          </div>
+        </div>
+
+        <button mat-button type="button" [disabled]="paymentStore.isLoading()" (click)="refresh()">
+          Retry
+        </button>
+      </div>
+    </div>
+  }
+
+  <div class="mt-6 flex flex-col gap-6">
+    <app-stripe-connect-card
+      [canManage]="canManagePayments()"
+      [isConnecting]="isConnectingStripe()"
+      [errorMessages]="stripeErrorMessages()"
+      (connectRequested)="connectStripe()"
+    />
+
+    <app-payment-filters
+      [filters]="paymentStore.filters()"
+      [isLoading]="paymentStore.isLoading()"
+      (filtersChange)="applyFilters($event)"
+      (resetRequested)="resetFilters()"
+    />
+
+    <app-payment-table
+      [rows]="paymentStore.rows()"
+      [isLoading]="paymentStore.isLoading()"
+      [currentPage]="paymentStore.pageInfo().page"
+      [pageSize]="paymentStore.pageInfo().pageSize"
+      [totalPages]="paymentStore.pageInfo().totalPages"
+      [totalCount]="paymentStore.pageInfo().totalCount"
+      (pageRequested)="changePage($event)"
+      (pageSizeRequested)="changePageSize($event)"
+    />
+  </div>
+</section>

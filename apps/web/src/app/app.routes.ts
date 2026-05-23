@@ -6,6 +6,7 @@ import { permissions } from './core/permissions/permissions';
 import { clientRoutes } from './features/clients/client.routes';
 import { dashboardRoutes } from './features/dashboard/dashboard.routes';
 import { invoiceRoutes } from './features/invoices/invoice.routes';
+import { paymentRoutes } from './features/payments/payment.routes';
 
 export const routes: Routes = [
   {
@@ -88,6 +89,14 @@ export const routes: Routes = [
           permissions: [permissions.client.view],
         },
         children: clientRoutes,
+      },
+      {
+        path: 'payments',
+        canActivate: [permissionGuard],
+        data: {
+          permissions: [permissions.payment.view],
+        },
+        children: paymentRoutes,
       },
     ],
   },
