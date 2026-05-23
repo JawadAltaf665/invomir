@@ -46,7 +46,7 @@ internal static class SubscriptionPlanCatalog
             "USD",
             null,
             null,
-            5,
+            3,
             new SubscriptionFeatureSet(true, true, true, true))
     ];
 

@@ -10,6 +10,8 @@ public interface IStripeService
         StripeSubscriptionCheckoutRequestDto request,
         CancellationToken cancellationToken);
 
+    bool IsSubscriptionCheckoutConfigured(string plan, string interval);
+
     Task<StripeSubscriptionCancellationDto> CancelSubscriptionAtPeriodEndAsync(
         string stripeSubscriptionId,
         CancellationToken cancellationToken);
