@@ -1,4 +1,5 @@
 using InvoMir.Application.Features.Subscriptions;
+using InvoMir.Application.Features.Team;
 
 namespace InvoMir.Application.Features.Payments.Commands.HandleStripeWebhook;
 
@@ -419,6 +420,12 @@ public sealed class HandleStripeWebhookCommandHandler(
         if (tenant is not null)
         {
             tenant.UpdatePlan(plan);
+            await TeamInvitationLifecycle.CancelPendingInvitationsForPlanAsync(
+                context,
+                tenant.Id,
+                plan,
+                DateTime.UtcNow,
+                cancellationToken);
 
             if (!string.IsNullOrWhiteSpace(stripeCustomerId))
                 tenant.UpdateStripeCustomerId(stripeCustomerId);
