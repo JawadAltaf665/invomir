@@ -3,6 +3,7 @@ import { Routes } from '@angular/router';
 import { authChildGuard, authGuard } from './core/guards/auth.guard';
 import { permissionGuard } from './core/guards/permission.guard';
 import { permissions } from './core/permissions/permissions';
+import { adminRoutes } from './features/admin/admin.routes';
 import { auditLogRoutes } from './features/audit-logs/audit-log.routes';
 import { clientRoutes } from './features/clients/client.routes';
 import { dashboardRoutes } from './features/dashboard/dashboard.routes';
@@ -133,6 +134,14 @@ export const routes: Routes = [
           permissions: [permissions.auditLog.view],
         },
         children: auditLogRoutes,
+      },
+      {
+        path: 'admin',
+        canActivate: [permissionGuard],
+        data: {
+          permissions: [permissions.system.access],
+        },
+        children: adminRoutes,
       },
     ],
   },

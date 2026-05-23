@@ -1,0 +1,33 @@
+<article class="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
+  <form class="grid gap-4 lg:grid-cols-[1fr_auto]" [formGroup]="form" (ngSubmit)="applyFilters()">
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-full">
+      <mat-label>Search users</mat-label>
+      <input matInput formControlName="q" autocomplete="off" />
+      <mat-hint>Name, email, or workspace</mat-hint>
+    </mat-form-field>
+
+    <div class="flex flex-col gap-3 sm:flex-row lg:items-start">
+      <button
+        mat-stroked-button
+        type="button"
+        class="w-full sm:w-auto"
+        [disabled]="isLoading()"
+        (click)="resetFilters()"
+      >
+        <svg lucideRotateCcw class="size-4" aria-hidden="true"></svg>
+        Reset
+      </button>
+
+      <button
+        mat-flat-button
+        color="primary"
+        type="submit"
+        class="w-full sm:w-auto"
+        [disabled]="isLoading()"
+      >
+        <svg lucideSearch class="size-4" aria-hidden="true"></svg>
+        Search
+      </button>
+    </div>
+  </form>
+</article>
