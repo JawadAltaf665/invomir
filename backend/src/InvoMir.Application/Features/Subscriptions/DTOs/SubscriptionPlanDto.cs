@@ -10,6 +10,8 @@ public sealed record SubscriptionPlanDto(
     decimal PricePerMonth,
     decimal PricePerYear,
     string Currency,
+    bool MonthlyCheckoutAvailable,
+    bool YearlyCheckoutAvailable,
     SubscriptionPlanLimitsDto Limits,
     SubscriptionFeaturesDto Features);
 

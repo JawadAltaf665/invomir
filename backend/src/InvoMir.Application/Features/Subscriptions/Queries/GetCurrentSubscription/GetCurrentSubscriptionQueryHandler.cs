@@ -26,6 +26,7 @@ public sealed class GetCurrentSubscriptionQueryHandler(
                     tenant.Id,
                     user.Plan,
                     user.TrialEndsAt ?? tenant.TrialEndsAt,
+                    user.TrialEndsAt != null ? user.CreationTime : tenant.CreationTime,
                     tenant.StripeCustomerId))
             .FirstOrDefaultAsync(cancellationToken);
 
@@ -67,6 +68,7 @@ public sealed class GetCurrentSubscriptionQueryHandler(
     {
         var now = DateTime.UtcNow;
         var activeTrial = profile.TrialEndsAt is not null && profile.TrialEndsAt > now;
+        var trialDaysRemaining = CalculateTrialDaysRemaining(profile.TrialEndsAt, now);
         var planName = subscription?.Plan ?? profile.Plan;
         var status = subscription?.Status ??
             (activeTrial ? SubscriptionConstants.Statuses.Trialing : SubscriptionConstants.Statuses.Active);
@@ -80,7 +82,9 @@ public sealed class GetCurrentSubscriptionQueryHandler(
             subscription?.Currency ?? plan.Currency,
             subscription?.CurrentPeriodStart,
             subscription?.CurrentPeriodEnd,
+            activeTrial ? profile.TrialStartedAt : null,
             activeTrial ? profile.TrialEndsAt : null,
+            activeTrial ? trialDaysRemaining : null,
             subscription?.StripeSubscriptionId,
             subscription?.StripeCustomerId ?? profile.StripeCustomerId,
             subscription?.CancelAtPeriodEnd ?? false,
@@ -95,11 +99,20 @@ public sealed class GetCurrentSubscriptionQueryHandler(
                 plan.Features.TeamSeats));
     }
 
+    private static int? CalculateTrialDaysRemaining(DateTime? trialEndsAt, DateTime now)
+    {
+        if (trialEndsAt is null || trialEndsAt <= now)
+            return null;
+
+        return Math.Max(1, (int)Math.Ceiling((trialEndsAt.Value - now).TotalDays));
+    }
+
     private sealed record SubscriptionProfileSnapshot(
         Guid UserId,
         Guid TenantId,
         string Plan,
         DateTime? TrialEndsAt,
+        DateTime TrialStartedAt,
         string? StripeCustomerId);
 
     private sealed record SubscriptionSnapshot(
