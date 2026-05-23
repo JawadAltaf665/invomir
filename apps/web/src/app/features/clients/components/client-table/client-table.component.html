@@ -1,0 +1,140 @@
+<article class="rounded-2xl border border-neutral-200 bg-white shadow-sm">
+  @if (isLoading() && rows().length === 0) {
+    <div class="p-5">
+      <div class="h-5 w-36 animate-pulse rounded-xl bg-neutral-100"></div>
+      <div class="mt-6 space-y-4">
+        @for (row of skeletonRows; track row) {
+          <div class="h-14 animate-pulse rounded-xl bg-neutral-100"></div>
+        }
+      </div>
+    </div>
+  } @else if (rows().length > 0) {
+    <div class="overflow-x-auto">
+      <table class="w-full min-w-[760px] table-fixed text-sm">
+        <colgroup>
+          <col class="w-[30%]" />
+          <col class="w-[22%]" />
+          <col class="w-[16%]" />
+          <col class="w-[16%]" />
+          <col class="w-[16%]" />
+        </colgroup>
+        <thead>
+          <tr class="border-b border-neutral-200">
+            <th class="px-5 py-3 text-left font-medium text-neutral-600">Client</th>
+            <th class="px-5 py-3 text-left font-medium text-neutral-600">Company</th>
+            <th class="px-5 py-3 text-right font-medium text-neutral-600">Revenue metric</th>
+            <th class="px-5 py-3 text-right font-medium text-neutral-600">Invoices</th>
+            <th class="px-5 py-3 text-right font-medium text-neutral-600">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (client of rows(); track client.id) {
+            <tr class="border-b border-neutral-100 transition last:border-0 hover:bg-neutral-50">
+              <td class="px-5 py-4">
+                <a
+                  class="font-semibold text-neutral-900 transition hover:text-primary"
+                  [routerLink]="['/app/clients', client.id]"
+                >
+                  {{ client.name }}
+                </a>
+                <p class="mt-1 break-words text-xs text-neutral-500 [overflow-wrap:anywhere]">
+                  {{ client.email }}
+                </p>
+              </td>
+              <td class="break-words px-5 py-4 text-neutral-600 [overflow-wrap:anywhere]">
+                {{ client.companyDisplay }}
+              </td>
+              <td class="px-5 py-4 text-right font-semibold text-neutral-900">
+                <span class="block break-words [overflow-wrap:anywhere]">
+                  {{ client.totalRevenueDisplay }}
+                </span>
+              </td>
+              <td class="px-5 py-4 text-right text-neutral-600">
+                {{ client.invoiceCountDisplay }}
+              </td>
+              <td class="px-5 py-4">
+                <div class="flex justify-end gap-2">
+                  <button
+                    mat-stroked-button
+                    type="button"
+                    [matMenuTriggerFor]="clientActionsMenu"
+                    (menuOpened)="openActionClientId.set(client.id)"
+                    (menuClosed)="openActionClientId.set(null)"
+                    aria-label="Open client actions"
+                  >
+                    Actions
+                    @if (openActionClientId() === client.id) {
+                      <svg lucideChevronUp class="size-4" aria-hidden="true"></svg>
+                    } @else {
+                      <svg lucideChevronDown class="size-4" aria-hidden="true"></svg>
+                    }
+                  </button>
+
+                  <mat-menu #clientActionsMenu="matMenu" xPosition="before" yPosition="below">
+                    <a mat-menu-item [routerLink]="['/app/clients', client.id]">
+                      <svg lucideEye class="size-4" aria-hidden="true"></svg>
+                      <span>View client</span>
+                    </a>
+
+                    @if (canUpdate()) {
+                      <a mat-menu-item [routerLink]="['/app/clients', client.id, 'edit']">
+                        <svg lucideEdit3 class="size-4" aria-hidden="true"></svg>
+                        <span>Edit client</span>
+                      </a>
+                    }
+
+                    @if (canDelete()) {
+                      <mat-divider />
+                      <button
+                        mat-menu-item
+                        type="button"
+                        class="text-red-700"
+                        (click)="deleteRequested.emit(client)"
+                      >
+                        <svg lucideTrash2 class="size-4" aria-hidden="true"></svg>
+                        <span>Delete client</span>
+                      </button>
+                    }
+                  </mat-menu>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <app-pagination
+      itemLabel="clients"
+      [page]="currentPage()"
+      [pageSize]="pageSize()"
+      [totalCount]="totalCount()"
+      [totalPages]="totalPages()"
+      [isLoading]="isLoading()"
+      (pageChange)="pageRequested.emit($event)"
+      (pageSizeChange)="pageSizeRequested.emit($event)"
+    />
+  } @else {
+    <div class="flex flex-col items-center justify-center px-6 py-24 text-center">
+      <div class="grid size-12 place-items-center rounded-2xl bg-primary/10 text-primary">
+        <svg lucideUserPlus class="size-5" aria-hidden="true"></svg>
+      </div>
+      <h3 class="mt-5 text-base font-semibold text-neutral-900">No clients found</h3>
+      <p class="mt-2 max-w-sm text-sm text-neutral-500">
+        Add a client profile before creating invoices or tracking payment history.
+      </p>
+      @if (canCreate()) {
+        <button
+          mat-flat-button
+          color="primary"
+          type="button"
+          class="mt-6"
+          (click)="createRequested.emit()"
+        >
+          <svg lucideUserPlus class="size-4" aria-hidden="true"></svg>
+          New client
+        </button>
+      }
+    </div>
+  }
+</article>

@@ -94,7 +94,6 @@ export class DashboardLayoutComponent {
       route: '/app/clients',
       icon: 'clients',
       permissions: [permissions.client.view],
-      disabled: true,
     },
     {
       label: 'Payments',

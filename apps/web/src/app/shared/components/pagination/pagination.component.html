@@ -15,7 +15,7 @@
     <p class="mt-1 text-xs text-neutral-500">Page {{ currentPage() }} of {{ safeTotalPages() }}</p>
   </div>
 
-  <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+  <div class="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center lg:justify-end">
     <div class="w-full sm:w-32">
       <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-full">
         <mat-label>Rows</mat-label>
@@ -31,45 +31,47 @@
       </mat-form-field>
     </div>
 
-    <div class="flex flex-wrap items-center gap-2">
-      <button
-        mat-stroked-button
-        type="button"
-        [disabled]="isLoading() || currentPage() <= 1"
-        (click)="goToPreviousPage()"
-      >
-        <svg lucideChevronLeft class="size-4" aria-hidden="true"></svg>
-        Previous
-      </button>
+    <div class="min-w-0 overflow-x-auto pb-1">
+      <div class="flex w-max items-center gap-2">
+        <button
+          mat-stroked-button
+          type="button"
+          [disabled]="isLoading() || currentPage() <= 1"
+          (click)="goToPreviousPage()"
+        >
+          <svg lucideChevronLeft class="size-4" aria-hidden="true"></svg>
+          Previous
+        </button>
 
-      <div class="flex flex-wrap items-center gap-2">
-        @for (item of pageItems(); track pageItemTrack(item, $index)) {
-          @if (item === 'ellipsis') {
-            <span class="px-1 text-sm font-medium text-neutral-400" aria-hidden="true">...</span>
-          } @else {
-            <button
-              type="button"
-              [class]="pageButtonClass(item)"
-              [disabled]="isLoading()"
-              [attr.aria-current]="item === currentPage() ? 'page' : null"
-              [attr.aria-label]="'Go to page ' + item"
-              (click)="goToPage(item)"
-            >
-              {{ item }}
-            </button>
+        <div class="flex items-center gap-2">
+          @for (item of pageItems(); track pageItemTrack(item, $index)) {
+            @if (item === 'ellipsis') {
+              <span class="px-1 text-sm font-medium text-neutral-400" aria-hidden="true">...</span>
+            } @else {
+              <button
+                type="button"
+                [class]="pageButtonClass(item)"
+                [disabled]="isLoading()"
+                [attr.aria-current]="item === currentPage() ? 'page' : null"
+                [attr.aria-label]="'Go to page ' + item"
+                (click)="goToPage(item)"
+              >
+                {{ item }}
+              </button>
+            }
           }
-        }
-      </div>
+        </div>
 
-      <button
-        mat-stroked-button
-        type="button"
-        [disabled]="isLoading() || currentPage() >= safeTotalPages()"
-        (click)="goToNextPage()"
-      >
-        Next
-        <svg lucideChevronRight class="size-4" aria-hidden="true"></svg>
-      </button>
+        <button
+          mat-stroked-button
+          type="button"
+          [disabled]="isLoading() || currentPage() >= safeTotalPages()"
+          (click)="goToNextPage()"
+        >
+          Next
+          <svg lucideChevronRight class="size-4" aria-hidden="true"></svg>
+        </button>
+      </div>
     </div>
   </div>
 </nav>

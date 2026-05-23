@@ -2,6 +2,14 @@ import { RenderMode, ServerRoute } from '@angular/ssr';
 
 export const serverRoutes: ServerRoute[] = [
   {
+    path: 'app/clients/:id/edit',
+    renderMode: RenderMode.Server,
+  },
+  {
+    path: 'app/clients/:id',
+    renderMode: RenderMode.Server,
+  },
+  {
     path: 'app/invoices/:id/edit',
     renderMode: RenderMode.Server,
   },
