@@ -37,6 +37,7 @@ export class LogoUploadCardComponent implements OnDestroy {
   readonly progress = input(0);
   readonly errorMessages = input<readonly string[]>([]);
   readonly successMessage = input('');
+  readonly cacheKey = input<string | number>('');
 
   readonly logoSelected = output<File>();
 
@@ -48,7 +49,7 @@ export class LogoUploadCardComponent implements OnDestroy {
   private readonly previewUrl = signal<string | null>(null);
 
   protected readonly displayLogoUrl = computed(
-    () => this.previewUrl() ?? resolveLogoUrl(this.profile()?.logoUrl ?? null),
+    () => this.previewUrl() ?? resolveLogoUrl(this.profile()?.logoUrl ?? null, this.cacheKey()),
   );
 
   ngOnDestroy(): void {

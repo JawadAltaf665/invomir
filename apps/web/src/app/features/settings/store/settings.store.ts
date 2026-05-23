@@ -28,6 +28,7 @@ export class SettingsStore {
   private readonly logoUploadProgressSignal = signal(0);
   private readonly logoErrorMessagesSignal = signal<readonly string[]>([]);
   private readonly logoSuccessMessageSignal = signal('');
+  private readonly logoVersionSignal = signal(Date.now());
 
   private readonly isChangingPasswordSignal = signal(false);
   private readonly passwordErrorMessagesSignal = signal<readonly string[]>([]);
@@ -45,6 +46,7 @@ export class SettingsStore {
   readonly logoUploadProgress = this.logoUploadProgressSignal.asReadonly();
   readonly logoErrorMessages = this.logoErrorMessagesSignal.asReadonly();
   readonly logoSuccessMessage = this.logoSuccessMessageSignal.asReadonly();
+  readonly logoVersion = this.logoVersionSignal.asReadonly();
 
   readonly isChangingPassword = this.isChangingPasswordSignal.asReadonly();
   readonly passwordErrorMessages = this.passwordErrorMessagesSignal.asReadonly();
@@ -73,7 +75,10 @@ export class SettingsStore {
         finalize(() => this.isLoadingSignal.set(false)),
       )
       .subscribe({
-        next: (profile) => this.profileSignal.set(profile),
+        next: (profile) => {
+          this.profileSignal.set(profile);
+          this.logoVersionSignal.set(Date.now());
+        },
         error: (error) => this.loadErrorMessagesSignal.set(extractApiErrors(error)),
       });
   }
@@ -116,6 +121,7 @@ export class SettingsStore {
         this.profileSignal.update((profile) =>
           profile ? { ...profile, logoUrl: logo.logoUrl } : profile,
         );
+        this.logoVersionSignal.set(Date.now());
         this.logoUploadProgressSignal.set(100);
         this.logoSuccessMessageSignal.set('Logo uploaded successfully.');
       }),

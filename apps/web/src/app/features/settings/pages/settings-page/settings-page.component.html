@@ -51,6 +51,7 @@
       [canManage]="canEditBusinessProfile()"
       [isUploading]="settingsStore.isUploadingLogo()"
       [progress]="settingsStore.logoUploadProgress()"
+      [cacheKey]="settingsStore.logoVersion()"
       [errorMessages]="settingsStore.logoErrorMessages()"
       [successMessage]="settingsStore.logoSuccessMessage()"
       (logoSelected)="uploadLogo($event)"

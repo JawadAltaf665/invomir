@@ -65,16 +65,22 @@ export function formatSettingsLabel(value: string | null | undefined): string {
     .join(' ');
 }
 
-export function resolveLogoUrl(logoUrl: string | null): string | null {
+export function resolveLogoUrl(
+  logoUrl: string | null,
+  cacheKey?: string | number | null,
+): string | null {
   if (!logoUrl) {
     return null;
   }
 
-  if (/^https?:\/\//i.test(logoUrl)) {
-    return logoUrl;
+  const resolvedUrl = /^https?:\/\//i.test(logoUrl) ? logoUrl : apiUrl(logoUrl);
+
+  if (cacheKey === null || cacheKey === undefined || cacheKey === '') {
+    return resolvedUrl;
   }
 
-  return apiUrl(logoUrl);
+  const separator = resolvedUrl.includes('?') ? '&' : '?';
+  return `${resolvedUrl}${separator}v=${encodeURIComponent(String(cacheKey))}`;
 }
 
 export function isAcceptedLogoFile(file: File): boolean {
