@@ -133,10 +133,9 @@ export class DashboardLayoutComponent {
     },
     {
       label: 'Admin',
-      route: '/app/admin',
+      route: '/app/admin/users',
       icon: 'admin',
       permissions: [permissions.system.access],
-      disabled: true,
     },
   ];
 
