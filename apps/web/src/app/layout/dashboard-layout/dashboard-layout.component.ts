@@ -8,6 +8,7 @@ import {
   LucideChartNoAxesCombined,
   LucideCreditCard,
   LucideFileText,
+  LucideHistory,
   LucideLayoutDashboard,
   LucideLogOut,
   LucideMenu,
@@ -30,6 +31,7 @@ type SidebarIcon =
   | 'payments'
   | 'reports'
   | 'subscriptions'
+  | 'auditLogs'
   | 'settings'
   | 'admin';
 
@@ -56,6 +58,7 @@ interface SidebarNavItem {
     LucideChartNoAxesCombined,
     LucideCreditCard,
     LucideFileText,
+    LucideHistory,
     LucideLayoutDashboard,
     LucideLogOut,
     LucideMenu,
@@ -115,6 +118,12 @@ export class DashboardLayoutComponent {
       route: '/app/subscriptions',
       icon: 'subscriptions',
       permissions: [permissions.subscription.view],
+    },
+    {
+      label: 'Audit logs',
+      route: '/app/audit-logs',
+      icon: 'auditLogs',
+      permissions: [permissions.auditLog.view],
     },
     {
       label: 'Settings',

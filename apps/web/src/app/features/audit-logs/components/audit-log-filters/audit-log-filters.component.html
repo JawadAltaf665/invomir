@@ -1,0 +1,60 @@
+<form
+  class="rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm lg:p-5"
+  [formGroup]="form"
+  (ngSubmit)="applyFilters()"
+>
+  <div class="grid grid-cols-1 gap-4 lg:grid-cols-12">
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="lg:col-span-3">
+      <mat-label>Entity</mat-label>
+      <mat-select formControlName="entityName">
+        @for (entity of entityOptions; track entity.value) {
+          <mat-option [value]="entity.value">{{ entity.label }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="lg:col-span-3">
+      <mat-label>Action</mat-label>
+      <mat-select formControlName="action">
+        @for (action of actionOptions; track action.value) {
+          <mat-option [value]="action.value">{{ action.label }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="lg:col-span-3">
+      <mat-label>Entity ID</mat-label>
+      <input matInput type="text" formControlName="entityId" autocomplete="off" />
+      @if (form.controls.entityId.hasError('pattern')) {
+        <mat-error>Use a valid GUID.</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="lg:col-span-3">
+      <mat-label>Search current page</mat-label>
+      <input matInput type="search" formControlName="searchTerm" autocomplete="off" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="lg:col-span-3">
+      <mat-label>From</mat-label>
+      <input matInput type="date" formControlName="from" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="lg:col-span-3">
+      <mat-label>To</mat-label>
+      <input matInput type="date" formControlName="to" />
+    </mat-form-field>
+
+    <div class="flex flex-col gap-3 sm:flex-row lg:col-span-6 lg:justify-end">
+      <button mat-button type="button" [disabled]="isLoading()" (click)="resetFilters()">
+        <svg lucideRotateCcw class="size-4" aria-hidden="true"></svg>
+        Reset
+      </button>
+
+      <button mat-flat-button color="primary" type="submit" [disabled]="isLoading()">
+        <svg lucideSearch class="size-4" aria-hidden="true"></svg>
+        Apply filters
+      </button>
+    </div>
+  </div>
+</form>
