@@ -1,0 +1,60 @@
+<article class="rounded-2xl border border-neutral-200 bg-white shadow-sm">
+  @if (isLoading() && rows().length === 0) {
+    <div class="p-5">
+      <div class="h-5 w-40 animate-pulse rounded-xl bg-neutral-100"></div>
+      <div class="mt-6 space-y-4">
+        @for (row of skeletonRows; track row) {
+          <div class="h-14 animate-pulse rounded-xl bg-neutral-100"></div>
+        }
+      </div>
+    </div>
+  } @else if (rows().length > 0) {
+    <div class="overflow-x-auto">
+      <table class="w-full min-w-[760px] table-fixed text-sm">
+        <colgroup>
+          <col class="w-[24%]" />
+          <col class="w-[19%]" />
+          <col class="w-[19%]" />
+          <col class="w-[19%]" />
+          <col class="w-[19%]" />
+        </colgroup>
+        <thead>
+          <tr class="border-b border-neutral-200">
+            <th class="px-5 py-3 text-left font-medium text-neutral-600">Period</th>
+            <th class="px-5 py-3 text-right font-medium text-neutral-600">Paid</th>
+            <th class="px-5 py-3 text-right font-medium text-neutral-600">Outstanding</th>
+            <th class="px-5 py-3 text-right font-medium text-neutral-600">Overdue</th>
+            <th class="px-5 py-3 text-right font-medium text-neutral-600">Invoices</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of rows(); track row.id) {
+            <tr class="border-b border-neutral-100 transition last:border-0 hover:bg-neutral-50">
+              <td class="px-5 py-4 font-semibold text-neutral-900">{{ row.monthLabel }}</td>
+              <td class="px-5 py-4 text-right font-medium text-neutral-900">
+                {{ row.paidDisplay }}
+              </td>
+              <td class="px-5 py-4 text-right text-neutral-600">
+                {{ row.outstandingDisplay }}
+              </td>
+              <td class="px-5 py-4 text-right text-neutral-600">{{ row.overdueDisplay }}</td>
+              <td class="px-5 py-4 text-right text-neutral-600">
+                {{ row.invoiceCountDisplay }}
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  } @else {
+    <div class="flex flex-col items-center justify-center px-6 py-24 text-center">
+      <div class="grid size-12 place-items-center rounded-2xl bg-primary/10 text-primary">
+        <svg lucideBarChart3 class="size-5" aria-hidden="true"></svg>
+      </div>
+      <h3 class="mt-5 text-base font-semibold text-neutral-900">No report rows found</h3>
+      <p class="mt-2 max-w-sm text-sm text-neutral-500">
+        Try a wider report range or create invoices to populate monthly reporting.
+      </p>
+    </div>
+  }
+</article>

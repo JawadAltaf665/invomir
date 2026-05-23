@@ -7,6 +7,7 @@ import { clientRoutes } from './features/clients/client.routes';
 import { dashboardRoutes } from './features/dashboard/dashboard.routes';
 import { invoiceRoutes } from './features/invoices/invoice.routes';
 import { paymentRoutes } from './features/payments/payment.routes';
+import { reportRoutes } from './features/reports/report.routes';
 
 export const routes: Routes = [
   {
@@ -97,6 +98,14 @@ export const routes: Routes = [
           permissions: [permissions.payment.view],
         },
         children: paymentRoutes,
+      },
+      {
+        path: 'reports',
+        canActivate: [permissionGuard],
+        data: {
+          permissions: [permissions.report.view],
+        },
+        children: reportRoutes,
       },
     ],
   },

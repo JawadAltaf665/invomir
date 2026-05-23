@@ -106,7 +106,6 @@ export class DashboardLayoutComponent {
       route: '/app/reports',
       icon: 'reports',
       permissions: [permissions.report.view],
-      disabled: true,
     },
   ];
 
