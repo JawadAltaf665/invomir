@@ -9,6 +9,7 @@ import { invoiceRoutes } from './features/invoices/invoice.routes';
 import { paymentRoutes } from './features/payments/payment.routes';
 import { reportRoutes } from './features/reports/report.routes';
 import { settingsRoutes } from './features/settings/settings.routes';
+import { subscriptionRoutes } from './features/subscriptions/subscription.routes';
 
 export const routes: Routes = [
   {
@@ -115,6 +116,41 @@ export const routes: Routes = [
           permissions: [permissions.settings.manage],
         },
         children: settingsRoutes,
+      },
+      {
+        path: 'subscriptions',
+        canActivate: [permissionGuard],
+        data: {
+          permissions: [permissions.subscription.view],
+        },
+        children: subscriptionRoutes,
+      },
+    ],
+  },
+  {
+    path: 'billing',
+    canActivate: [authGuard],
+    canActivateChild: [authChildGuard],
+    loadComponent: () =>
+      import('./layout/dashboard-layout/dashboard-layout.component').then(
+        (component) => component.DashboardLayoutComponent,
+      ),
+    children: [
+      {
+        path: '',
+        canActivate: [permissionGuard],
+        data: {
+          permissions: [permissions.subscription.view],
+        },
+        children: subscriptionRoutes,
+      },
+      {
+        path: 'success',
+        canActivate: [permissionGuard],
+        data: {
+          permissions: [permissions.subscription.view],
+        },
+        children: subscriptionRoutes,
       },
     ],
   },

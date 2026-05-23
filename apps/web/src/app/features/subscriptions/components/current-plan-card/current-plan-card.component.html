@@ -1,0 +1,90 @@
+<article class="h-full rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
+  @if (isLoading()) {
+    <div class="h-5 w-40 animate-pulse rounded-xl bg-neutral-100"></div>
+    <div class="mt-6 h-24 animate-pulse rounded-xl bg-neutral-100"></div>
+    <div class="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
+      <div class="h-20 animate-pulse rounded-xl bg-neutral-100"></div>
+      <div class="h-20 animate-pulse rounded-xl bg-neutral-100"></div>
+    </div>
+  } @else if (subscription(); as currentSubscription) {
+    <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+      <div>
+        <h2 class="text-lg font-semibold text-neutral-900">Current plan</h2>
+        <p class="mt-1 text-sm text-neutral-500">
+          {{ formatBillingLabel(currentSubscription.plan) }} workspace subscription.
+        </p>
+      </div>
+
+      <app-billing-status-badge
+        [status]="currentSubscription.status"
+        [cancelAtPeriodEnd]="currentSubscription.cancelAtPeriodEnd"
+      />
+    </div>
+
+    <div class="mt-6 rounded-2xl bg-neutral-50 p-5">
+      <div class="flex items-start gap-4">
+        <div
+          class="grid size-11 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary"
+        >
+          <svg lucideCreditCard class="size-5" aria-hidden="true"></svg>
+        </div>
+        <div class="min-w-0">
+          <p class="text-2xl font-semibold tracking-tight text-neutral-900">
+            {{
+              formatBillingCurrency(currentSubscription.pricePerMonth, currentSubscription.currency)
+            }}
+            <span class="text-sm font-normal text-neutral-500">/ month</span>
+          </p>
+          <p class="mt-1 text-sm text-neutral-500">
+            {{
+              formatBillingCurrency(currentSubscription.pricePerYear, currentSubscription.currency)
+            }}
+            billed yearly.
+          </p>
+        </div>
+      </div>
+
+      @if (currentSubscription.status === 'trialing' && currentSubscription.trialDaysRemaining) {
+        <div
+          class="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700"
+        >
+          {{ formatTrialDaysRemaining(currentSubscription.trialDaysRemaining) }}
+        </div>
+      }
+    </div>
+
+    <div class="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
+      <div class="rounded-2xl bg-neutral-50 p-4">
+        <div
+          class="flex items-center gap-2 text-xs font-medium uppercase tracking-normal text-neutral-500"
+        >
+          <svg lucideCalendarDays class="size-4" aria-hidden="true"></svg>
+          Period start
+        </div>
+        <p class="mt-2 text-sm font-semibold text-neutral-900">
+          {{
+            formatBillingDate(
+              currentSubscription.currentPeriodStart ?? currentSubscription.trialStartedAt
+            )
+          }}
+        </p>
+      </div>
+
+      <div class="rounded-2xl bg-neutral-50 p-4">
+        <div
+          class="flex items-center gap-2 text-xs font-medium uppercase tracking-normal text-neutral-500"
+        >
+          <svg lucideCalendarDays class="size-4" aria-hidden="true"></svg>
+          Period end
+        </div>
+        <p class="mt-2 text-sm font-semibold text-neutral-900">
+          {{
+            formatBillingDate(
+              currentSubscription.currentPeriodEnd ?? currentSubscription.trialEndsAt
+            )
+          }}
+        </p>
+      </div>
+    </div>
+  }
+</article>

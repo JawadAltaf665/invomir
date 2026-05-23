@@ -115,7 +115,6 @@ export class DashboardLayoutComponent {
       route: '/app/subscriptions',
       icon: 'subscriptions',
       permissions: [permissions.subscription.view],
-      disabled: true,
     },
     {
       label: 'Settings',
