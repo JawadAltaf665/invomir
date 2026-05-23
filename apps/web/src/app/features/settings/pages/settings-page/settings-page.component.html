@@ -1,0 +1,77 @@
+<section class="mx-auto max-w-7xl p-6 lg:p-8">
+  <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+    <div>
+      <p class="text-xs font-medium uppercase tracking-normal text-neutral-500">
+        Workspace settings
+      </p>
+      <h1 class="mt-2 text-2xl font-semibold tracking-tight text-neutral-900">Settings</h1>
+      <p class="mt-2 text-sm text-neutral-500">
+        Manage business identity, invoice defaults, logo branding, and account security.
+      </p>
+    </div>
+
+    <button
+      mat-stroked-button
+      type="button"
+      [disabled]="settingsStore.isBusy()"
+      (click)="refresh()"
+    >
+      <svg lucideRefreshCcw class="size-4" aria-hidden="true"></svg>
+      Refresh
+    </button>
+  </div>
+
+  @if (settingsStore.loadErrorMessages().length > 0) {
+    <div class="mt-6 rounded-2xl border border-red-200 bg-red-50 p-5 shadow-sm">
+      <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+        <div>
+          <p class="text-sm font-medium text-red-800">Settings could not be loaded</p>
+          <div class="mt-2 space-y-1">
+            @for (error of settingsStore.loadErrorMessages(); track error) {
+              <p class="text-xs text-red-600">{{ error }}</p>
+            }
+          </div>
+        </div>
+
+        <button mat-button type="button" [disabled]="settingsStore.isLoading()" (click)="refresh()">
+          Retry
+        </button>
+      </div>
+    </div>
+  }
+
+  <div class="mt-6 grid grid-cols-1 items-stretch gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
+    <app-account-profile-card
+      [profile]="settingsStore.profile()"
+      [isLoading]="settingsStore.isLoading() && !settingsStore.profile()"
+    />
+
+    <app-logo-upload-card
+      [profile]="settingsStore.profile()"
+      [canManage]="canEditBusinessProfile()"
+      [isUploading]="settingsStore.isUploadingLogo()"
+      [progress]="settingsStore.logoUploadProgress()"
+      [cacheKey]="settingsStore.logoVersion()"
+      [errorMessages]="settingsStore.logoErrorMessages()"
+      [successMessage]="settingsStore.logoSuccessMessage()"
+      (logoSelected)="uploadLogo($event)"
+    />
+
+    <app-business-profile-form
+      [profile]="settingsStore.profile()"
+      [canManage]="canEditBusinessProfile()"
+      [isSaving]="settingsStore.isSavingProfile()"
+      [errorMessages]="settingsStore.profileErrorMessages()"
+      [successMessage]="settingsStore.profileSuccessMessage()"
+      (saveRequested)="saveBusinessProfile($event)"
+    />
+
+    <app-password-change-form
+      [canManage]="canManageSettings()"
+      [isSaving]="settingsStore.isChangingPassword()"
+      [errorMessages]="settingsStore.passwordErrorMessages()"
+      [successMessage]="settingsStore.passwordSuccessMessage()"
+      (passwordChangeRequested)="changePassword($event)"
+    />
+  </div>
+</section>
