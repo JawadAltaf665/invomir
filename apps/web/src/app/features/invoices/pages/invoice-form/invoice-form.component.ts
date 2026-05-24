@@ -28,7 +28,9 @@ import { LucideArrowLeft, LucidePlus, LucideSave, LucideTrash2 } from '@lucide/a
 import { finalize, map } from 'rxjs';
 
 import { ApiResponseError, extractApiErrors } from '../../../../core/errors/api-response-error';
+import { supportedCurrencies } from '../../../../core/auth/auth.models';
 import { ApiResponse, PagedResult } from '../../../../core/models/api-response.model';
+import { CurrentUserApiService } from '../../../../core/services/current-user-api.service';
 import {
   InvoiceClientListItemDto,
   InvoiceDetailDto,
@@ -39,7 +41,6 @@ import {
   InvoiceSaveRequest,
   invoiceDiscountTypes,
   invoicePaymentTerms,
-  supportedInvoiceCurrencies,
 } from '../../models/invoice.models';
 import { InvoiceApiService } from '../../services/invoice-api.service';
 import {
@@ -90,6 +91,7 @@ type InvoiceFormGroup = FormGroup<{
 })
 export class InvoiceFormComponent implements OnInit {
   private readonly invoiceApi = inject(InvoiceApiService);
+  private readonly currentUserApi = inject(CurrentUserApiService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly platformId = inject(PLATFORM_ID);
@@ -99,6 +101,8 @@ export class InvoiceFormComponent implements OnInit {
   protected readonly errorMessages = signal<readonly string[]>([]);
   protected readonly clientOptions = signal<readonly InvoiceClientListItemDto[]>([]);
   protected readonly editingInvoice = signal<InvoiceDetailDto | null>(null);
+  protected readonly workspaceCurrency = signal('USD');
+  protected readonly currencyOptions = supportedCurrencies;
 
   protected readonly isEditMode = computed(() => !!this.editingInvoice());
   protected readonly title = computed(() =>
@@ -113,7 +117,6 @@ export class InvoiceFormComponent implements OnInit {
     value: type,
     label: discountTypeLabel(type),
   }));
-  protected readonly currencyOptions = supportedInvoiceCurrencies;
 
   protected readonly form: InvoiceFormGroup = new FormGroup(
     {
@@ -147,9 +150,10 @@ export class InvoiceFormComponent implements OnInit {
       return;
     }
 
+    const invoiceId = this.route.snapshot.paramMap.get('id');
+    this.loadWorkspaceDefaults(!!invoiceId);
     this.loadClients();
 
-    const invoiceId = this.route.snapshot.paramMap.get('id');
     if (invoiceId) {
       this.loadInvoice(invoiceId);
     }
@@ -235,6 +239,24 @@ export class InvoiceFormComponent implements OnInit {
       .subscribe({
         next: (result) => this.clientOptions.set(result.items),
         error: (error) => this.errorMessages.set(extractApiErrors(error)),
+      });
+  }
+
+  private loadWorkspaceDefaults(isEditingInvoice: boolean): void {
+    this.currentUserApi
+      .getCurrentUser()
+      .pipe(map((response) => this.unwrap(response, 'Workspace defaults could not be loaded.')))
+      .subscribe({
+        next: (profile) => {
+          const currency = profile.currency.toUpperCase();
+          this.workspaceCurrency.set(currency);
+
+          if (!isEditingInvoice) {
+            this.form.controls.currency.setValue(currency, { emitEvent: false });
+            this.form.controls.taxPercent.setValue(profile.taxPercent, { emitEvent: false });
+          }
+        },
+        error: (error) => this.appendErrors(extractApiErrors(error)),
       });
   }
 
@@ -384,6 +406,10 @@ export class InvoiceFormComponent implements OnInit {
     fallbackMessage: string,
   ): PagedResult<T> {
     return this.unwrap(response, fallbackMessage);
+  }
+
+  private appendErrors(messages: readonly string[]): void {
+    this.errorMessages.set([...this.errorMessages(), ...messages]);
   }
 }
 

@@ -8,10 +8,6 @@ const metricFormatter = new Intl.NumberFormat('en-US', {
   maximumFractionDigits: 2,
 });
 
-const currencyFormatter = new Intl.NumberFormat('en-US', {
-  maximumFractionDigits: 2,
-});
-
 const statusLabels: Record<ReportInvoiceStatus, string> = {
   draft: 'Draft',
   sent: 'Sent',
@@ -25,9 +21,19 @@ export function reportStatusLabel(status: ReportInvoiceStatus): string {
   return statusLabels[status];
 }
 
-export function formatReportMetric(value: number | null | undefined): string {
+export function formatReportMetric(value: number | null | undefined, currency: string): string {
   const safeValue = Number(value ?? 0);
-  return currencyFormatter.format(Number.isFinite(safeValue) ? safeValue : 0);
+  const normalizedCurrency = currency?.trim().toUpperCase() || 'USD';
+
+  try {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: normalizedCurrency,
+      maximumFractionDigits: 2,
+    }).format(Number.isFinite(safeValue) ? safeValue : 0);
+  } catch {
+    return `${normalizedCurrency} ${metricFormatter.format(Number.isFinite(safeValue) ? safeValue : 0)}`;
+  }
 }
 
 export function formatReportCount(value: number | null | undefined): string {

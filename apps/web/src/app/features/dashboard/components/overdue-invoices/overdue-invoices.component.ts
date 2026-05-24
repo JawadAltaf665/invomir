@@ -5,6 +5,9 @@ import { DashboardOverdueSummary, DashboardTone } from '../../models/dashboard.m
 @Component({
   selector: 'app-overdue-invoices',
   standalone: true,
+  host: {
+    class: 'block h-full',
+  },
   templateUrl: './overdue-invoices.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

@@ -13,7 +13,6 @@ import {
 } from '../models/report.models';
 import { ReportApiService } from '../services/report-api.service';
 import {
-  averageValue,
   formatReportCount,
   formatReportMetric,
   formatReportMonth,
@@ -46,6 +45,8 @@ export class ReportStore {
     (this.result()?.months ?? []).map((month) => this.toMonthView(month)),
   );
 
+  readonly currency = computed(() => this.result()?.currency ?? 'USD');
+
   readonly hasData = computed(() =>
     this.rows().some(
       (month) =>
@@ -71,23 +72,24 @@ export class ReportStore {
 
   readonly summaryCards = computed<readonly ReportSummaryCardView[]>(() => {
     const totals = this.totals();
+    const currency = this.currency();
 
     return [
       {
         label: 'Paid',
-        value: formatReportMetric(totals.paid),
-        helper: `${averageValue(totals.paid, totals.monthCount)} average per period`,
+        value: formatReportMetric(totals.paid, currency),
+        helper: `${formatReportMetric(totals.monthCount > 0 ? totals.paid / totals.monthCount : 0, currency)} average per period`,
         tone: 'success',
       },
       {
         label: 'Outstanding',
-        value: formatReportMetric(totals.outstanding),
+        value: formatReportMetric(totals.outstanding, currency),
         helper: 'Sent, viewed, and overdue invoices',
         tone: 'primary',
       },
       {
         label: 'Overdue',
-        value: formatReportMetric(totals.overdue),
+        value: formatReportMetric(totals.overdue, currency),
         helper: 'Past due invoice exposure',
         tone: 'danger',
       },
@@ -208,13 +210,15 @@ export class ReportStore {
   }
 
   private toMonthView(month: MonthlyReportMonthDto): ReportMonthView {
+    const currency = this.currency();
+
     return {
       id: month.month,
       month: month.month,
       monthLabel: formatReportMonth(month.month),
-      paidDisplay: formatReportMetric(month.paid),
-      outstandingDisplay: formatReportMetric(month.outstanding),
-      overdueDisplay: formatReportMetric(month.overdue),
+      paidDisplay: formatReportMetric(month.paid, currency),
+      outstandingDisplay: formatReportMetric(month.outstanding, currency),
+      overdueDisplay: formatReportMetric(month.overdue, currency),
       invoiceCountDisplay: formatReportCount(month.invoiceCount),
       paid: month.paid,
       outstanding: month.outstanding,
