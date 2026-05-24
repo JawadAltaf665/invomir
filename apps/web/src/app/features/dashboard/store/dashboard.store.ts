@@ -1,6 +1,7 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { finalize, map } from 'rxjs';
 
+import { AuthSessionService } from '../../../core/auth/auth-session.service';
 import { ApiResponseError, extractApiErrors } from '../../../core/errors/api-response-error';
 import { ApiResponse } from '../../../core/models/api-response.model';
 import {
@@ -21,10 +22,13 @@ import { DashboardApiService } from '../services/dashboard-api.service';
 @Injectable({ providedIn: 'root' })
 export class DashboardStore {
   private readonly dashboardApi = inject(DashboardApiService);
+  private readonly authSession = inject(AuthSessionService);
   private readonly dashboardSignal = signal<DashboardDto | null>(null);
   private readonly isLoadingSignal = signal(false);
   private readonly errorMessagesSignal = signal<readonly string[]>([]);
   private readonly lastLoadedAtSignal = signal<Date | null>(null);
+  private readonly cachedSessionKeySignal = signal<string | null>(null);
+  private activeRequestSessionKey: string | null = null;
 
   readonly dashboard = this.dashboardSignal.asReadonly();
   readonly isLoading = this.isLoadingSignal.asReadonly();
@@ -230,7 +234,18 @@ export class DashboardStore {
   });
 
   load(force = false): void {
-    if (this.isLoading()) {
+    const sessionKey = this.currentSessionKey();
+
+    if (!sessionKey) {
+      this.clear();
+      return;
+    }
+
+    if (this.cachedSessionKeySignal() !== sessionKey) {
+      this.clear();
+    }
+
+    if (this.isLoading() && this.activeRequestSessionKey === sessionKey) {
       return;
     }
 
@@ -238,6 +253,7 @@ export class DashboardStore {
       return;
     }
 
+    this.activeRequestSessionKey = sessionKey;
     this.isLoadingSignal.set(true);
     this.errorMessagesSignal.set([]);
 
@@ -245,14 +261,28 @@ export class DashboardStore {
       .getDashboard()
       .pipe(
         map((response) => this.unwrap(response)),
-        finalize(() => this.isLoadingSignal.set(false)),
+        finalize(() => {
+          if (this.activeRequestSessionKey === sessionKey) {
+            this.activeRequestSessionKey = null;
+            this.isLoadingSignal.set(false);
+          }
+        }),
       )
       .subscribe({
         next: (dashboard) => {
+          if (this.currentSessionKey() !== sessionKey) {
+            return;
+          }
+
           this.dashboardSignal.set(dashboard);
+          this.cachedSessionKeySignal.set(sessionKey);
           this.lastLoadedAtSignal.set(new Date());
         },
         error: (error) => {
+          if (this.currentSessionKey() !== sessionKey) {
+            return;
+          }
+
           this.errorMessagesSignal.set(extractApiErrors(error));
         },
       });
@@ -262,6 +292,15 @@ export class DashboardStore {
     this.load(true);
   }
 
+  clear(): void {
+    this.dashboardSignal.set(null);
+    this.errorMessagesSignal.set([]);
+    this.lastLoadedAtSignal.set(null);
+    this.cachedSessionKeySignal.set(null);
+    this.activeRequestSessionKey = null;
+    this.isLoadingSignal.set(false);
+  }
+
   private unwrap<T>(response: ApiResponse<T>): T {
     if (!response.success || response.data === null) {
       const message = response.message ?? response.errors[0] ?? 'Dashboard request failed.';
@@ -269,6 +308,16 @@ export class DashboardStore {
     }
 
     return response.data;
+  }
+
+  private currentSessionKey(): string | null {
+    const user = this.authSession.user();
+
+    if (!user?.id || !user.tenantId) {
+      return null;
+    }
+
+    return `${user.tenantId}:${user.id}`;
   }
 
   private toStatusMetric(

@@ -5,6 +5,7 @@ namespace InvoMir.Application.Features.Dashboard.Queries.GetDashboard;
 public sealed class GetDashboardQueryHandler(
     IAppDbContext context,
     ICurrentUserContext currentUserContext,
+    ITenantContext tenantContext,
     ICurrencyConversionService currencyConversionService)
     : IRequestHandler<GetDashboardQuery, DashboardDto>
 {
@@ -21,11 +22,12 @@ public sealed class GetDashboardQueryHandler(
     {
         var userId = currentUserContext.UserId
             ?? throw new UnauthorizedAccessException("User context is not available.");
+        var tenantId = tenantContext.TenantId;
 
         var workspace = await context.Users
             .AsNoTracking()
-            .Where(user => user.Id == userId)
-            .Select(user => new DashboardWorkspace(user.Currency, user.Role))
+            .Where(user => user.Id == userId && user.TenantId == tenantId)
+            .Select(user => new DashboardWorkspace(user.TenantId, user.Currency, user.Role))
             .FirstOrDefaultAsync(cancellationToken);
 
         if (workspace is null)
@@ -41,6 +43,7 @@ public sealed class GetDashboardQueryHandler(
 
         var invoiceRows = await context.Invoices
             .AsNoTracking()
+            .Where(invoice => invoice.TenantId == workspace.TenantId)
             .Select(invoice => new DashboardInvoiceSnapshot(
                 invoice.Id,
                 invoice.ClientId,
@@ -208,7 +211,10 @@ public sealed class GetDashboardQueryHandler(
         return decimal.Round(amount, 2, MidpointRounding.AwayFromZero);
     }
 
-    private sealed record DashboardWorkspace(string Currency, string Role);
+    private sealed record DashboardWorkspace(
+        Guid TenantId,
+        string Currency,
+        string Role);
 
     private sealed record DashboardInvoiceSnapshot(
         Guid Id,
