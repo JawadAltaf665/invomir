@@ -10,19 +10,25 @@
     </div>
   } @else if (rows().length > 0) {
     <div class="overflow-x-auto">
-      <table class="w-full min-w-[1120px] table-fixed text-sm">
+      <table class="w-full min-w-[1280px] table-fixed text-sm">
         <colgroup>
-          <col class="w-[18%]" />
-          <col class="w-[16%]" />
           <col class="w-[14%]" />
-          <col class="w-[20%]" />
           <col class="w-[14%]" />
+          @if (isSystemScope()) {
+            <col class="w-[15%]" />
+          }
+          <col class="w-[12%]" />
           <col class="w-[18%]" />
+          <col class="w-[12%]" />
+          <col class="w-[15%]" />
         </colgroup>
         <thead>
           <tr class="border-b border-neutral-200">
             <th class="px-5 py-3 text-left font-medium text-neutral-600">Time</th>
             <th class="px-5 py-3 text-left font-medium text-neutral-600">Actor</th>
+            @if (isSystemScope()) {
+              <th class="px-5 py-3 text-left font-medium text-neutral-600">Workspace</th>
+            }
             <th class="px-5 py-3 text-left font-medium text-neutral-600">Action</th>
             <th class="px-5 py-3 text-left font-medium text-neutral-600">Entity</th>
             <th class="px-5 py-3 text-left font-medium text-neutral-600">Network</th>
@@ -46,6 +52,16 @@
                   {{ auditLog.actorMeta }}
                 </p>
               </td>
+              @if (isSystemScope()) {
+                <td class="px-5 py-4">
+                  <p class="break-words font-medium text-neutral-900 [overflow-wrap:anywhere]">
+                    {{ auditLog.workspaceName }}
+                  </p>
+                  <p class="mt-1 break-words text-xs text-neutral-500 [overflow-wrap:anywhere]">
+                    {{ auditLog.workspaceMeta }}
+                  </p>
+                </td>
+              }
               <td class="px-5 py-4">
                 <app-audit-action-badge
                   [label]="auditLog.actionLabel"

@@ -61,6 +61,8 @@ export class AuditLogListStore {
       [
         auditLog.actorName,
         auditLog.actorMeta,
+        auditLog.workspaceName,
+        auditLog.workspaceMeta,
         auditLog.entityName,
         auditLog.entityLabel,
         auditLog.actionLabel,

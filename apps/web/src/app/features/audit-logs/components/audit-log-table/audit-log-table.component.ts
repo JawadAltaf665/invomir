@@ -20,6 +20,7 @@ export class AuditLogTableComponent {
   readonly pageSize = input(20);
   readonly totalCount = input(0);
   readonly totalPages = input(0);
+  readonly isSystemScope = input(false);
 
   readonly pageRequested = output<number>();
   readonly pageSizeRequested = output<number>();

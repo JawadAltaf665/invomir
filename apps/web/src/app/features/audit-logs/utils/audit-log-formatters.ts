@@ -4,6 +4,7 @@ const entityLabels: Record<string, string> = {
   invoice: 'Invoice',
   client: 'Client',
   user: 'User',
+  teaminvitation: 'Team invitation',
 };
 
 const actionToneMap: Record<string, AuditLogListItemView['actionTone']> = {
@@ -31,6 +32,11 @@ const actionToneMap: Record<string, AuditLogListItemView['actionTone']> = {
   subscription_synced: 'info',
   plan_overridden: 'warning',
   trial_extended: 'success',
+  team_invited: 'success',
+  team_invitation_cancelled: 'warning',
+  team_invitation_accepted: 'success',
+  team_member_removed: 'danger',
+  team_member_role_changed: 'info',
 };
 
 export function toAuditLogView(log: AuditLogDto): AuditLogListItemView {
@@ -42,6 +48,8 @@ export function toAuditLogView(log: AuditLogDto): AuditLogListItemView {
     id: log.id,
     actorName,
     actorMeta: log.userEmail?.trim() || log.userId || 'Automated event',
+    workspaceName: log.tenantName?.trim() || 'Workspace',
+    workspaceMeta: log.tenantId || 'No tenant recorded',
     entityName,
     entityLabel: formatEntityReference(log.entityName, log.entityId),
     entityId: log.entityId,
@@ -65,6 +73,7 @@ export function formatAuditLabel(value: string | null | undefined): string {
   }
 
   return value
+    .replace(/([a-z])([A-Z])/g, '$1_$2')
     .split('_')
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(' ');

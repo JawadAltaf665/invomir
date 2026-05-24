@@ -1,4 +1,4 @@
-export const auditEntityFilters = ['all', 'Invoice', 'Client', 'User'] as const;
+export const auditEntityFilters = ['all', 'Invoice', 'Client', 'User', 'TeamInvitation'] as const;
 export const auditActionFilters = [
   'all',
   'created',
@@ -25,6 +25,11 @@ export const auditActionFilters = [
   'subscription_synced',
   'plan_overridden',
   'trial_extended',
+  'team_invited',
+  'team_invitation_cancelled',
+  'team_invitation_accepted',
+  'team_member_removed',
+  'team_member_role_changed',
 ] as const;
 
 export type AuditEntityFilter = (typeof auditEntityFilters)[number];
@@ -33,6 +38,7 @@ export type AuditActionFilter = (typeof auditActionFilters)[number];
 export interface AuditLogDto {
   id: string;
   tenantId: string | null;
+  tenantName: string | null;
   userId: string | null;
   userEmail: string | null;
   userName: string | null;
@@ -64,6 +70,8 @@ export interface AuditLogListItemView {
   id: string;
   actorName: string;
   actorMeta: string;
+  workspaceName: string;
+  workspaceMeta: string;
   entityName: string;
   entityLabel: string;
   entityId: string | null;

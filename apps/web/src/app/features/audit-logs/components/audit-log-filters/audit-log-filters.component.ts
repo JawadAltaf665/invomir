@@ -43,7 +43,7 @@ export class AuditLogFiltersComponent {
 
   protected readonly entityOptions = auditEntityFilters.map((entity) => ({
     value: entity,
-    label: entity === 'all' ? 'All entities' : entity,
+    label: entity === 'all' ? 'All entities' : formatAuditLabel(entity),
   }));
   protected readonly actionOptions = auditActionFilters.map((action) => ({
     value: action,

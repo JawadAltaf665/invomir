@@ -5,7 +5,8 @@ namespace InvoMir.Application.Features.AuditLogs.Queries.GetEntityAuditLogs;
 
 public sealed class GetEntityAuditLogsQueryHandler(
     IAppDbContext context,
-    ITenantContext tenantContext)
+    ITenantContext tenantContext,
+    ICurrentUserContext currentUserContext)
     : IRequestHandler<GetEntityAuditLogsQuery, PagedResult<AuditLogDto>>
 {
     private const int DefaultPage = 1;
@@ -22,12 +23,18 @@ public sealed class GetEntityAuditLogsQueryHandler(
         var page = request.Page < DefaultPage ? DefaultPage : request.Page;
         var limit = request.Limit <= 0 ? DefaultLimit : Math.Min(request.Limit, MaxLimit);
         var entityName = request.EntityName.Trim().ToLowerInvariant();
+        var isSystemAdmin = await IsSystemAdminAsync(cancellationToken);
         var query = context.AuditLogs
             .AsNoTracking()
             .Where(auditLog =>
-                auditLog.TenantId == tenantContext.TenantId &&
                 auditLog.EntityName.ToLower() == entityName &&
                 auditLog.EntityId == request.EntityId);
+
+        if (!isSystemAdmin)
+        {
+            var tenantId = tenantContext.TenantId;
+            query = query.Where(auditLog => auditLog.TenantId == tenantId);
+        }
 
         if (request.From.HasValue)
             query = query.Where(auditLog => auditLog.CreatedAt >= NormalizeUtc(request.From.Value));
@@ -54,16 +61,33 @@ public sealed class GetEntityAuditLogsQueryHandler(
             .Take(limit)
             .ToListAsync(cancellationToken);
 
-        var actors = await LoadActorsAsync(auditLogs, cancellationToken);
+        var actors = await LoadActorsAsync(auditLogs, isSystemAdmin, cancellationToken);
+        var tenants = await LoadTenantsAsync(auditLogs, isSystemAdmin, cancellationToken);
         var items = auditLogs
-            .Select(auditLog => ToDto(auditLog, actors))
+            .Select(auditLog => ToDto(auditLog, actors, tenants))
             .ToList();
 
         return new PagedResult<AuditLogDto>(items, page, limit, totalCount);
     }
 
+    private async Task<bool> IsSystemAdminAsync(CancellationToken cancellationToken)
+    {
+        var currentUserId = currentUserContext.UserId
+            ?? throw new UnauthorizedAccessException("Current user context is not available.");
+
+        var role = await context.Users
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .Where(user => user.Id == currentUserId && !user.IsDeleted)
+            .Select(user => user.Role)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        return string.Equals(role, AuthConstants.Roles.SystemAdmin, StringComparison.OrdinalIgnoreCase);
+    }
+
     private async Task<IReadOnlyDictionary<Guid, AuditActorSnapshot>> LoadActorsAsync(
         IReadOnlyList<AuditLogSnapshot> auditLogs,
+        bool isSystemAdmin,
         CancellationToken cancellationToken)
     {
         var userIds = auditLogs
@@ -75,12 +99,18 @@ public sealed class GetEntityAuditLogsQueryHandler(
         if (userIds.Count == 0)
             return new Dictionary<Guid, AuditActorSnapshot>();
 
-        return await context.Users
+        var query = context.Users
             .IgnoreQueryFilters()
             .AsNoTracking()
-            .Where(user =>
-                user.TenantId == tenantContext.TenantId &&
-                userIds.Contains(user.Id))
+            .Where(user => userIds.Contains(user.Id));
+
+        if (!isSystemAdmin)
+        {
+            var tenantId = tenantContext.TenantId;
+            query = query.Where(user => user.TenantId == tenantId);
+        }
+
+        return await query
             .Select(user => new AuditActorSnapshot(
                 user.Id,
                 user.Email,
@@ -88,17 +118,52 @@ public sealed class GetEntityAuditLogsQueryHandler(
             .ToDictionaryAsync(actor => actor.UserId, cancellationToken);
     }
 
+    private async Task<IReadOnlyDictionary<Guid, string>> LoadTenantsAsync(
+        IReadOnlyList<AuditLogSnapshot> auditLogs,
+        bool isSystemAdmin,
+        CancellationToken cancellationToken)
+    {
+        var tenantIds = auditLogs
+            .Where(auditLog => auditLog.TenantId.HasValue)
+            .Select(auditLog => auditLog.TenantId!.Value)
+            .Distinct()
+            .ToList();
+
+        if (tenantIds.Count == 0)
+            return new Dictionary<Guid, string>();
+
+        var query = context.Tenants
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .Where(tenant => tenantIds.Contains(tenant.Id));
+
+        if (!isSystemAdmin)
+        {
+            var tenantId = tenantContext.TenantId;
+            query = query.Where(tenant => tenant.Id == tenantId);
+        }
+
+        return await query
+            .Select(tenant => new AuditTenantSnapshot(tenant.Id, tenant.Name))
+            .ToDictionaryAsync(tenant => tenant.TenantId, tenant => tenant.Name, cancellationToken);
+    }
+
     private static AuditLogDto ToDto(
         AuditLogSnapshot auditLog,
-        IReadOnlyDictionary<Guid, AuditActorSnapshot> actors)
+        IReadOnlyDictionary<Guid, AuditActorSnapshot> actors,
+        IReadOnlyDictionary<Guid, string> tenants)
     {
         var actor = auditLog.UserId.HasValue && actors.TryGetValue(auditLog.UserId.Value, out var currentActor)
             ? currentActor
+            : null;
+        var tenantName = auditLog.TenantId.HasValue && tenants.TryGetValue(auditLog.TenantId.Value, out var currentTenantName)
+            ? currentTenantName
             : null;
 
         return new AuditLogDto(
             auditLog.Id,
             auditLog.TenantId,
+            tenantName,
             auditLog.UserId,
             actor?.Email,
             actor?.Name,
@@ -154,5 +219,9 @@ public sealed class GetEntityAuditLogsQueryHandler(
     private sealed record AuditActorSnapshot(
         Guid UserId,
         string Email,
+        string Name);
+
+    private sealed record AuditTenantSnapshot(
+        Guid TenantId,
         string Name);
 }
