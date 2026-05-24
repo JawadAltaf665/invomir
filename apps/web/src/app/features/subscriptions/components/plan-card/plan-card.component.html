@@ -1,0 +1,91 @@
+<article
+  class="relative flex h-full flex-col rounded-2xl border bg-white p-5 shadow-sm"
+  [ngClass]="{
+    'border-primary shadow-md': card().isRecommended,
+    'border-neutral-200': !card().isRecommended,
+  }"
+>
+  @if (card().isRecommended || card().isPopular) {
+    <span
+      class="absolute right-5 top-5 inline-flex h-7 items-center rounded-xl px-2.5 text-xs font-medium"
+      [ngClass]="{
+        'bg-primary/10 text-primary': card().isRecommended,
+        'bg-emerald-50 text-emerald-700': card().isPopular && !card().isRecommended,
+      }"
+    >
+      {{ card().isRecommended ? 'Recommended' : 'Most popular' }}
+    </span>
+  }
+
+  <div class="pr-28">
+    <h3 class="text-lg font-semibold text-neutral-900">{{ card().plan.name }}</h3>
+    <p class="mt-2 min-h-10 text-sm text-neutral-500">{{ card().plan.description }}</p>
+  </div>
+
+  <div class="mt-6">
+    <p class="text-3xl font-semibold tracking-tight text-neutral-900">
+      {{ interval() === 'year' ? card().yearlyPriceDisplay : card().priceDisplay }}
+      <span class="text-sm font-normal text-neutral-500">
+        / {{ interval() === 'year' ? 'year' : 'month' }}
+      </span>
+    </p>
+    @if (interval() === 'year' && card().savingsDisplay) {
+      <p class="mt-2 text-sm font-medium text-emerald-700">{{ card().savingsDisplay }}</p>
+    } @else {
+      <p class="mt-2 text-sm text-neutral-500">Monthly and annual billing available.</p>
+    }
+  </div>
+
+  <div class="mt-6 space-y-2">
+    @for (limit of card().limitSummary; track limit) {
+      <p class="text-sm text-neutral-600">{{ limit }}</p>
+    }
+  </div>
+
+  <div class="mt-6 space-y-3">
+    @for (feature of card().features; track feature.id) {
+      <div class="flex items-center gap-3 text-sm">
+        @if (feature.enabled) {
+          <span class="grid size-5 place-items-center rounded-full bg-emerald-50 text-emerald-600">
+            <svg lucideCheck class="size-3.5" aria-hidden="true"></svg>
+          </span>
+        } @else {
+          <span class="grid size-5 place-items-center rounded-full bg-neutral-100 text-neutral-400">
+            <svg lucideX class="size-3.5" aria-hidden="true"></svg>
+          </span>
+        }
+        <span class="inline-flex min-w-0 items-center gap-2">
+          <span
+            [class.text-neutral-900]="feature.enabled"
+            [class.text-neutral-500]="!feature.enabled"
+          >
+            {{ feature.label }}
+          </span>
+          <span
+            class="inline-flex text-neutral-400"
+            [matTooltip]="feature.description"
+            matTooltipPosition="above"
+          >
+            <svg lucideCircleHelp class="size-3.5" aria-hidden="true"></svg>
+          </span>
+        </span>
+      </div>
+    }
+  </div>
+
+  <span class="mt-6 block" [matTooltip]="checkoutTooltip()" matTooltipPosition="above">
+    <button
+      mat-flat-button
+      color="primary"
+      type="button"
+      class="w-full"
+      [disabled]="isCheckoutDisabled()"
+      (click)="startCheckout()"
+    >
+      @if (isStartingCheckout() && activeCheckoutPlan() === card().plan.plan) {
+        <mat-spinner diameter="18" />
+      }
+      {{ checkoutButtonLabel(card(), interval()) }}
+    </button>
+  </span>
+</article>

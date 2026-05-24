@@ -1,0 +1,161 @@
+<article class="rounded-2xl border border-neutral-200 bg-white shadow-sm">
+  @if (isLoading() && rows().length === 0) {
+    <div class="p-5">
+      <div class="h-5 w-40 animate-pulse rounded-xl bg-neutral-100"></div>
+      <div class="mt-6 space-y-4">
+        @for (row of skeletonRows; track row) {
+          <div class="h-16 animate-pulse rounded-xl bg-neutral-100"></div>
+        }
+      </div>
+    </div>
+  } @else if (rows().length > 0) {
+    <div class="overflow-x-auto">
+      <table class="w-full min-w-[1200px] table-fixed text-sm">
+        <colgroup>
+          <col class="w-[21%]" />
+          <col class="w-[18%]" />
+          <col class="w-[12%]" />
+          <col class="w-[14%]" />
+          <col class="w-[15%]" />
+          <col class="w-[9%]" />
+          <col class="w-[11%]" />
+        </colgroup>
+        <thead>
+          <tr class="border-b border-neutral-200">
+            <th class="px-5 py-3 text-left font-medium text-neutral-600">User</th>
+            <th class="px-5 py-3 text-left font-medium text-neutral-600">Workspace</th>
+            <th class="px-5 py-3 text-left font-medium text-neutral-600">Access</th>
+            <th class="px-5 py-3 text-left font-medium text-neutral-600">Plan</th>
+            <th class="px-5 py-3 text-left font-medium text-neutral-600">Status</th>
+            <th class="px-5 py-3 text-right font-medium text-neutral-600">Usage</th>
+            <th class="px-5 py-3 text-right font-medium text-neutral-600">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (user of rows(); track user.id) {
+            <tr class="border-b border-neutral-100 transition last:border-0 hover:bg-neutral-50">
+              <td class="px-5 py-4">
+                <div class="flex min-w-0 items-center gap-3">
+                  <span
+                    class="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-xs font-semibold text-primary"
+                  >
+                    {{ user.initials }}
+                  </span>
+                  <div class="min-w-0">
+                    <a
+                      class="block truncate font-semibold text-neutral-900 transition hover:text-primary"
+                      [routerLink]="['/app/admin/users', user.id]"
+                    >
+                      {{ user.fullName }}
+                    </a>
+                    <p class="mt-1 break-words text-xs text-neutral-500 [overflow-wrap:anywhere]">
+                      {{ user.email }}
+                    </p>
+                  </div>
+                </div>
+              </td>
+              <td class="px-5 py-4">
+                <p class="break-words font-medium text-neutral-900 [overflow-wrap:anywhere]">
+                  {{ user.tenantName }}
+                </p>
+                <p class="mt-1 break-words text-xs text-neutral-500 [overflow-wrap:anywhere]">
+                  {{ user.tenantId }}
+                </p>
+              </td>
+              <td class="px-5 py-4">
+                <p class="font-medium text-neutral-900">{{ user.roleLabel }}</p>
+                <p class="mt-1 text-xs text-neutral-500">
+                  {{ user.rolePermissionCount }} permissions
+                </p>
+              </td>
+              <td class="px-5 py-4">
+                <div class="flex min-w-max flex-nowrap items-center gap-2">
+                  <app-admin-user-badge [label]="user.planLabel" tone="info" />
+                  <app-admin-user-badge
+                    [label]="user.trialStatusLabel"
+                    [tone]="user.trialStatusTone"
+                  />
+                </div>
+                <p class="mt-2 text-xs text-neutral-500">{{ user.trialEndsDisplay }}</p>
+              </td>
+              <td class="px-5 py-4">
+                <div class="flex min-w-max flex-nowrap items-center gap-2">
+                  <app-admin-user-badge [label]="user.statusLabel" [tone]="user.statusTone" />
+                  <app-admin-user-badge
+                    [label]="user.emailStatusLabel"
+                    [tone]="user.emailStatusTone"
+                  />
+                </div>
+                <p class="mt-2 text-xs text-neutral-500">{{ user.lastLoginDisplay }}</p>
+              </td>
+              <td class="px-5 py-4 text-right">
+                <p class="break-words font-semibold text-neutral-900 [overflow-wrap:anywhere]">
+                  {{ user.totalRevenueDisplay }}
+                </p>
+                <p class="mt-1 break-words text-xs text-neutral-500 [overflow-wrap:anywhere]">
+                  {{ user.invoiceCountDisplay }} invoices &middot;
+                  {{ user.paidInvoiceCountDisplay }} paid
+                </p>
+              </td>
+              <td class="px-4 py-4">
+                <div class="flex justify-end">
+                  <button
+                    mat-stroked-button
+                    type="button"
+                    class="min-w-24"
+                    [matMenuTriggerFor]="userActionsMenu"
+                    (menuOpened)="openActionUserId.set(user.id)"
+                    (menuClosed)="openActionUserId.set(null)"
+                    aria-label="Open admin user actions"
+                  >
+                    Actions
+                    @if (openActionUserId() === user.id) {
+                      <svg lucideChevronUp class="size-4" aria-hidden="true"></svg>
+                    } @else {
+                      <svg lucideChevronDown class="size-4" aria-hidden="true"></svg>
+                    }
+                  </button>
+
+                  <mat-menu #userActionsMenu="matMenu" xPosition="before" yPosition="below">
+                    <a mat-menu-item [routerLink]="['/app/admin/users', user.id]">
+                      <svg lucideEye class="size-4" aria-hidden="true"></svg>
+                      <span>View user</span>
+                    </a>
+
+                    @if (canManage()) {
+                      <a mat-menu-item [routerLink]="['/app/admin/users', user.id]">
+                        <svg lucideSlidersHorizontal class="size-4" aria-hidden="true"></svg>
+                        <span>Manage plan</span>
+                      </a>
+                    }
+                  </mat-menu>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <app-pagination
+      itemLabel="admin users"
+      [page]="currentPage()"
+      [pageSize]="pageSize()"
+      [totalCount]="totalCount()"
+      [totalPages]="totalPages()"
+      [isLoading]="isLoading()"
+      (pageChange)="pageRequested.emit($event)"
+      (pageSizeChange)="pageSizeRequested.emit($event)"
+    />
+  } @else {
+    <div class="flex flex-col items-center justify-center px-6 py-24 text-center">
+      <div class="grid size-12 place-items-center rounded-2xl bg-primary/10 text-primary">
+        <svg lucideUsers class="size-5" aria-hidden="true"></svg>
+      </div>
+      <h3 class="mt-5 text-base font-semibold text-neutral-900">No admin users found</h3>
+      <p class="mt-2 max-w-sm text-sm text-neutral-500">
+        Search by a different name, email, or workspace to review system access.
+      </p>
+    </div>
+  }
+</article>

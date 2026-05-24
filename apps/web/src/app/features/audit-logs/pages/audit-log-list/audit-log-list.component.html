@@ -1,0 +1,60 @@
+<section class="mx-auto max-w-7xl p-6 lg:p-8">
+  <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+    <div>
+      <p class="text-xs font-medium uppercase tracking-normal text-neutral-500">Workspace audit</p>
+      <h1 class="mt-2 text-2xl font-semibold tracking-tight text-neutral-900">Audit logs</h1>
+      <p class="mt-2 text-sm text-neutral-500">
+        Review user actions, entity changes, and security-sensitive workspace activity.
+      </p>
+    </div>
+
+    <button
+      mat-stroked-button
+      type="button"
+      [disabled]="auditLogStore.isLoading()"
+      (click)="refresh()"
+    >
+      <svg lucideRefreshCcw class="size-4" aria-hidden="true"></svg>
+      Refresh
+    </button>
+  </div>
+
+  @if (auditLogStore.errorMessages().length > 0) {
+    <div class="mt-6 rounded-2xl border border-red-200 bg-red-50 p-5 shadow-sm">
+      <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+        <div>
+          <p class="text-sm font-medium text-red-800">Audit logs could not be loaded</p>
+          <div class="mt-2 space-y-1">
+            @for (error of auditLogStore.errorMessages(); track error) {
+              <p class="text-xs text-red-600">{{ error }}</p>
+            }
+          </div>
+        </div>
+
+        <button mat-button type="button" [disabled]="auditLogStore.isLoading()" (click)="refresh()">
+          Retry
+        </button>
+      </div>
+    </div>
+  }
+
+  <div class="mt-6 flex flex-col gap-6">
+    <app-audit-log-filters
+      [filters]="auditLogStore.filters()"
+      [isLoading]="auditLogStore.isLoading()"
+      (filtersChange)="applyFilters($event)"
+      (resetRequested)="resetFilters()"
+    />
+
+    <app-audit-log-table
+      [rows]="auditLogStore.rows()"
+      [isLoading]="auditLogStore.isLoading()"
+      [currentPage]="auditLogStore.pageInfo().page"
+      [pageSize]="auditLogStore.pageInfo().pageSize"
+      [totalPages]="auditLogStore.pageInfo().totalPages"
+      [totalCount]="auditLogStore.pageInfo().totalCount"
+      (pageRequested)="changePage($event)"
+      (pageSizeRequested)="changePageSize($event)"
+    />
+  </div>
+</section>

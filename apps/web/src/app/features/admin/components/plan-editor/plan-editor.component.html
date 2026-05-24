@@ -1,0 +1,29 @@
+<article class="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
+  <div>
+    <h2 class="text-lg font-semibold text-neutral-900">Plan override</h2>
+    <p class="mt-2 text-sm text-neutral-500">Update the user and workspace plan together.</p>
+  </div>
+
+  <form class="mt-5 space-y-5" [formGroup]="form" (ngSubmit)="submitPlan()">
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-full">
+      <mat-label>Plan</mat-label>
+      <mat-select formControlName="plan" [disabled]="!canManage() || isSaving()">
+        @for (plan of planOptions; track plan.value) {
+          <mat-option [value]="plan.value">{{ plan.label }}</mat-option>
+        }
+      </mat-select>
+      <mat-hint>Backend accepts free, starter, professional, or business.</mat-hint>
+    </mat-form-field>
+
+    <button
+      mat-flat-button
+      color="primary"
+      type="submit"
+      class="w-full"
+      [disabled]="!canManage() || isSaving()"
+    >
+      <svg lucideSave class="size-4" aria-hidden="true"></svg>
+      Save plan
+    </button>
+  </form>
+</article>

@@ -1,0 +1,402 @@
+<section class="mx-auto max-w-7xl p-6 lg:p-8">
+  <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+    <div>
+      <a
+        routerLink="/app/admin/users"
+        class="inline-flex items-center gap-2 text-sm font-medium text-neutral-500 transition hover:text-neutral-900"
+      >
+        <svg lucideArrowLeft class="size-4" aria-hidden="true"></svg>
+        Admin users
+      </a>
+
+      <div class="mt-4 flex min-w-0 items-center gap-3">
+        <span
+          class="grid size-12 shrink-0 place-items-center rounded-2xl bg-primary/10 text-sm font-semibold text-primary"
+        >
+          {{ userInitials() }}
+        </span>
+        <div class="min-w-0">
+          <p class="text-xs font-medium uppercase tracking-normal text-neutral-500">
+            User management
+          </p>
+          <h1 class="mt-1 truncate text-2xl font-semibold tracking-tight text-neutral-900">
+            {{ userName() }}
+          </h1>
+        </div>
+      </div>
+    </div>
+
+    <button
+      mat-stroked-button
+      type="button"
+      [disabled]="adminUserStore.isLoading()"
+      (click)="refresh()"
+    >
+      <svg lucideRefreshCcw class="size-4" aria-hidden="true"></svg>
+      Refresh
+    </button>
+  </div>
+
+  @if (adminUserStore.errorMessages().length > 0) {
+    <div class="mt-6 rounded-2xl border border-red-200 bg-red-50 p-5 shadow-sm">
+      <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+        <div>
+          <p class="text-sm font-medium text-red-800">Admin user could not be loaded</p>
+          <div class="mt-2 space-y-1">
+            @for (error of adminUserStore.errorMessages(); track error) {
+              <p class="text-xs text-red-600">{{ error }}</p>
+            }
+          </div>
+        </div>
+
+        <button
+          mat-button
+          type="button"
+          [disabled]="adminUserStore.isLoading()"
+          (click)="refresh()"
+        >
+          Retry
+        </button>
+      </div>
+    </div>
+  }
+
+  @if (adminUserStore.actionErrorMessages().length > 0) {
+    <div class="mt-6 rounded-2xl border border-red-200 bg-red-50 p-5 shadow-sm">
+      <p class="text-sm font-medium text-red-800">Admin action failed</p>
+      <div class="mt-2 space-y-1">
+        @for (error of adminUserStore.actionErrorMessages(); track error) {
+          <p class="text-xs text-red-600">{{ error }}</p>
+        }
+      </div>
+    </div>
+  }
+
+  @if (adminUserStore.successMessage()) {
+    <div class="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-5 shadow-sm">
+      <p class="text-sm font-medium text-emerald-800">{{ adminUserStore.successMessage() }}</p>
+    </div>
+  }
+
+  @if (adminUserStore.isLoading() && !adminUserStore.user()) {
+    <div class="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+      <div class="space-y-6">
+        <div class="h-72 animate-pulse rounded-2xl bg-neutral-100"></div>
+        <div class="h-64 animate-pulse rounded-2xl bg-neutral-100"></div>
+      </div>
+      <div class="space-y-6">
+        <div class="h-56 animate-pulse rounded-2xl bg-neutral-100"></div>
+        <div class="h-56 animate-pulse rounded-2xl bg-neutral-100"></div>
+      </div>
+    </div>
+  } @else if (adminUserStore.user(); as user) {
+    <div class="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+      <div class="space-y-6">
+        <article class="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
+          <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+            <div>
+              <h2 class="text-lg font-semibold text-neutral-900">Account profile</h2>
+              <p class="mt-2 text-sm text-neutral-500">{{ user.email }}</p>
+            </div>
+
+            <div class="flex flex-wrap gap-2">
+              <app-admin-user-badge
+                [label]="user.isActive ? 'Active' : 'Inactive'"
+                [tone]="activeTone(user)"
+              />
+              <app-admin-user-badge
+                [label]="user.emailVerified ? 'Verified' : 'Pending email'"
+                [tone]="emailTone(user)"
+              />
+            </div>
+          </div>
+
+          <div class="mt-6 grid gap-4 md:grid-cols-2">
+            <div class="rounded-2xl bg-neutral-50 p-4">
+              <p class="text-xs font-medium uppercase tracking-normal text-neutral-500">Role</p>
+              <p class="mt-2 text-sm font-semibold text-neutral-900">
+                {{ formatRoleLabel(user.role) }}
+              </p>
+            </div>
+            <div class="rounded-2xl bg-neutral-50 p-4">
+              <p class="text-xs font-medium uppercase tracking-normal text-neutral-500">Plan</p>
+              <p class="mt-2 text-sm font-semibold text-neutral-900">
+                {{ formatPlanLabel(user.plan) }}
+              </p>
+            </div>
+            <div class="rounded-2xl bg-neutral-50 p-4">
+              <p class="text-xs font-medium uppercase tracking-normal text-neutral-500">
+                Workspace
+              </p>
+              <p class="mt-2 break-words text-sm font-semibold text-neutral-900">
+                {{ user.tenantName }}
+              </p>
+              <p class="mt-1 break-words text-xs text-neutral-500 [overflow-wrap:anywhere]">
+                {{ user.tenantId }}
+              </p>
+            </div>
+            <div class="rounded-2xl bg-neutral-50 p-4">
+              <p class="text-xs font-medium uppercase tracking-normal text-neutral-500">Trial</p>
+              <p class="mt-2 text-sm font-semibold text-neutral-900">
+                {{ formatTrialEnds(user.trialEndsAt) }}
+              </p>
+              <p class="mt-1 text-xs text-neutral-500">
+                Ends {{ formatNullableDateTime(user.trialEndsAt) }}
+              </p>
+            </div>
+            <div class="rounded-2xl bg-neutral-50 p-4">
+              <p class="text-xs font-medium uppercase tracking-normal text-neutral-500">Created</p>
+              <p class="mt-2 text-sm font-semibold text-neutral-900">
+                {{ formatNullableDateTime(user.createdAt) }}
+              </p>
+            </div>
+            <div class="rounded-2xl bg-neutral-50 p-4">
+              <p class="text-xs font-medium uppercase tracking-normal text-neutral-500">
+                Last login
+              </p>
+              <p class="mt-2 text-sm font-semibold text-neutral-900">
+                {{ formatNullableDateTime(user.lastLoginAt) }}
+              </p>
+            </div>
+          </div>
+        </article>
+
+        <div class="grid gap-4 md:grid-cols-4">
+          <article class="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
+            <p class="text-xs font-medium uppercase tracking-normal text-neutral-500">Invoices</p>
+            <p class="mt-3 text-2xl font-semibold text-neutral-900">
+              {{ user.stats.invoiceCount }}
+            </p>
+          </article>
+          <article class="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
+            <p class="text-xs font-medium uppercase tracking-normal text-neutral-500">Paid</p>
+            <p class="mt-3 text-2xl font-semibold text-neutral-900">
+              {{ user.stats.paidInvoiceCount }}
+            </p>
+          </article>
+          <article class="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
+            <p class="text-xs font-medium uppercase tracking-normal text-neutral-500">Overdue</p>
+            <p class="mt-3 text-2xl font-semibold text-neutral-900">
+              {{ user.stats.overdueInvoiceCount }}
+            </p>
+          </article>
+          <article class="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
+            <p class="text-xs font-medium uppercase tracking-normal text-neutral-500">Revenue</p>
+            <p
+              class="mt-3 break-words text-2xl font-semibold text-neutral-900 [overflow-wrap:anywhere]"
+            >
+              {{ formatAdminAmount(user.stats.totalRevenue) }}
+            </p>
+          </article>
+        </div>
+
+        <article class="rounded-2xl border border-neutral-200 bg-white shadow-sm">
+          <div class="border-b border-neutral-200 p-5">
+            <h2 class="text-lg font-semibold text-neutral-900">Invoices</h2>
+            <p class="mt-2 text-sm text-neutral-500">Latest invoices attached to this account.</p>
+          </div>
+
+          @if (user.invoices.length > 0) {
+            <div class="overflow-x-auto">
+              <table class="w-full min-w-[760px] table-fixed text-sm">
+                <colgroup>
+                  <col class="w-[24%]" />
+                  <col class="w-[22%]" />
+                  <col class="w-[16%]" />
+                  <col class="w-[18%]" />
+                  <col class="w-[20%]" />
+                </colgroup>
+                <thead>
+                  <tr class="border-b border-neutral-200">
+                    <th class="px-5 py-3 text-left font-medium text-neutral-600">Invoice</th>
+                    <th class="px-5 py-3 text-left font-medium text-neutral-600">Client</th>
+                    <th class="px-5 py-3 text-left font-medium text-neutral-600">Status</th>
+                    <th class="px-5 py-3 text-left font-medium text-neutral-600">Due</th>
+                    <th class="px-5 py-3 text-right font-medium text-neutral-600">Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (invoice of user.invoices; track invoice.id) {
+                    <tr
+                      class="border-b border-neutral-100 transition last:border-0 hover:bg-neutral-50"
+                    >
+                      <td class="px-5 py-4">
+                        <a
+                          class="font-semibold text-neutral-900 transition hover:text-primary"
+                          [routerLink]="['/app/invoices', invoice.id]"
+                        >
+                          {{ invoice.invoiceNumber }}
+                        </a>
+                        <p class="mt-1 text-xs text-neutral-500">
+                          {{ formatNullableDateTime(invoice.createdAt) }}
+                        </p>
+                      </td>
+                      <td class="break-words px-5 py-4 text-neutral-600 [overflow-wrap:anywhere]">
+                        {{ invoice.clientName }}
+                      </td>
+                      <td class="px-5 py-4">
+                        <app-admin-user-badge
+                          [label]="formatStatusLabel(invoice.status)"
+                          tone="neutral"
+                        />
+                      </td>
+                      <td class="px-5 py-4 text-neutral-600">
+                        {{ formatNullableDate(invoice.dueDate) }}
+                      </td>
+                      <td class="px-5 py-4 text-right font-semibold text-neutral-900">
+                        {{ formatCurrencyAmount(invoice.total, invoice.currency) }}
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          } @else {
+            <div class="flex flex-col items-center justify-center px-6 py-16 text-center">
+              <div class="grid size-12 place-items-center rounded-2xl bg-primary/10 text-primary">
+                <svg lucideFileText class="size-5" aria-hidden="true"></svg>
+              </div>
+              <h3 class="mt-5 text-base font-semibold text-neutral-900">No invoices found</h3>
+              <p class="mt-2 max-w-sm text-sm text-neutral-500">
+                This account has not created invoices yet.
+              </p>
+            </div>
+          }
+        </article>
+
+        <article class="rounded-2xl border border-neutral-200 bg-white shadow-sm">
+          <div class="border-b border-neutral-200 p-5">
+            <h2 class="text-lg font-semibold text-neutral-900">Plan history</h2>
+            <p class="mt-2 text-sm text-neutral-500">Subscription and current-plan records.</p>
+          </div>
+
+          <div class="divide-y divide-neutral-100">
+            @for (history of user.planHistory; track history.changedAt + history.plan) {
+              <div class="grid gap-4 p-5 md:grid-cols-[1fr_auto] md:items-center">
+                <div>
+                  <div class="flex flex-wrap items-center gap-2">
+                    <app-admin-user-badge [label]="formatPlanLabel(history.plan)" tone="info" />
+                    <app-admin-user-badge
+                      [label]="formatStatusLabel(history.status)"
+                      tone="neutral"
+                    />
+                  </div>
+                  <p class="mt-2 text-sm text-neutral-600">
+                    {{ formatStatusLabel(history.source) }}
+                    @if (history.interval) {
+                      &middot; {{ formatStatusLabel(history.interval) }}
+                    }
+                  </p>
+                  @if (history.stripeSubscriptionId) {
+                    <p class="mt-1 break-words text-xs text-neutral-500 [overflow-wrap:anywhere]">
+                      {{ history.stripeSubscriptionId }}
+                    </p>
+                  }
+                </div>
+                <div class="text-left md:text-right">
+                  <p class="text-sm font-medium text-neutral-900">
+                    @if (history.amount !== null && history.currency) {
+                      {{ formatCurrencyAmount(history.amount, history.currency) }}
+                    } @else {
+                      No billing amount
+                    }
+                  </p>
+                  <p class="mt-1 text-xs text-neutral-500">
+                    {{ formatNullableDateTime(history.changedAt) }}
+                  </p>
+                </div>
+              </div>
+            }
+          </div>
+        </article>
+      </div>
+
+      <aside class="space-y-6">
+        <app-plan-editor
+          [currentPlan]="user.plan"
+          [canManage]="canManageUsers()"
+          [isSaving]="adminUserStore.isUpdatingPlan()"
+          (planSubmitted)="updatePlan($event)"
+        />
+
+        <app-trial-editor
+          [trialEndsAt]="user.trialEndsAt"
+          [canManage]="canManageUsers()"
+          [isSaving]="adminUserStore.isUpdatingTrial()"
+          (trialSubmitted)="updateTrial($event)"
+        />
+
+        <article class="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
+          <div class="flex items-start gap-3">
+            <span
+              class="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary"
+            >
+              <svg lucideShieldCheck class="size-5" aria-hidden="true"></svg>
+            </span>
+            <div>
+              <h2 class="text-lg font-semibold text-neutral-900">Permissions</h2>
+              <p class="mt-2 text-sm text-neutral-500">
+                Default permissions resolved from the assigned role.
+              </p>
+            </div>
+          </div>
+
+          <div class="mt-5 space-y-5">
+            @for (group of permissionGroups(); track group.label) {
+              <div>
+                <p class="text-xs font-medium uppercase tracking-normal text-neutral-500">
+                  {{ group.label }}
+                </p>
+                <div class="mt-3 flex flex-wrap gap-2">
+                  @for (permission of group.permissions; track permission) {
+                    <app-admin-user-badge
+                      [label]="formatPermissionLabel(permission)"
+                      tone="neutral"
+                    />
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        </article>
+
+        <article class="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
+          <h2 class="text-lg font-semibold text-neutral-900">Stripe</h2>
+          <div class="mt-5 space-y-4">
+            <div>
+              <p class="text-xs font-medium uppercase tracking-normal text-neutral-500">Customer</p>
+              <p
+                class="mt-2 break-words text-sm font-semibold text-neutral-900 [overflow-wrap:anywhere]"
+              >
+                {{ user.stripeCustomerId || 'Not connected' }}
+              </p>
+            </div>
+            <div>
+              <p class="text-xs font-medium uppercase tracking-normal text-neutral-500">
+                Connect account
+              </p>
+              <p
+                class="mt-2 break-words text-sm font-semibold text-neutral-900 [overflow-wrap:anywhere]"
+              >
+                {{ user.stripeAccountId || 'Not connected' }}
+              </p>
+            </div>
+
+            @if (user.stripeCustomerUrl) {
+              <a
+                mat-stroked-button
+                class="w-full"
+                [href]="user.stripeCustomerUrl"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <svg lucideExternalLink class="size-4" aria-hidden="true"></svg>
+                Open Stripe
+              </a>
+            }
+          </div>
+        </article>
+      </aside>
+    </div>
+  }
+</section>

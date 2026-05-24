@@ -153,6 +153,41 @@ public sealed class SendGridEmailService(
             cancellationToken);
     }
 
+    public async Task SendTeamInvitationAsync(
+        string toEmail,
+        string inviterName,
+        string tenantName,
+        string role,
+        string invitationToken,
+        DateTime expiresAt,
+        CancellationToken cancellationToken)
+    {
+        var invitationUrl = BuildTeamInvitationUrl(invitationToken);
+        var html = $"""
+            <div style="font-family:Arial,sans-serif;color:#111827;line-height:1.55">
+              <p>{Html(inviterName)} invited you to join <strong>{Html(tenantName)}</strong> on InvoMir.</p>
+              <p><strong>Role:</strong> {Html(role)}</p>
+              <p><a href="{Html(invitationUrl)}" style="display:inline-block;padding:10px 16px;background:#2563eb;color:#ffffff;text-decoration:none;border-radius:6px">Accept invitation</a></p>
+              <p>This invitation expires on {expiresAt:yyyy-MM-dd HH:mm} UTC.</p>
+              <p style="color:#6b7280;font-size:12px">Sent via InvoMir.</p>
+            </div>
+            """;
+
+        await SendEmailAsync(
+            new EmailDeliveryRequest(
+                toEmail,
+                $"Join {tenantName} on InvoMir",
+                html,
+                null,
+                null,
+                EmailConstants.Types.TeamInvitation,
+                null,
+                null,
+                null,
+                null),
+            cancellationToken);
+    }
+
     private async Task SendEmailAsync(
         EmailDeliveryRequest deliveryRequest,
         CancellationToken cancellationToken)
@@ -374,6 +409,12 @@ public sealed class SendGridEmailService(
     {
         var separator = _settings.EmailVerificationBaseUrl.Contains('?', StringComparison.Ordinal) ? '&' : '?';
         return $"{_settings.EmailVerificationBaseUrl}{separator}token={Uri.EscapeDataString(verificationToken)}";
+    }
+
+    private string BuildTeamInvitationUrl(string invitationToken)
+    {
+        var separator = _settings.TeamInvitationBaseUrl.Contains('?', StringComparison.Ordinal) ? '&' : '?';
+        return $"{_settings.TeamInvitationBaseUrl}{separator}token={Uri.EscapeDataString(invitationToken)}";
     }
 
     private static string Html(string? value)

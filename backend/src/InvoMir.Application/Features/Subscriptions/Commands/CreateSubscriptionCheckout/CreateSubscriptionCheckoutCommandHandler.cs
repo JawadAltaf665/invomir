@@ -47,6 +47,10 @@ public sealed class CreateSubscriptionCheckoutCommandHandler(
 
         var plan = request.Plan.Trim().ToLowerInvariant();
         var interval = request.Interval.Trim().ToLowerInvariant();
+
+        if (!stripeService.IsSubscriptionCheckoutConfigured(plan, interval))
+            throw new BadRequestException("Subscription checkout is not available.");
+
         var checkoutSession = await stripeService.CreateSubscriptionCheckoutSessionAsync(
             new StripeSubscriptionCheckoutRequestDto(
                 profile.UserId,

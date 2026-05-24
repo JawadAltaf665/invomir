@@ -1,6 +1,7 @@
 namespace InvoMir.Application.Features.Reports.DTOs;
 
 public sealed record MonthlyReportsDto(
+    string Currency,
     IReadOnlyList<MonthlyReportMonthDto> Months);
 
 public sealed record MonthlyReportMonthDto(

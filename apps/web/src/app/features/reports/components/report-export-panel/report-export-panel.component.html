@@ -1,0 +1,74 @@
+<article class="flex h-full flex-col rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
+  <div>
+    <h2 class="text-lg font-semibold text-neutral-900">Export report</h2>
+    <p class="mt-1 text-sm text-neutral-500">Download invoice report rows for a selected period.</p>
+  </div>
+
+  <form class="mt-5 grid grid-cols-1 gap-4" [formGroup]="form">
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-full">
+      <mat-label>From</mat-label>
+      <input matInput type="date" formControlName="from" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-full">
+      <mat-label>To</mat-label>
+      <input matInput type="date" formControlName="to" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-full">
+      <mat-label>Status</mat-label>
+      <mat-select formControlName="status">
+        <mat-option [value]="null">All statuses</mat-option>
+        @for (status of statusOptions; track status.value) {
+          <mat-option [value]="status.value">{{ status.label }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    @if (validationMessage()) {
+      <p class="text-xs font-medium text-red-600">{{ validationMessage() }}</p>
+    }
+  </form>
+
+  @if (errorMessages().length > 0) {
+    <div class="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4">
+      @for (error of errorMessages(); track error) {
+        <p class="text-sm font-medium text-amber-800">{{ error }}</p>
+      }
+    </div>
+  }
+
+  <div class="mt-5 grid grid-cols-1 gap-3">
+    @if (canExport()) {
+      <button
+        mat-flat-button
+        color="primary"
+        type="button"
+        [disabled]="isExporting()"
+        (click)="exportReport('csv')"
+      >
+        @if (isExporting()) {
+          <mat-spinner diameter="18" />
+        } @else {
+          <svg lucideDownload class="size-4" aria-hidden="true"></svg>
+        }
+        Export CSV
+      </button>
+      <button
+        mat-stroked-button
+        type="button"
+        [disabled]="isExporting()"
+        (click)="exportReport('pdf')"
+      >
+        <svg lucideDownload class="size-4" aria-hidden="true"></svg>
+        Export PDF
+      </button>
+    } @else {
+      <span
+        class="inline-flex h-10 items-center justify-center rounded-xl border border-neutral-200 px-4 text-sm font-medium text-neutral-500"
+      >
+        Export permission required
+      </span>
+    }
+  </div>
+</article>

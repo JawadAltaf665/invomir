@@ -7,6 +7,7 @@ public static class AuditConstants
         public const string User = "User";
         public const string Client = "Client";
         public const string Invoice = "Invoice";
+        public const string TeamInvitation = "TeamInvitation";
     }
 
     public static class Actions
@@ -35,5 +36,10 @@ public static class AuditConstants
         public const string SubscriptionSynced = "subscription_synced";
         public const string PlanOverridden = "plan_overridden";
         public const string TrialExtended = "trial_extended";
+        public const string TeamInvited = "team_invited";
+        public const string TeamInvitationCancelled = "team_invitation_cancelled";
+        public const string TeamInvitationAccepted = "team_invitation_accepted";
+        public const string TeamMemberRemoved = "team_member_removed";
+        public const string TeamMemberRoleChanged = "team_member_role_changed";
     }
 }

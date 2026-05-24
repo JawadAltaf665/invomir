@@ -2,7 +2,7 @@ using InvoMir.Application.Features.Subscriptions.DTOs;
 
 namespace InvoMir.Application.Features.Subscriptions.Queries.GetSubscriptionPlans;
 
-public sealed class GetSubscriptionPlansQueryHandler
+public sealed class GetSubscriptionPlansQueryHandler(IStripeService stripeService)
     : IRequestHandler<GetSubscriptionPlansQuery, SubscriptionPlansDto>
 {
     public Task<SubscriptionPlansDto> Handle(
@@ -19,6 +19,12 @@ public sealed class GetSubscriptionPlansQueryHandler
                 plan.PricePerMonth,
                 plan.PricePerYear,
                 plan.Currency,
+                stripeService.IsSubscriptionCheckoutConfigured(
+                    plan.Plan,
+                    SubscriptionConstants.Intervals.Month),
+                stripeService.IsSubscriptionCheckoutConfigured(
+                    plan.Plan,
+                    SubscriptionConstants.Intervals.Year),
                 new SubscriptionPlanLimitsDto(
                     plan.ClientLimit,
                     plan.InvoiceLimitPerMonth,

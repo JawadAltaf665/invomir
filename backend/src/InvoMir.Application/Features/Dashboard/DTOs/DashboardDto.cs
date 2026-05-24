@@ -1,6 +1,8 @@
 namespace InvoMir.Application.Features.Dashboard.DTOs;
 
 public sealed record DashboardDto(
+    string Currency,
+    string WorkspaceRole,
     DashboardRevenueDto Revenue,
     decimal Outstanding,
     decimal Overdue,
@@ -28,6 +30,9 @@ public sealed record DashboardRecentInvoiceDto(
     string Status,
     decimal Total,
     string Currency,
+    decimal OriginalTotal,
+    string OriginalCurrency,
+    decimal ExchangeRate,
     DateOnly DueDate,
     DateTime? SentAt,
     DateTime? PaidAt);
@@ -35,4 +40,6 @@ public sealed record DashboardRecentInvoiceDto(
 public sealed record DashboardTopClientDto(
     Guid Id,
     string Name,
-    decimal Revenue);
+    decimal Revenue,
+    decimal InvoiceVolume,
+    int InvoiceCount);

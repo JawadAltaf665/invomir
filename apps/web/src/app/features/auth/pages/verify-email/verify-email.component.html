@@ -1,0 +1,34 @@
+<app-auth-form-shell
+  title="Verify email"
+  subtitle="We are confirming your email verification link."
+  footerLabel="Need to access your workspace?"
+  footerLinkText="Sign in"
+  footerLink="/auth/login"
+>
+  <div class="space-y-5">
+    @if (isLoading()) {
+      <div class="flex items-center gap-3 rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
+        <mat-spinner diameter="20" />
+        <p class="text-sm font-medium text-neutral-700">Verifying email...</p>
+      </div>
+    }
+
+    @if (successMessage()) {
+      <div class="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+        <p class="text-sm font-medium text-emerald-800">{{ successMessage() }}</p>
+      </div>
+    }
+
+    @if (errorMessages().length > 0) {
+      <div class="rounded-2xl border border-red-200 bg-red-50 p-4">
+        @for (error of errorMessages(); track error) {
+          <p class="text-sm font-medium text-red-800">{{ error }}</p>
+        }
+      </div>
+    }
+
+    <a mat-flat-button color="primary" routerLink="/auth/login" class="h-10 w-full rounded-xl">
+      Continue to sign in
+    </a>
+  </div>
+</app-auth-form-shell>

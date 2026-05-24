@@ -1,0 +1,148 @@
+<section class="mx-auto max-w-7xl p-6 lg:p-8">
+  <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+    <div>
+      <p class="text-xs font-medium uppercase tracking-normal text-neutral-500">
+        Workspace billing
+      </p>
+      <h1 class="mt-2 text-2xl font-semibold tracking-tight text-neutral-900">Subscriptions</h1>
+      <p class="mt-2 text-sm text-neutral-500">
+        Manage plan access, workspace usage, and Stripe subscription checkout.
+      </p>
+    </div>
+
+    <button
+      mat-stroked-button
+      type="button"
+      [disabled]="subscriptionStore.isBusy()"
+      (click)="refresh()"
+    >
+      <svg lucideRefreshCcw class="size-4" aria-hidden="true"></svg>
+      Refresh
+    </button>
+  </div>
+
+  @if (trialBanner(); as trial) {
+    <div class="mt-6 rounded-2xl border border-primary/20 bg-primary/5 p-5 shadow-sm">
+      <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div>
+          <p class="text-sm font-semibold text-neutral-900">You're on a free trial</p>
+          <p class="mt-1 text-sm text-neutral-600">
+            {{ trial.remaining }}. Trial ends {{ trial.endDate }}.
+          </p>
+        </div>
+
+        <button mat-stroked-button type="button" (click)="scrollToPlans()">View plans</button>
+      </div>
+    </div>
+  }
+
+  @if (checkoutReturnMessage()) {
+    <div class="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-5 shadow-sm">
+      <p class="text-sm font-medium text-emerald-700">{{ checkoutReturnMessage() }}</p>
+    </div>
+  }
+
+  @if (subscriptionStore.loadErrorMessages().length > 0) {
+    <div class="mt-6 rounded-2xl border border-red-200 bg-red-50 p-5 shadow-sm">
+      <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+        <div>
+          <p class="text-sm font-medium text-red-800">Billing could not be loaded</p>
+          <div class="mt-2 space-y-1">
+            @for (error of subscriptionStore.loadErrorMessages(); track error) {
+              <p class="text-xs text-red-600">{{ error }}</p>
+            }
+          </div>
+        </div>
+
+        <button
+          mat-button
+          type="button"
+          [disabled]="subscriptionStore.isLoading()"
+          (click)="refresh()"
+        >
+          Retry
+        </button>
+      </div>
+    </div>
+  }
+
+  <div class="mt-6 grid grid-cols-1 items-stretch gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
+    <app-current-plan-card
+      [subscription]="subscriptionStore.currentSubscription()"
+      [isLoading]="subscriptionStore.isLoading() && !subscriptionStore.currentSubscription()"
+    />
+
+    <app-usage-metrics-card
+      [metrics]="subscriptionStore.usageMetrics()"
+      [isLoading]="subscriptionStore.isLoading() && !subscriptionStore.currentSubscription()"
+    />
+
+    <div>
+      <div id="plans" class="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
+        <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+          <div>
+            <h2 class="text-lg font-semibold text-neutral-900">Plans</h2>
+            <p class="mt-1 text-sm text-neutral-500">
+              Choose the plan and billing interval that fits the workspace.
+            </p>
+          </div>
+
+          <div class="inline-flex rounded-xl border border-neutral-200 bg-neutral-50 p-1">
+            @for (interval of intervalOptions; track interval) {
+              <button
+                type="button"
+                class="h-9 rounded-lg px-3 text-sm font-medium transition"
+                [class.bg-white]="subscriptionStore.interval() === interval"
+                [class.text-neutral-900]="subscriptionStore.interval() === interval"
+                [class.shadow-sm]="subscriptionStore.interval() === interval"
+                [class.text-neutral-500]="subscriptionStore.interval() !== interval"
+                (click)="setInterval(interval)"
+              >
+                {{ interval === 'month' ? 'Monthly' : 'Yearly' }}
+              </button>
+            }
+          </div>
+        </div>
+
+        @if (subscriptionStore.checkoutErrorMessages().length > 0) {
+          <div class="mt-5 rounded-2xl border border-red-200 bg-red-50 p-4">
+            @for (error of subscriptionStore.checkoutErrorMessages(); track error) {
+              <p class="text-sm font-medium text-red-700">{{ error }}</p>
+            }
+          </div>
+        }
+
+        @if (subscriptionStore.isLoading() && subscriptionStore.planCards().length === 0) {
+          <div class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-4">
+            @for (item of [1, 2, 3, 4]; track item) {
+              <div class="h-96 animate-pulse rounded-2xl bg-neutral-100"></div>
+            }
+          </div>
+        } @else {
+          <div class="mt-6 grid grid-cols-1 items-stretch gap-6 lg:grid-cols-2">
+            @for (card of subscriptionStore.planCards(); track card.plan.plan) {
+              <app-plan-card
+                [card]="card"
+                [interval]="subscriptionStore.interval()"
+                [canManage]="canManageSubscriptions()"
+                [isStartingCheckout]="subscriptionStore.isStartingCheckout()"
+                [activeCheckoutPlan]="activeCheckoutPlan()"
+                (checkoutRequested)="startCheckout($event)"
+              />
+            }
+          </div>
+        }
+      </div>
+    </div>
+
+    <app-billing-actions-card
+      [subscription]="subscriptionStore.currentSubscription()"
+      [canManage]="canManageSubscriptions()"
+      [canCancel]="subscriptionStore.canCancelCurrentPlan()"
+      [isCancelling]="subscriptionStore.isCancelling()"
+      [errorMessages]="subscriptionStore.cancellationErrorMessages()"
+      [successMessage]="subscriptionStore.cancellationSuccessMessage()"
+      (cancelRequested)="cancelSubscription()"
+    />
+  </div>
+</section>

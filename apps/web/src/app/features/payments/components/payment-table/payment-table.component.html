@@ -1,0 +1,101 @@
+<article class="rounded-2xl border border-neutral-200 bg-white shadow-sm">
+  @if (isLoading() && rows().length === 0) {
+    <div class="p-5">
+      <div class="h-5 w-40 animate-pulse rounded-xl bg-neutral-100"></div>
+      <div class="mt-6 space-y-4">
+        @for (row of skeletonRows; track row) {
+          <div class="h-14 animate-pulse rounded-xl bg-neutral-100"></div>
+        }
+      </div>
+    </div>
+  } @else if (rows().length > 0) {
+    <div class="overflow-x-auto">
+      <table class="w-full min-w-[980px] table-fixed text-sm">
+        <colgroup>
+          <col class="w-[20%]" />
+          <col class="w-[18%]" />
+          <col class="w-[12%]" />
+          <col class="w-[12%]" />
+          <col class="w-[16%]" />
+          <col class="w-[12%]" />
+          <col class="w-[10%]" />
+        </colgroup>
+        <thead>
+          <tr class="border-b border-neutral-200">
+            <th class="px-5 py-3 text-left font-medium text-neutral-600">Invoice</th>
+            <th class="px-5 py-3 text-left font-medium text-neutral-600">Client</th>
+            <th class="px-5 py-3 text-left font-medium text-neutral-600">Method</th>
+            <th class="px-5 py-3 text-left font-medium text-neutral-600">Status</th>
+            <th class="px-5 py-3 text-left font-medium text-neutral-600">Paid</th>
+            <th class="px-5 py-3 text-right font-medium text-neutral-600">Amount</th>
+            <th class="px-5 py-3 text-left font-medium text-neutral-600">Reference</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (payment of rows(); track payment.id) {
+            <tr class="border-b border-neutral-100 transition last:border-0 hover:bg-neutral-50">
+              <td class="px-5 py-4">
+                <a
+                  class="font-semibold text-neutral-900 transition hover:text-primary"
+                  [routerLink]="['/app/invoices', payment.invoiceId]"
+                >
+                  {{ payment.invoiceNumber }}
+                </a>
+                <p class="mt-1 text-xs text-neutral-500">{{ payment.noteDisplay }}</p>
+              </td>
+              <td class="px-5 py-4">
+                <a
+                  class="break-words font-medium text-neutral-700 transition hover:text-primary [overflow-wrap:anywhere]"
+                  [routerLink]="['/app/clients', payment.clientId]"
+                >
+                  {{ payment.clientName }}
+                </a>
+              </td>
+              <td class="px-5 py-4 text-neutral-600">
+                <span class="inline-flex items-center gap-2">
+                  <svg lucideCreditCard class="size-4 text-neutral-400" aria-hidden="true"></svg>
+                  {{ payment.methodLabel }}
+                </span>
+              </td>
+              <td class="px-5 py-4">
+                <app-payment-status-badge [status]="payment.status" />
+              </td>
+              <td class="px-5 py-4 text-neutral-600">{{ payment.paidAtDisplay }}</td>
+              <td class="px-5 py-4 text-right font-semibold text-neutral-900">
+                <span class="block break-words [overflow-wrap:anywhere]">
+                  {{ payment.amountDisplay }}
+                </span>
+              </td>
+              <td class="px-5 py-4">
+                <span class="block break-words text-xs text-neutral-500 [overflow-wrap:anywhere]">
+                  {{ payment.gatewayReferenceDisplay }}
+                </span>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <app-pagination
+      itemLabel="payments"
+      [page]="currentPage()"
+      [pageSize]="pageSize()"
+      [totalCount]="totalCount()"
+      [totalPages]="totalPages()"
+      [isLoading]="isLoading()"
+      (pageChange)="pageRequested.emit($event)"
+      (pageSizeChange)="pageSizeRequested.emit($event)"
+    />
+  } @else {
+    <div class="flex flex-col items-center justify-center px-6 py-24 text-center">
+      <div class="grid size-12 place-items-center rounded-2xl bg-primary/10 text-primary">
+        <svg lucideReceiptText class="size-5" aria-hidden="true"></svg>
+      </div>
+      <h3 class="mt-5 text-base font-semibold text-neutral-900">No payments found</h3>
+      <p class="mt-2 max-w-sm text-sm text-neutral-500">
+        Payments will appear here after invoices are paid manually or through Stripe.
+      </p>
+    </div>
+  }
+</article>

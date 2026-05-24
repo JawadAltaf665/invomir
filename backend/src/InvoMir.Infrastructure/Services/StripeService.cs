@@ -63,11 +63,11 @@ public sealed class StripeService(
         CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(_settings.SecretKey))
-            throw new BadRequestException("Stripe is not configured.");
+            throw new BadRequestException("Subscription checkout is not available.");
 
         var priceId = ResolveSubscriptionPriceId(request.Plan, request.Interval);
         if (string.IsNullOrWhiteSpace(priceId))
-            throw new BadRequestException("Stripe subscription price is not configured.");
+            throw new BadRequestException("Subscription checkout is not available.");
 
         using var httpRequest = new HttpRequestMessage(HttpMethod.Post, CheckoutSessionsUrl)
         {
@@ -98,6 +98,12 @@ public sealed class StripeService(
             throw new BadRequestException("Stripe subscription checkout response was invalid.");
 
         return new StripeCheckoutSessionDto(id, url);
+    }
+
+    public bool IsSubscriptionCheckoutConfigured(string plan, string interval)
+    {
+        return !string.IsNullOrWhiteSpace(_settings.SecretKey) &&
+            !string.IsNullOrWhiteSpace(ResolveSubscriptionPriceId(plan, interval));
     }
 
     public async Task<StripeSubscriptionCancellationDto> CancelSubscriptionAtPeriodEndAsync(

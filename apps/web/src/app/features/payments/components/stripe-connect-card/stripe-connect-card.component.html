@@ -1,0 +1,46 @@
+<article class="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
+  <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+    <div class="flex min-w-0 gap-4">
+      <div class="grid size-11 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary">
+        <svg lucideShieldCheck class="size-5" aria-hidden="true"></svg>
+      </div>
+      <div class="min-w-0">
+        <h2 class="text-base font-semibold text-neutral-900">Stripe Connect</h2>
+        <p class="mt-1 max-w-2xl text-sm text-neutral-500">
+          Connect Stripe to collect card payments from public invoice payment pages.
+        </p>
+      </div>
+    </div>
+
+    @if (canManage()) {
+      <button
+        mat-flat-button
+        color="primary"
+        type="button"
+        [disabled]="isConnecting()"
+        (click)="connectRequested.emit()"
+      >
+        @if (isConnecting()) {
+          <mat-spinner diameter="18" />
+        } @else {
+          <svg lucideArrowUpRight class="size-4" aria-hidden="true"></svg>
+        }
+        Connect Stripe
+      </button>
+    } @else {
+      <span
+        class="inline-flex h-10 items-center rounded-xl border border-neutral-200 px-4 text-sm font-medium text-neutral-500"
+      >
+        Manage permission required
+      </span>
+    }
+  </div>
+
+  @if (errorMessages().length > 0) {
+    <div class="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4">
+      @for (error of errorMessages(); track error) {
+        <p class="text-sm font-medium text-amber-800">{{ error }}</p>
+      }
+    </div>
+  }
+</article>

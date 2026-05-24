@@ -1,0 +1,34 @@
+<article class="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
+  <div>
+    <h2 class="text-lg font-semibold text-neutral-900">Trial access</h2>
+    <p class="mt-2 text-sm text-neutral-500">Extend the trial end date for the user workspace.</p>
+  </div>
+
+  <form class="mt-5 space-y-5" [formGroup]="form" (ngSubmit)="submitTrial()">
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>Trial ends at</mat-label>
+      <input
+        matInput
+        type="date"
+        formControlName="trialEndsAt"
+        [min]="minTrialDate"
+        [readonly]="!canManage() || isSaving()"
+      />
+      <mat-hint>Must be a future date.</mat-hint>
+      @if (form.controls.trialEndsAt.hasError('required') && form.controls.trialEndsAt.touched) {
+        <mat-error>Trial end date is required.</mat-error>
+      }
+    </mat-form-field>
+
+    <button
+      mat-flat-button
+      color="primary"
+      type="submit"
+      class="w-full"
+      [disabled]="!canManage() || isSaving()"
+    >
+      <svg lucideCalendarClock class="size-4" aria-hidden="true"></svg>
+      Save trial
+    </button>
+  </form>
+</article>

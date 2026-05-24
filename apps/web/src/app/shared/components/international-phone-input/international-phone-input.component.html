@@ -1,0 +1,70 @@
+<div class="grid w-full grid-cols-1 gap-5 sm:grid-cols-[minmax(180px,0.35fr)_minmax(0,0.65fr)]">
+  <mat-form-field appearance="outline" class="w-full">
+    <mat-label>Country code</mat-label>
+    <input
+      matInput
+      type="text"
+      autocomplete="off"
+      [formControl]="countryQuery"
+      [matAutocomplete]="countryAutocomplete"
+      [disabled]="isDisabled() || isLoadingCountries()"
+      (blur)="markTouched()"
+    />
+    <mat-autocomplete
+      #countryAutocomplete="matAutocomplete"
+      autoActiveFirstOption
+      [displayWith]="displayCountry"
+      (closed)="restoreSelectedCountry()"
+      (optionSelected)="selectCountry($event)"
+    >
+      @for (country of filteredCountries(); track country.iso2 + country.dialCode) {
+        <mat-option [value]="country">
+          <span class="flex min-w-0 items-center justify-between gap-4">
+            <span class="min-w-0 truncate">{{ country.name }}</span>
+            <span class="shrink-0 text-xs font-medium text-neutral-500">
+              {{ country.iso2 }} +{{ country.dialCode }}
+            </span>
+          </span>
+        </mat-option>
+      }
+    </mat-autocomplete>
+    @if (countryErrorMessage()) {
+      <mat-error>{{ countryErrorMessage() }}</mat-error>
+    } @else if (isLoadingCountries()) {
+      <mat-hint>Loading countries from API.</mat-hint>
+    } @else {
+      <mat-hint>Search country or code.</mat-hint>
+    }
+  </mat-form-field>
+
+  <mat-form-field
+    appearance="outline"
+    class="w-full"
+    [ngClass]="{ 'phone-field-invalid': phoneErrorMessage() }"
+  >
+    <mat-label>{{ label() }}</mat-label>
+    <span matTextPrefix class="text-sm font-medium text-neutral-500">
+      @if (selectedCountry(); as country) {
+        +{{ country.dialCode }}&nbsp;
+      }
+    </span>
+    <input
+      matInput
+      type="tel"
+      inputmode="numeric"
+      autocomplete="tel"
+      pattern="[0-9]*"
+      maxlength="15"
+      [formControl]="nationalNumber"
+      [disabled]="isDisabled() || isLoadingCountries() || !!countryErrorMessage()"
+      (blur)="markTouched()"
+    />
+    @if (phoneErrorMessage()) {
+      <mat-error>{{ phoneErrorMessage() }}</mat-error>
+    } @else if (normalizedPreview()) {
+      <mat-hint>Stored as {{ normalizedPreview() }}.</mat-hint>
+    } @else {
+      <mat-hint>Digits only, or paste full + number.</mat-hint>
+    }
+  </mat-form-field>
+</div>

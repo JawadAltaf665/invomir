@@ -1,0 +1,94 @@
+<app-auth-form-shell
+  title="Accept invitation"
+  subtitle="Create your account to join the existing InvoMir workspace."
+  footerLabel="Already joined?"
+  footerLinkText="Sign in"
+  footerLink="/auth/login"
+>
+  <form class="space-y-5" [formGroup]="form" (ngSubmit)="submit()">
+    @if (teamStore.acceptSuccessMessage()) {
+      <div class="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+        <p class="text-sm font-medium text-emerald-800">
+          {{ teamStore.acceptSuccessMessage() }}
+        </p>
+        @if (teamStore.acceptedInvitation(); as acceptedInvitation) {
+          <p class="mt-2 text-xs text-emerald-700">
+            {{ acceptedInvitation.email }} joined as {{ acceptedInvitation.role }}.
+          </p>
+        }
+      </div>
+    }
+
+    @if (localErrorMessages().length > 0 || teamStore.acceptErrorMessages().length > 0) {
+      <div class="rounded-2xl border border-red-200 bg-red-50 p-4">
+        @for (error of localErrorMessages(); track error) {
+          <p class="text-sm font-medium text-red-800">{{ error }}</p>
+        }
+        @for (error of teamStore.acceptErrorMessages(); track error) {
+          <p class="text-sm font-medium text-red-800">{{ error }}</p>
+        }
+      </div>
+    }
+
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>First name</mat-label>
+        <input matInput formControlName="firstName" autocomplete="given-name" />
+        @if (form.controls.firstName.hasError('required')) {
+          <mat-error>First name is required.</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>Last name</mat-label>
+        <input matInput formControlName="lastName" autocomplete="family-name" />
+        @if (form.controls.lastName.hasError('required')) {
+          <mat-error>Last name is required.</mat-error>
+        }
+      </mat-form-field>
+    </div>
+
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>Password</mat-label>
+      <input matInput type="password" formControlName="password" autocomplete="new-password" />
+      @if (form.controls.password.hasError('required')) {
+        <mat-error>Password is required.</mat-error>
+      } @else if (form.controls.password.invalid) {
+        <mat-error>Use 8+ characters with an uppercase letter and number.</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>Confirm password</mat-label>
+      <input matInput type="password" formControlName="confirmPassword" autocomplete="new-password" />
+      @if (form.controls.confirmPassword.hasError('required')) {
+        <mat-error>Confirm your password.</mat-error>
+      } @else if (form.controls.confirmPassword.touched && form.controls.confirmPassword.value !== form.controls.password.value) {
+        <mat-error>Passwords do not match.</mat-error>
+      }
+    </mat-form-field>
+
+    <button
+      mat-flat-button
+      color="primary"
+      class="h-10 w-full rounded-xl"
+      type="submit"
+      [disabled]="teamStore.isAcceptingInvitation() || !!teamStore.acceptSuccessMessage()"
+    >
+      @if (teamStore.isAcceptingInvitation()) {
+        <mat-spinner diameter="18" />
+      } @else {
+        Accept invitation
+      }
+    </button>
+
+    @if (teamStore.acceptSuccessMessage()) {
+      <a
+        routerLink="/auth/login"
+        class="block text-center text-sm font-medium text-primary transition hover:text-primary/90"
+      >
+        Continue to sign in
+      </a>
+    }
+  </form>
+</app-auth-form-shell>
