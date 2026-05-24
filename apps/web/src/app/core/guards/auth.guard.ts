@@ -11,11 +11,8 @@ export const authGuard: CanActivateFn = (_route, state) => {
   const platformId = inject(PLATFORM_ID);
 
   if (!isPlatformBrowser(platformId)) {
-    return router.createUrlTree(['/auth/login'], {
-      queryParams: {
-        returnUrl: state.url,
-      },
-    });
+    // Browser storage is unavailable during SSR, so defer auth enforcement to hydration.
+    return true;
   }
 
   return authSession.ensureAuthenticated().pipe(

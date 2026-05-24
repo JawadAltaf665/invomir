@@ -5,6 +5,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { LucideEye, LucideEyeOff } from '@lucide/angular';
 import { finalize } from 'rxjs';
 
 import { AuthSessionService } from '../../../../core/auth/auth-session.service';
@@ -21,7 +22,9 @@ import { AuthFormShellComponent } from '../../components/auth-form-shell/auth-fo
     MatInputModule,
     MatProgressSpinnerModule,
     ReactiveFormsModule,
-    RouterLink
+    RouterLink,
+    LucideEye,
+    LucideEyeOff
   ],
   templateUrl: './login.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -34,6 +37,7 @@ export class LoginComponent {
 
   protected readonly isSubmitting = signal(false);
   protected readonly errorMessages = signal<readonly string[]>([]);
+  protected readonly isPasswordVisible = signal(false);
 
   protected readonly form = this.fb.nonNullable.group({
     email: ['', [Validators.required, Validators.email, Validators.maxLength(255)]],
@@ -58,5 +62,9 @@ export class LoginComponent {
         next: () => void this.router.navigateByUrl(returnUrl),
         error: error => this.errorMessages.set(extractApiErrors(error))
       });
+  }
+
+  protected togglePasswordVisibility(): void {
+    this.isPasswordVisible.update(isVisible => !isVisible);
   }
 }

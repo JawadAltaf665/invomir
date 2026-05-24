@@ -2,11 +2,11 @@
 
 Backend alignment:
 
-- `GET /api/audit-logs` loads tenant-scoped activity with `entityName`, `entityId`, `action`, `from`, `to`, `page`, and `limit`.
-- `GET /api/audit-logs/{entityName}/{entityId}` supports reusable entity-history panels for invoice/client/admin detail pages later.
+- `GET /api/audit-logs` loads system-admin audit activity with `entityName`, `entityId`, `action`, `from`, `to`, `search`, `page`, and `limit`.
+- `GET /api/audit-logs/{entityName}/{entityId}` supports reusable system-admin entity-history panels for admin detail pages later.
 
 Permissions:
 
-- `audit_log.view` gates route access and audit history reads.
+- `system.access` gates route access and audit history reads. Workspace owner/member roles must not see this module.
 
-Owns audit log listing, entity history models, filters, pagination, action badges, entity links, and permission-aware access.
+Owns audit log listing, entity history models, backend search filters, date-picker ranges, pagination, action badges, entity links, and system-admin-only access.

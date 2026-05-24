@@ -12,21 +12,25 @@
     <div class="overflow-x-auto">
       <table class="w-full min-w-[1120px] table-fixed text-sm">
         <colgroup>
-          <col class="w-[18%]" />
-          <col class="w-[16%]" />
+          <col class="w-[15%]" />
+          <col class="w-[17%]" />
+          @if (isSystemScope()) {
+            <col class="w-[17%]" />
+          }
           <col class="w-[14%]" />
-          <col class="w-[20%]" />
-          <col class="w-[14%]" />
-          <col class="w-[18%]" />
+          <col class="w-[22%]" />
+          <col class="w-[15%]" />
         </colgroup>
         <thead>
           <tr class="border-b border-neutral-200">
             <th class="px-5 py-3 text-left font-medium text-neutral-600">Time</th>
             <th class="px-5 py-3 text-left font-medium text-neutral-600">Actor</th>
+            @if (isSystemScope()) {
+              <th class="px-5 py-3 text-left font-medium text-neutral-600">Workspace</th>
+            }
             <th class="px-5 py-3 text-left font-medium text-neutral-600">Action</th>
             <th class="px-5 py-3 text-left font-medium text-neutral-600">Entity</th>
             <th class="px-5 py-3 text-left font-medium text-neutral-600">Network</th>
-            <th class="px-5 py-3 text-left font-medium text-neutral-600">Details</th>
           </tr>
         </thead>
         <tbody>
@@ -46,6 +50,16 @@
                   {{ auditLog.actorMeta }}
                 </p>
               </td>
+              @if (isSystemScope()) {
+                <td class="px-5 py-4">
+                  <p class="break-words font-medium text-neutral-900 [overflow-wrap:anywhere]">
+                    {{ auditLog.workspaceName }}
+                  </p>
+                  <p class="mt-1 break-words text-xs text-neutral-500 [overflow-wrap:anywhere]">
+                    {{ auditLog.workspaceMeta }}
+                  </p>
+                </td>
+              }
               <td class="px-5 py-4">
                 <app-audit-action-badge
                   [label]="auditLog.actionLabel"
@@ -63,11 +77,6 @@
                 } @else {
                   <p class="font-semibold text-neutral-900">{{ auditLog.entityLabel }}</p>
                 }
-                @if (auditLog.entityId) {
-                  <p class="mt-1 break-words text-xs text-neutral-500 [overflow-wrap:anywhere]">
-                    {{ auditLog.entityId }}
-                  </p>
-                }
               </td>
               <td class="px-5 py-4">
                 <p class="break-words text-neutral-700 [overflow-wrap:anywhere]">
@@ -79,13 +88,20 @@
                   {{ auditLog.userAgentDisplay }}
                 </p>
               </td>
-              <td class="px-5 py-4">
-                <p class="text-neutral-700">{{ auditLog.summary }}</p>
-                <details class="mt-3 rounded-xl border border-neutral-200 bg-white p-3">
+            </tr>
+            <tr class="border-b border-neutral-100 last:border-0">
+              <td class="px-5 pb-4" [attr.colspan]="isSystemScope() ? 6 : 5">
+                <details class="rounded-xl border border-neutral-200 bg-white p-3">
                   <summary class="cursor-pointer text-xs font-medium text-neutral-600">
                     Recorded values
                   </summary>
-                  <div class="mt-3 grid grid-cols-1 gap-3">
+                  <p class="mt-3 text-sm text-neutral-700">{{ auditLog.summary }}</p>
+                  @if (auditLog.entityId) {
+                    <p class="mt-1 break-words text-xs text-neutral-500 [overflow-wrap:anywhere]">
+                      Entity ID {{ auditLog.entityId }}
+                    </p>
+                  }
+                  <div class="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-2">
                     <div>
                       <p class="text-xs font-medium uppercase tracking-normal text-neutral-500">
                         Before
@@ -130,8 +146,18 @@
       </div>
       <h3 class="mt-5 text-base font-semibold text-neutral-900">No audit activity found</h3>
       <p class="mt-2 max-w-sm text-sm text-neutral-500">
-        Activity will appear here after users create, update, send, or manage workspace records.
+        @if (hasActiveFilters()) {
+          No audit logs match the selected filters.
+        } @else {
+          System audit activity will appear here after users create, update, send, or manage records.
+        }
       </p>
+      @if (hasActiveFilters()) {
+        <button mat-stroked-button type="button" class="mt-5" (click)="resetRequested.emit()">
+          <svg lucideRotateCcw class="size-4" aria-hidden="true"></svg>
+          Reset filters
+        </button>
+      }
     </div>
   }
 </article>

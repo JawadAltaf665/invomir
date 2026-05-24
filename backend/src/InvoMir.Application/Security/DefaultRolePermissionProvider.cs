@@ -14,7 +14,6 @@ public sealed class DefaultRolePermissionProvider : IRolePermissionProvider
                 ..Permissions.Client.All,
                 ..Permissions.Payment.All,
                 ..Permissions.Report.All,
-                ..Permissions.AuditLog.All,
                 Permissions.Subscription.View,
                 Permissions.Team.Manage,
                 Permissions.Settings.Manage

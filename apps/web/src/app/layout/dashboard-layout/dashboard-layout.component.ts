@@ -159,7 +159,7 @@ export class DashboardLayoutComponent implements OnInit {
       label: 'Audit logs',
       route: '/app/audit-logs',
       icon: 'auditLogs',
-      permissions: [permissions.auditLog.view],
+      permissions: [permissions.system.access],
     },
     {
       label: 'Settings',

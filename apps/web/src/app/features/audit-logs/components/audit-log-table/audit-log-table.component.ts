@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { MatButtonModule } from '@angular/material/button';
 import { RouterLink } from '@angular/router';
-import { LucideHistory } from '@lucide/angular';
+import { LucideHistory, LucideRotateCcw } from '@lucide/angular';
 
 import { PaginationComponent } from '../../../../shared/components/pagination/pagination.component';
 import { AuditLogListItemView } from '../../models/audit-log.models';
@@ -9,7 +10,14 @@ import { AuditActionBadgeComponent } from '../audit-action-badge/audit-action-ba
 @Component({
   selector: 'app-audit-log-table',
   standalone: true,
-  imports: [RouterLink, PaginationComponent, AuditActionBadgeComponent, LucideHistory],
+  imports: [
+    RouterLink,
+    MatButtonModule,
+    PaginationComponent,
+    AuditActionBadgeComponent,
+    LucideHistory,
+    LucideRotateCcw,
+  ],
   templateUrl: './audit-log-table.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -20,9 +28,12 @@ export class AuditLogTableComponent {
   readonly pageSize = input(20);
   readonly totalCount = input(0);
   readonly totalPages = input(0);
+  readonly isSystemScope = input(false);
+  readonly hasActiveFilters = input(false);
 
   readonly pageRequested = output<number>();
   readonly pageSizeRequested = output<number>();
+  readonly resetRequested = output<void>();
 
   protected readonly skeletonRows = [1, 2, 3, 4, 5];
 }

@@ -9,7 +9,7 @@ namespace InvoMir.API.Controllers;
 public sealed class AuditLogsController(ISender mediator) : ControllerBase
 {
     [HttpGet]
-    [RequirePermission(Permissions.AuditLog.View)]
+    [RequirePermission(Permissions.System.Access)]
     [ProducesResponseType(typeof(ApiResponse<PagedResult<AuditLogDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status422UnprocessableEntity)]
     public async Task<IActionResult> List(
@@ -18,19 +18,20 @@ public sealed class AuditLogsController(ISender mediator) : ControllerBase
         [FromQuery] string? action,
         [FromQuery] DateTime? from,
         [FromQuery] DateTime? to,
+        [FromQuery] string? search,
         [FromQuery] int page,
         [FromQuery(Name = "limit")] int limit,
         CancellationToken cancellationToken)
     {
         var result = await mediator.Send(
-            new ListAuditLogsQuery(entityName, entityId, action, from, to, page, limit),
+            new ListAuditLogsQuery(entityName, entityId, action, from, to, search, page, limit),
             cancellationToken);
 
         return Ok(ApiResponse<PagedResult<AuditLogDto>>.Ok(result));
     }
 
     [HttpGet("{entityName}/{entityId:guid}")]
-    [RequirePermission(Permissions.AuditLog.View)]
+    [RequirePermission(Permissions.System.Access)]
     [ProducesResponseType(typeof(ApiResponse<PagedResult<AuditLogDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status422UnprocessableEntity)]
     public async Task<IActionResult> GetEntityHistory(

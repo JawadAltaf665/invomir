@@ -44,6 +44,10 @@ export class AuditLogApiService {
       params = params.set('action', query.action);
     }
 
+    if (query.searchTerm.trim()) {
+      params = params.set('search', query.searchTerm.trim());
+    }
+
     return params;
   }
 
