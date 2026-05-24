@@ -30,6 +30,7 @@ export type ReportInvoiceStatus = (typeof reportInvoiceStatuses)[number];
 export type ReportTone = 'neutral' | 'primary' | 'success' | 'warning' | 'danger';
 
 export interface MonthlyReportsDto {
+  currency: string;
   months: readonly MonthlyReportMonthDto[];
 }
 

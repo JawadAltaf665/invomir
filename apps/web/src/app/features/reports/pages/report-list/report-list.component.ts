@@ -5,6 +5,7 @@ import {
   OnInit,
   PLATFORM_ID,
   computed,
+  effect,
   inject,
   signal,
 } from '@angular/core';
@@ -15,6 +16,7 @@ import { finalize } from 'rxjs';
 import { AuthSessionService } from '../../../../core/auth/auth-session.service';
 import { extractApiErrors } from '../../../../core/errors/api-response-error';
 import { permissions } from '../../../../core/permissions/permissions';
+import { WorkspaceCurrencyRefreshService } from '../../../../core/services/workspace-currency-refresh.service';
 import { ReportBreakdownTableComponent } from '../../components/report-breakdown-table/report-breakdown-table.component';
 import { ReportExportPanelComponent } from '../../components/report-export-panel/report-export-panel.component';
 import { ReportFiltersComponent } from '../../components/report-filters/report-filters.component';
@@ -45,6 +47,21 @@ export class ReportListComponent implements OnInit {
   private readonly authSession = inject(AuthSessionService);
   private readonly reportApi = inject(ReportApiService);
   private readonly platformId = inject(PLATFORM_ID);
+  private readonly workspaceCurrencyRefresh = inject(WorkspaceCurrencyRefreshService);
+  private observedCurrencyRefreshVersion = this.workspaceCurrencyRefresh.version();
+  private readonly refreshOnWorkspaceCurrencyChange = effect(() => {
+    const version = this.workspaceCurrencyRefresh.version();
+
+    if (version === this.observedCurrencyRefreshVersion) {
+      return;
+    }
+
+    this.observedCurrencyRefreshVersion = version;
+
+    if (isPlatformBrowser(this.platformId)) {
+      this.reportStore.loadReports();
+    }
+  });
 
   protected readonly isExporting = signal(false);
   protected readonly exportErrorMessages = signal<readonly string[]>([]);

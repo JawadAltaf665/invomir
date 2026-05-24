@@ -32,10 +32,12 @@ public static class DependencyInjection
         services.AddScoped<IStripeService, StripeService>();
         services.AddScoped<IPdfService, DinkToPdfService>();
         services.AddScoped<IUserLogoStorageService, UserLogoStorageService>();
+        services.AddSingleton<ICurrencyConversionService, ExchangeRateCurrencyConversionService>();
 
         services.Configure<JwtSettings>(configuration.GetSection(JwtSettings.SectionName));
         services.Configure<SendGridSettings>(configuration.GetSection(SendGridSettings.SectionName));
         services.Configure<StripeSettings>(configuration.GetSection(StripeSettings.SectionName));
+        services.Configure<CurrencyExchangeSettings>(configuration.GetSection(CurrencyExchangeSettings.SectionName));
         services.AddInvoMirRateLimiting();
 
         return services;

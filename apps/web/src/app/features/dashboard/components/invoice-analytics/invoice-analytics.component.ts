@@ -10,6 +10,9 @@ interface DashboardStatusMetricView extends DashboardStatusMetric {
 @Component({
   selector: 'app-invoice-analytics',
   standalone: true,
+  host: {
+    class: 'block h-full',
+  },
   templateUrl: './invoice-analytics.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

@@ -8,14 +8,17 @@
       <p class="mt-2 text-sm text-neutral-500">{{ greeting() }}</p>
     </div>
 
-    <button
-      mat-stroked-button
-      type="button"
-      [disabled]="dashboardStore.isLoading()"
-      (click)="refreshDashboard()"
-    >
-      Refresh
-    </button>
+    <div class="flex flex-col items-start gap-2 sm:items-end">
+      <button
+        mat-stroked-button
+        type="button"
+        [disabled]="dashboardStore.isLoading()"
+        (click)="refreshDashboard()"
+      >
+        Refresh
+      </button>
+      <p class="text-xs text-neutral-500">{{ lastUpdatedLabel() }}</p>
+    </div>
   </div>
 
   @if (dashboardStore.errorMessages().length > 0) {

@@ -31,6 +31,9 @@ export interface DashboardRecentInvoiceDto {
   status: DashboardInvoiceStatus;
   total: number;
   currency: string;
+  originalTotal: number;
+  originalCurrency: string;
+  exchangeRate: number;
   dueDate: string;
   sentAt: string | null;
   paidAt: string | null;
@@ -40,9 +43,13 @@ export interface DashboardTopClientDto {
   id: string;
   name: string;
   revenue: number;
+  invoiceVolume: number;
+  invoiceCount: number;
 }
 
 export interface DashboardDto {
+  currency: string;
+  workspaceRole: string;
   revenue: DashboardRevenueDto;
   outstanding: number;
   overdue: number;
@@ -75,19 +82,22 @@ export interface DashboardRecentInvoiceItem {
   statusTone: DashboardTone;
   totalDisplay: string;
   dueDateDisplay: string;
+  dueDateTone: DashboardTone;
   activityLabel: string;
 }
 
 export interface DashboardTopClientItem {
   id: string;
   name: string;
-  revenueDisplay: string;
+  amountDisplay: string;
+  helper: string;
   percentage: number;
 }
 
 export interface DashboardRevenueBar {
   id: string;
   label: string;
+  value: number;
   valueDisplay: string;
   heightPercentage: number;
   tone: DashboardTone;

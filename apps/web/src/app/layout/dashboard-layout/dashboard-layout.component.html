@@ -217,20 +217,66 @@
           </div>
         </div>
 
-        <button
-          type="button"
-          class="grid size-9 place-items-center rounded-xl text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-900"
-          aria-label="Notifications"
-          matTooltip="Notifications"
-        >
-          <svg lucideBell class="size-4" aria-hidden="true"></svg>
-        </button>
+        <div class="flex items-center gap-2">
+          <button
+            type="button"
+            class="inline-flex h-9 items-center gap-2 rounded-xl border border-neutral-200 bg-white px-3 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50 hover:text-neutral-900 disabled:cursor-not-allowed disabled:opacity-60"
+            aria-label="Workspace currency"
+            matTooltip="Workspace reporting currency"
+            [matMenuTriggerFor]="currencyMenu"
+            [disabled]="isCurrencyLoading() || isCurrencySaving()"
+          >
+            <svg lucideBadgeDollarSign class="size-4 shrink-0 text-primary" aria-hidden="true"></svg>
+            <span>{{ currencyLabel() }}</span>
+            <svg lucideChevronDown class="size-4 shrink-0 text-neutral-400" aria-hidden="true"></svg>
+          </button>
+
+          <button
+            type="button"
+            class="grid size-9 place-items-center rounded-xl text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-900"
+            aria-label="Notifications"
+            matTooltip="Notifications"
+          >
+            <svg lucideBell class="size-4" aria-hidden="true"></svg>
+          </button>
+        </div>
       </div>
     </header>
 
     <router-outlet />
   </div>
 </div>
+
+<mat-menu #currencyMenu="matMenu" xPosition="before" yPosition="below">
+  <div class="px-3 py-2">
+    <p class="text-xs font-medium uppercase tracking-normal text-neutral-500">
+      Workspace currency
+    </p>
+  </div>
+  @for (currency of currencyOptions; track currency) {
+    <button
+      type="button"
+      mat-menu-item
+      class="text-sm"
+      [disabled]="isCurrencySaving()"
+      (click)="changeWorkspaceCurrency(currency)"
+    >
+      <span class="flex w-full items-center justify-between gap-6">
+        <span>{{ currency }}</span>
+        @if (currency === currentCurrency()) {
+          <span class="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+            Active
+          </span>
+        }
+      </span>
+    </button>
+  }
+  @if (currencyErrorMessages().length > 0) {
+    <div class="border-t border-neutral-100 px-3 py-2">
+      <p class="text-xs text-red-600">{{ currencyErrorMessages()[0] }}</p>
+    </div>
+  }
+</mat-menu>
 
 <ng-template #navIcon let-icon="icon">
   @switch (icon) {

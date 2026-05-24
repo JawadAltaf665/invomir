@@ -81,7 +81,7 @@ export class DashboardStore {
         id: 'all-time-revenue',
         label: 'All-time revenue',
         value: this.formatCurrency(dashboard.revenue.allTime, currency),
-        helper: `${counts.paid} ${this.pluralize('paid invoice', counts.paid)}`,
+        helper: `Revenue counts only paid invoices. ${counts.paid} ${this.pluralize('paid invoice', counts.paid)}`,
         tone: 'success',
       },
     ];
@@ -113,7 +113,8 @@ export class DashboardStore {
       return [];
     }
 
-    return dashboard.recentInvoices.map((invoice) => this.toRecentInvoiceItem(invoice));
+    const currency = this.resolveCurrency(dashboard);
+    return dashboard.recentInvoices.map((invoice) => this.toRecentInvoiceItem(invoice, currency));
   });
 
   readonly monthlyRevenueBars = computed<readonly DashboardRevenueBar[]>(() => {
@@ -130,6 +131,7 @@ export class DashboardStore {
       {
         id: 'last-month',
         label: 'Last month',
+        value: dashboard.revenue.lastMonth,
         valueDisplay: this.formatCurrency(dashboard.revenue.lastMonth, currency),
         heightPercentage: this.toBarHeight(dashboard.revenue.lastMonth, maxRevenue),
         tone: 'neutral',
@@ -137,6 +139,7 @@ export class DashboardStore {
       {
         id: 'this-month',
         label: 'This month',
+        value: dashboard.revenue.thisMonth,
         valueDisplay: this.formatCurrency(dashboard.revenue.thisMonth, currency),
         heightPercentage: this.toBarHeight(dashboard.revenue.thisMonth, maxRevenue),
         tone: 'primary',
@@ -174,9 +177,20 @@ export class DashboardStore {
       clients: dashboard.topClients.map((client) => ({
         id: client.id,
         name: client.name,
-        revenueDisplay: this.formatCurrency(client.revenue, currency),
+        amountDisplay: this.formatCurrency(
+          client.revenue > 0 ? client.revenue : client.invoiceVolume,
+          currency,
+        ),
+        helper:
+          client.revenue > 0
+            ? `${client.invoiceCount} ${this.pluralize('invoice', client.invoiceCount)} paid`
+            : `${client.invoiceCount} ${this.pluralize('invoice', client.invoiceCount)} booked, unpaid volume`,
         percentage:
-          denominator > 0 ? Math.min(100, Math.round((client.revenue / denominator) * 100)) : 0,
+          denominator > 0
+            ? Math.min(100, Math.round((client.revenue / denominator) * 100))
+            : client.invoiceVolume > 0
+              ? 100
+              : 0,
       })),
     };
   });
@@ -273,15 +287,21 @@ export class DashboardStore {
     };
   }
 
-  private toRecentInvoiceItem(invoice: DashboardRecentInvoiceDto): DashboardRecentInvoiceItem {
+  private toRecentInvoiceItem(
+    invoice: DashboardRecentInvoiceDto,
+    workspaceCurrency: string,
+  ): DashboardRecentInvoiceItem {
+    const dueDateTone = this.toDueDateTone(invoice);
+
     return {
       id: invoice.id,
       invoiceNumber: invoice.invoiceNumber,
       clientName: invoice.clientName,
       statusLabel: this.toTitleCase(invoice.status),
       statusTone: this.toStatusTone(invoice.status),
-      totalDisplay: this.formatCurrency(invoice.total, invoice.currency),
+      totalDisplay: this.formatCurrency(invoice.total, workspaceCurrency),
       dueDateDisplay: this.formatDate(invoice.dueDate),
+      dueDateTone,
       activityLabel: this.invoiceActivityLabel(invoice),
     };
   }
@@ -316,8 +336,30 @@ export class DashboardStore {
     return 'neutral';
   }
 
+  private toDueDateTone(invoice: DashboardRecentInvoiceDto): DashboardTone {
+    const normalizedStatus = invoice.status.toLowerCase();
+    const dueDate = new Date(`${invoice.dueDate}T00:00:00`);
+
+    if (Number.isNaN(dueDate.getTime())) {
+      return 'neutral';
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (normalizedStatus === 'draft' && dueDate.getTime() < today.getTime()) {
+      return 'warning';
+    }
+
+    if (normalizedStatus === 'overdue') {
+      return 'danger';
+    }
+
+    return 'neutral';
+  }
+
   private resolveCurrency(dashboard: DashboardDto | null): string {
-    return dashboard?.recentInvoices[0]?.currency ?? 'USD';
+    return dashboard?.currency ?? 'USD';
   }
 
   private formatCurrency(value: number, currency: string): string {

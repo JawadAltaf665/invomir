@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { RouterLink } from '@angular/router';
 
 import { DashboardRevenueBar, DashboardTone } from '../../models/dashboard.models';
 
@@ -9,6 +10,10 @@ interface DashboardRevenueBarView extends DashboardRevenueBar {
 @Component({
   selector: 'app-monthly-chart',
   standalone: true,
+  imports: [RouterLink],
+  host: {
+    class: 'block h-full',
+  },
   templateUrl: './monthly-chart.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -23,6 +28,7 @@ export class MonthlyChartComponent {
       barClass: this.toBarClass(bar.tone),
     })),
   );
+  protected readonly hasRevenue = computed(() => this.bars().some((bar) => bar.value > 0));
 
   private toBarClass(tone: DashboardTone): string {
     const classByTone: Record<DashboardTone, string> = {

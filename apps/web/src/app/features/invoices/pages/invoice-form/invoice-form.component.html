@@ -92,7 +92,7 @@
                   <mat-option [value]="currency">{{ currency }}</mat-option>
                 }
               </mat-select>
-              <mat-hint>Supported invoice currency.</mat-hint>
+              <mat-hint>Dashboard reports convert to {{ workspaceCurrency() }}.</mat-hint>
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="w-full">

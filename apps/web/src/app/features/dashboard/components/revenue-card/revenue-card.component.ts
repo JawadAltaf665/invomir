@@ -5,6 +5,9 @@ import { DashboardStatCard, DashboardTone } from '../../models/dashboard.models'
 @Component({
   selector: 'app-revenue-card',
   standalone: true,
+  host: {
+    class: 'block h-full',
+  },
   templateUrl: './revenue-card.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

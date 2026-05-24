@@ -48,7 +48,7 @@ public sealed class CreateInvoiceCommandHandler(
         if (dueDate < issueDate)
             throw new BadRequestException("Due date must be on or after issue date.");
 
-        var currency = NormalizeCurrency(request.Currency, userSettings.Currency);
+        var currency = NormalizeInvoiceCurrency(request.Currency, userSettings.Currency);
         var taxPercent = request.TaxPercent ?? userSettings.TaxPercent;
         var totals = InvoiceDraftCalculator.CalculateTotals(request.Items, taxPercent, request.Discount);
         var invoiceNumber = await invoiceNumberService.GenerateNextAsync(tenantContext.TenantId, cancellationToken);
@@ -153,11 +153,13 @@ public sealed class CreateInvoiceCommandHandler(
         };
     }
 
-    private static string NormalizeCurrency(string? requestedCurrency, string defaultCurrency)
+    private static string NormalizeInvoiceCurrency(string? requestedCurrency, string defaultCurrency)
     {
-        return string.IsNullOrWhiteSpace(requestedCurrency)
-            ? defaultCurrency.ToUpperInvariant().Trim()
-            : requestedCurrency.ToUpperInvariant().Trim();
+        var currency = string.IsNullOrWhiteSpace(requestedCurrency)
+            ? defaultCurrency
+            : requestedCurrency;
+
+        return currency.ToUpperInvariant().Trim();
     }
 
     private static string? NormalizeOptional(string? value)
