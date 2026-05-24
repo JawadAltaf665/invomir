@@ -1,11 +1,22 @@
-import { NgClass, NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { NgClass, NgTemplateOutlet, isPlatformBrowser } from '@angular/common';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  PLATFORM_ID,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
+import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import {
   LucideBell,
+  LucideBadgeDollarSign,
   LucideChartNoAxesCombined,
+  LucideChevronDown,
   LucideCreditCard,
   LucideFileText,
   LucideHistory,
@@ -19,10 +30,15 @@ import {
   LucideShieldCheck,
   LucideUsers,
 } from '@lucide/angular';
-import { finalize } from 'rxjs';
+import { finalize, map } from 'rxjs';
 
 import { AuthSessionService } from '../../core/auth/auth-session.service';
+import { SupportedCurrency, supportedCurrencies } from '../../core/auth/auth.models';
+import { ApiResponseError, extractApiErrors } from '../../core/errors/api-response-error';
+import { ApiResponse } from '../../core/models/api-response.model';
 import { Permission, permissions } from '../../core/permissions/permissions';
+import { CurrentUserApiService } from '../../core/services/current-user-api.service';
+import { WorkspaceCurrencyRefreshService } from '../../core/services/workspace-currency-refresh.service';
 
 type SidebarIcon =
   | 'dashboard'
@@ -51,12 +67,15 @@ interface SidebarNavItem {
     NgClass,
     NgTemplateOutlet,
     MatButtonModule,
+    MatMenuModule,
     MatTooltipModule,
     RouterLink,
     RouterLinkActive,
     RouterOutlet,
+    LucideBadgeDollarSign,
     LucideBell,
     LucideChartNoAxesCombined,
+    LucideChevronDown,
     LucideCreditCard,
     LucideFileText,
     LucideHistory,
@@ -73,12 +92,22 @@ interface SidebarNavItem {
   templateUrl: './dashboard-layout.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class DashboardLayoutComponent {
+export class DashboardLayoutComponent implements OnInit {
   protected readonly authSession = inject(AuthSessionService);
   protected readonly isLoggingOut = signal(false);
   protected readonly isSidebarExpanded = signal(true);
   protected readonly isMobileSidebarOpen = signal(false);
+  protected readonly currentCurrency = signal<SupportedCurrency>('USD');
+  protected readonly isCurrencyLoading = signal(false);
+  protected readonly isCurrencySaving = signal(false);
+  protected readonly currencyErrorMessages = signal<readonly string[]>([]);
+  protected readonly currencyOptions = supportedCurrencies;
   private readonly router = inject(Router);
+  private readonly currentUserApi = inject(CurrentUserApiService);
+  private readonly workspaceCurrencyRefresh = inject(WorkspaceCurrencyRefreshService);
+  private readonly platformId = inject(PLATFORM_ID);
+
+  protected readonly currencyLabel = computed(() => this.currentCurrency());
 
   private readonly mainNavItems: readonly SidebarNavItem[] = [
     {
@@ -164,6 +193,12 @@ export class DashboardLayoutComponent {
     this.isSidebarExpanded() ? 'lg:pl-64' : 'lg:pl-20',
   ]);
 
+  ngOnInit(): void {
+    if (isPlatformBrowser(this.platformId)) {
+      this.loadWorkspaceCurrency();
+    }
+  }
+
   protected toggleSidebar(): void {
     this.isSidebarExpanded.update((isExpanded) => !isExpanded);
   }
@@ -191,7 +226,72 @@ export class DashboardLayoutComponent {
       });
   }
 
+  protected changeWorkspaceCurrency(currency: SupportedCurrency): void {
+    if (this.isCurrencySaving() || currency === this.currentCurrency()) {
+      return;
+    }
+
+    const previousCurrency = this.currentCurrency();
+    this.currentCurrency.set(currency);
+    this.currencyErrorMessages.set([]);
+    this.isCurrencySaving.set(true);
+
+    this.currentUserApi
+      .updateCurrentUser({ currency })
+      .pipe(
+        map((response) => this.unwrap(response, 'Workspace currency could not be updated.')),
+        finalize(() => this.isCurrencySaving.set(false)),
+      )
+      .subscribe({
+        next: (profile) => {
+          this.currentCurrency.set(this.toSupportedCurrency(profile.currency));
+          this.workspaceCurrencyRefresh.notifyCurrencyChanged();
+        },
+        error: (error) => {
+          this.currentCurrency.set(previousCurrency);
+          this.currencyErrorMessages.set(extractApiErrors(error));
+        },
+      });
+  }
+
   private visibleNavItems(items: readonly SidebarNavItem[]): readonly SidebarNavItem[] {
     return items.filter((item) => this.authSession.hasAnyPermission(item.permissions));
+  }
+
+  private loadWorkspaceCurrency(): void {
+    if (this.isCurrencyLoading()) {
+      return;
+    }
+
+    this.isCurrencyLoading.set(true);
+    this.currencyErrorMessages.set([]);
+
+    this.currentUserApi
+      .getCurrentUser()
+      .pipe(
+        map((response) => this.unwrap(response, 'Workspace currency could not be loaded.')),
+        finalize(() => this.isCurrencyLoading.set(false)),
+      )
+      .subscribe({
+        next: (profile) => this.currentCurrency.set(this.toSupportedCurrency(profile.currency)),
+        error: (error) => this.currencyErrorMessages.set(extractApiErrors(error)),
+      });
+  }
+
+  private toSupportedCurrency(value: string): SupportedCurrency {
+    const normalized = value?.trim().toUpperCase();
+
+    return this.currencyOptions.includes(normalized as SupportedCurrency)
+      ? (normalized as SupportedCurrency)
+      : 'USD';
+  }
+
+  private unwrap<T>(response: ApiResponse<T>, fallbackMessage: string): T {
+    if (!response.success || response.data === null) {
+      const message = response.message ?? response.errors[0] ?? fallbackMessage;
+      throw new ApiResponseError(message, response.errors.length > 0 ? response.errors : [message]);
+    }
+
+    return response.data;
   }
 }
