@@ -164,19 +164,27 @@
       <div
         class="flex items-center gap-3 rounded-xl px-3 py-2"
         [class.justify-center]="!isSidebarExpanded()"
-        [matTooltip]="isSidebarExpanded() ? '' : (authSession.user()?.firstName ?? 'Account')"
+        [matTooltip]="isSidebarExpanded() ? '' : displayUserName()"
       >
         <span
-          class="grid size-9 shrink-0 place-items-center rounded-xl bg-neutral-100 text-neutral-600"
+          class="grid size-9 shrink-0 place-items-center overflow-hidden rounded-xl bg-neutral-100 text-xs font-semibold text-neutral-600"
         >
-          <svg lucideUsers class="size-4" aria-hidden="true"></svg>
+          @if (displayProfilePictureUrl()) {
+            <img
+              class="h-full w-full object-cover"
+              [src]="displayProfilePictureUrl()"
+              alt="Profile picture"
+            />
+          } @else {
+            <span>{{ displayUserInitials() }}</span>
+          }
         </span>
         @if (isSidebarExpanded()) {
           <div class="min-w-0 flex-1">
             <p class="truncate text-sm font-medium text-neutral-900">
-              {{ authSession.user()?.firstName }}
+              {{ displayUserName() }}
             </p>
-            <p class="truncate text-xs text-neutral-500">{{ authSession.role() }}</p>
+            <p class="truncate text-xs text-neutral-500">{{ displayUserRole() }}</p>
           </div>
         }
       </div>
@@ -230,6 +238,32 @@
             <span>{{ currencyLabel() }}</span>
             <svg lucideChevronDown class="size-4 shrink-0 text-neutral-400" aria-hidden="true"></svg>
           </button>
+
+          <div
+            class="hidden min-w-0 items-center gap-2 rounded-xl px-2 py-1.5 text-right sm:flex"
+            [matTooltip]="displayUserName() + ' - ' + displayUserRole()"
+          >
+            <div class="hidden min-w-0 md:block">
+              <p class="max-w-36 truncate text-sm font-medium text-neutral-900">
+                {{ displayUserName() }}
+              </p>
+              <p class="truncate text-xs text-neutral-500">{{ displayUserRole() }}</p>
+            </div>
+
+            <span
+              class="grid size-9 shrink-0 place-items-center overflow-hidden rounded-xl bg-neutral-100 text-xs font-semibold text-neutral-600"
+            >
+              @if (displayProfilePictureUrl()) {
+                <img
+                  class="h-full w-full object-cover"
+                  [src]="displayProfilePictureUrl()"
+                  alt="Profile picture"
+                />
+              } @else {
+                <span>{{ displayUserInitials() }}</span>
+              }
+            </span>
+          </div>
 
           <button
             type="button"

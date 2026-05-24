@@ -11,6 +11,7 @@ public sealed class User : TenantEntity
     public string Role { get; private set; } = AuthConstants.Roles.Owner;
     public string Plan { get; private set; } = AuthConstants.Plans.Free;
     public string? LogoUrl { get; private set; }
+    public string? ProfilePictureUrl { get; private set; }
     public string Currency { get; private set; } = "USD";
     public decimal TaxPercent { get; private set; }
     public string? StripeAccountId { get; private set; }
@@ -157,6 +158,14 @@ public sealed class User : TenantEntity
             throw new ArgumentException("Logo URL is required.", nameof(logoUrl));
 
         LogoUrl = logoUrl.Trim();
+    }
+
+    public void UpdateProfilePictureUrl(string profilePictureUrl)
+    {
+        if (string.IsNullOrWhiteSpace(profilePictureUrl))
+            throw new ArgumentException("Profile picture URL is required.", nameof(profilePictureUrl));
+
+        ProfilePictureUrl = profilePictureUrl.Trim();
     }
 
     public void UpdateStripeAccountId(string stripeAccountId)

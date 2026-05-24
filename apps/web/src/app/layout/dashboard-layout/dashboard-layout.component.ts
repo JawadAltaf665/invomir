@@ -5,8 +5,10 @@ import {
   OnInit,
   PLATFORM_ID,
   computed,
+  effect,
   inject,
   signal,
+  untracked,
 } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatMenuModule } from '@angular/material/menu';
@@ -36,8 +38,11 @@ import { AuthSessionService } from '../../core/auth/auth-session.service';
 import { SupportedCurrency, supportedCurrencies } from '../../core/auth/auth.models';
 import { ApiResponseError, extractApiErrors } from '../../core/errors/api-response-error';
 import { ApiResponse } from '../../core/models/api-response.model';
+import { CurrentUserProfileDto } from '../../core/models/current-user-profile.model';
 import { Permission, permissions } from '../../core/permissions/permissions';
+import { apiUrl } from '../../core/config/api-url';
 import { CurrentUserApiService } from '../../core/services/current-user-api.service';
+import { CurrentUserProfileRefreshService } from '../../core/services/current-user-profile-refresh.service';
 import { WorkspaceCurrencyRefreshService } from '../../core/services/workspace-currency-refresh.service';
 
 type SidebarIcon =
@@ -102,12 +107,46 @@ export class DashboardLayoutComponent implements OnInit {
   protected readonly isCurrencySaving = signal(false);
   protected readonly currencyErrorMessages = signal<readonly string[]>([]);
   protected readonly currencyOptions = supportedCurrencies;
+  protected readonly currentUserProfile = signal<CurrentUserProfileDto | null>(null);
+  protected readonly profilePictureVersion = signal(Date.now());
   private readonly router = inject(Router);
   private readonly currentUserApi = inject(CurrentUserApiService);
+  private readonly currentUserProfileRefresh = inject(CurrentUserProfileRefreshService);
   private readonly workspaceCurrencyRefresh = inject(WorkspaceCurrencyRefreshService);
   private readonly platformId = inject(PLATFORM_ID);
 
   protected readonly currencyLabel = computed(() => this.currentCurrency());
+  protected readonly displayUserName = computed(() => {
+    const profile = this.currentUserProfile();
+
+    if (profile) {
+      return this.formatFullName(profile.firstName, profile.lastName);
+    }
+
+    return this.authSession.user()?.firstName ?? 'Account';
+  });
+  protected readonly displayUserRole = computed(() =>
+    this.formatLabel(this.currentUserProfile()?.role ?? this.authSession.role() ?? ''),
+  );
+  protected readonly displayProfilePictureUrl = computed(() =>
+    this.resolveAssetUrl(
+      this.currentUserProfile()?.profilePictureUrl ?? null,
+      this.profilePictureVersion(),
+    ),
+  );
+  protected readonly displayUserInitials = computed(() => {
+    const profile = this.currentUserProfile();
+
+    if (!profile) {
+      return this.authSession.user()?.firstName?.charAt(0).toUpperCase() || 'IM';
+    }
+
+    const firstInitial = profile.firstName.trim().charAt(0);
+    const lastInitial = profile.lastName.trim().charAt(0);
+    const initials = `${firstInitial}${lastInitial}`.trim();
+
+    return initials.length > 0 ? initials.toUpperCase() : 'IM';
+  });
 
   private readonly mainNavItems: readonly SidebarNavItem[] = [
     {
@@ -180,6 +219,16 @@ export class DashboardLayoutComponent implements OnInit {
     this.visibleNavItems(this.manageNavItems),
   );
 
+  private readonly reloadProfileOnChange = effect(() => {
+    const version = this.currentUserProfileRefresh.version();
+
+    if (version === 0 || !isPlatformBrowser(this.platformId)) {
+      return;
+    }
+
+    untracked(() => this.loadCurrentUserProfile());
+  });
+
   protected readonly sidebarClass = computed(() => [
     'fixed inset-y-0 left-0 z-40 flex flex-col border-r border-neutral-200 bg-white transition-all duration-200',
     this.isSidebarExpanded() ? 'w-64' : 'w-20',
@@ -195,7 +244,7 @@ export class DashboardLayoutComponent implements OnInit {
 
   ngOnInit(): void {
     if (isPlatformBrowser(this.platformId)) {
-      this.loadWorkspaceCurrency();
+      this.loadCurrentUserProfile();
     }
   }
 
@@ -244,6 +293,7 @@ export class DashboardLayoutComponent implements OnInit {
       )
       .subscribe({
         next: (profile) => {
+          this.currentUserProfile.set(profile);
           this.currentCurrency.set(this.toSupportedCurrency(profile.currency));
           this.workspaceCurrencyRefresh.notifyCurrencyChanged();
         },
@@ -258,7 +308,7 @@ export class DashboardLayoutComponent implements OnInit {
     return items.filter((item) => this.authSession.hasAnyPermission(item.permissions));
   }
 
-  private loadWorkspaceCurrency(): void {
+  private loadCurrentUserProfile(): void {
     if (this.isCurrencyLoading()) {
       return;
     }
@@ -273,7 +323,11 @@ export class DashboardLayoutComponent implements OnInit {
         finalize(() => this.isCurrencyLoading.set(false)),
       )
       .subscribe({
-        next: (profile) => this.currentCurrency.set(this.toSupportedCurrency(profile.currency)),
+        next: (profile) => {
+          this.currentUserProfile.set(profile);
+          this.profilePictureVersion.set(Date.now());
+          this.currentCurrency.set(this.toSupportedCurrency(profile.currency));
+        },
         error: (error) => this.currencyErrorMessages.set(extractApiErrors(error)),
       });
   }
@@ -293,5 +347,32 @@ export class DashboardLayoutComponent implements OnInit {
     }
 
     return response.data;
+  }
+
+  private formatFullName(firstName: string, lastName: string): string {
+    const fullName = `${firstName} ${lastName}`.trim();
+    return fullName.length > 0 ? fullName : 'Account';
+  }
+
+  private formatLabel(value: string): string {
+    if (!value) {
+      return 'Role not set';
+    }
+
+    return value
+      .split('_')
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(' ');
+  }
+
+  private resolveAssetUrl(assetUrl: string | null, cacheKey: string | number): string | null {
+    if (!assetUrl) {
+      return null;
+    }
+
+    const resolvedUrl = /^https?:\/\//i.test(assetUrl) ? assetUrl : apiUrl(assetUrl);
+    const separator = resolvedUrl.includes('?') ? '&' : '?';
+
+    return `${resolvedUrl}${separator}v=${encodeURIComponent(String(cacheKey))}`;
   }
 }
