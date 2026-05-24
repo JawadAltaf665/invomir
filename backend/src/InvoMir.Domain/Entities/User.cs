@@ -68,6 +68,57 @@ public sealed class User : TenantEntity
         return user;
     }
 
+    public static User CreateTeamMember(
+        Guid tenantId,
+        string email,
+        string passwordHash,
+        string firstName,
+        string lastName,
+        string role,
+        string plan,
+        string currency = "USD",
+        decimal taxPercent = 0)
+    {
+        if (tenantId == Guid.Empty)
+            throw new ArgumentException("Tenant id is required.", nameof(tenantId));
+
+        if (string.IsNullOrWhiteSpace(email))
+            throw new ArgumentException("Email is required.", nameof(email));
+
+        if (string.IsNullOrWhiteSpace(passwordHash))
+            throw new ArgumentException("Password hash is required.", nameof(passwordHash));
+
+        if (string.IsNullOrWhiteSpace(firstName))
+            throw new ArgumentException("First name is required.", nameof(firstName));
+
+        if (string.IsNullOrWhiteSpace(lastName))
+            throw new ArgumentException("Last name is required.", nameof(lastName));
+
+        var normalizedRole = role.Trim().ToLowerInvariant();
+        if (!TeamConstants.Roles.Manageable.Contains(normalizedRole))
+            throw new ArgumentException("Team role is not supported.", nameof(role));
+
+        var normalizedPlan = plan.Trim().ToLowerInvariant();
+        if (!AuthConstants.Plans.All.Contains(normalizedPlan))
+            throw new ArgumentException("Plan is not supported.", nameof(plan));
+
+        var user = new User
+        {
+            Email = email.ToLowerInvariant().Trim(),
+            PasswordHash = passwordHash,
+            FirstName = firstName.Trim(),
+            LastName = lastName.Trim(),
+            Currency = currency.ToUpperInvariant().Trim(),
+            TaxPercent = taxPercent,
+            Role = normalizedRole,
+            Plan = normalizedPlan,
+            TrialEndsAt = null
+        };
+
+        user.SetTenant(tenantId);
+        return user;
+    }
+
     public void RecordLogin() => LastLoginAt = DateTime.UtcNow;
 
     public void VerifyEmail() => EmailVerified = true;
@@ -122,6 +173,15 @@ public sealed class User : TenantEntity
             throw new ArgumentException("Plan is not supported.", nameof(plan));
 
         Plan = plan;
+    }
+
+    public void UpdateRole(string role)
+    {
+        var normalizedRole = role.Trim().ToLowerInvariant();
+        if (!TeamConstants.Roles.Manageable.Contains(normalizedRole))
+            throw new ArgumentException("Team role is not supported.", nameof(role));
+
+        Role = normalizedRole;
     }
 
     public void UpdateTrialEndsAt(DateTime trialEndsAtUtc)

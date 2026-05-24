@@ -23,7 +23,9 @@ public sealed class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(user => user.LastLoginAt);
         builder.Property(user => user.TrialEndsAt);
 
-        builder.HasIndex(user => user.Email).IsUnique();
+        builder.HasIndex(user => user.Email)
+            .IsUnique()
+            .HasFilter("\"IsDeleted\" = false");
         builder.HasIndex(user => user.TenantId);
         builder.HasIndex(user => new { user.TenantId, user.IsDeleted });
         builder.HasIndex(user => new { user.TenantId, user.IsActive });

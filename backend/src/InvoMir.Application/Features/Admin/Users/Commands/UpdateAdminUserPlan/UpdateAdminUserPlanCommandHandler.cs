@@ -1,4 +1,5 @@
 using InvoMir.Application.Features.Admin.DTOs;
+using InvoMir.Application.Features.Team;
 
 namespace InvoMir.Application.Features.Admin.Users.Commands.UpdateAdminUserPlan;
 
@@ -41,6 +42,12 @@ public sealed class UpdateAdminUserPlanCommandHandler(
 
         user.UpdatePlan(plan);
         tenant.UpdatePlan(plan);
+        var cancelledInvitationCount = await TeamInvitationLifecycle.CancelPendingInvitationsForPlanAsync(
+            context,
+            tenant.Id,
+            plan,
+            DateTime.UtcNow,
+            cancellationToken);
 
         await context.SaveChangesAsync(cancellationToken);
 
@@ -51,7 +58,7 @@ public sealed class UpdateAdminUserPlanCommandHandler(
             user.TenantId,
             adminUserId,
             oldValues,
-            ToAuditSnapshot(user, tenant),
+            ToAuditSnapshot(user, tenant, cancelledInvitationCount),
             clientContext.IpAddress,
             clientContext.DeviceInfo,
             cancellationToken);
@@ -73,6 +80,20 @@ public sealed class UpdateAdminUserPlanCommandHandler(
             TenantPlan = tenant.Plan,
             user.TrialEndsAt,
             TenantTrialEndsAt = tenant.TrialEndsAt
+        };
+    }
+
+    private static object ToAuditSnapshot(User user, Tenant tenant, int cancelledInvitationCount)
+    {
+        return new
+        {
+            user.Id,
+            user.Email,
+            user.Plan,
+            TenantPlan = tenant.Plan,
+            user.TrialEndsAt,
+            TenantTrialEndsAt = tenant.TrialEndsAt,
+            CancelledPendingTeamInvitations = cancelledInvitationCount
         };
     }
 }

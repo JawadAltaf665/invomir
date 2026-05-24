@@ -31,6 +31,7 @@ type SidebarIcon =
   | 'payments'
   | 'reports'
   | 'subscriptions'
+  | 'team'
   | 'auditLogs'
   | 'settings'
   | 'admin';
@@ -118,6 +119,12 @@ export class DashboardLayoutComponent {
       route: '/app/subscriptions',
       icon: 'subscriptions',
       permissions: [permissions.subscription.view],
+    },
+    {
+      label: 'Team',
+      route: '/app/team',
+      icon: 'team',
+      permissions: [permissions.team.manage],
     },
     {
       label: 'Audit logs',

@@ -401,6 +401,9 @@ public static class RateLimitingConfiguration
             if (path.StartsWith("/api/audit-logs", StringComparison.Ordinal))
                 return Sliding(RateLimitPolicies.ApiAuthenticated, "audit-logs", 30, TimeSpan.FromMinutes(1), RateLimitKeyKind.AuthenticatedUser);
 
+            if (path.StartsWith("/api/team", StringComparison.Ordinal))
+                return Sliding(RateLimitPolicies.ApiAuthenticated, "team", 30, TimeSpan.FromMinutes(1), RateLimitKeyKind.AuthenticatedUser);
+
             return Sliding(RateLimitPolicies.ApiAuthenticated, "standard", 60, TimeSpan.FromMinutes(1), RateLimitKeyKind.AuthenticatedUser);
         }
 

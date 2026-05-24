@@ -12,6 +12,7 @@ import { paymentRoutes } from './features/payments/payment.routes';
 import { reportRoutes } from './features/reports/report.routes';
 import { settingsRoutes } from './features/settings/settings.routes';
 import { subscriptionRoutes } from './features/subscriptions/subscription.routes';
+import { teamRoutes } from './features/team/team.routes';
 
 export const routes: Routes = [
   {
@@ -54,6 +55,31 @@ export const routes: Routes = [
           import('./features/auth/pages/verify-email/verify-email.component').then(
             (component) => component.VerifyEmailComponent,
           ),
+      },
+    ],
+  },
+  {
+    path: 'accept-invitation',
+    loadComponent: () =>
+      import('./layout/auth-layout/auth-layout.component').then(
+        (component) => component.AuthLayoutComponent,
+      ),
+    children: [
+      {
+        path: '',
+        title: 'Accept invitation | InvoMir',
+        loadComponent: () =>
+          import(
+            './features/team/pages/accept-team-invitation/accept-team-invitation.component'
+          ).then((component) => component.AcceptTeamInvitationComponent),
+      },
+      {
+        path: ':token',
+        title: 'Accept invitation | InvoMir',
+        loadComponent: () =>
+          import(
+            './features/team/pages/accept-team-invitation/accept-team-invitation.component'
+          ).then((component) => component.AcceptTeamInvitationComponent),
       },
     ],
   },
@@ -126,6 +152,14 @@ export const routes: Routes = [
           permissions: [permissions.subscription.view],
         },
         children: subscriptionRoutes,
+      },
+      {
+        path: 'team',
+        canActivate: [permissionGuard],
+        data: {
+          permissions: [permissions.team.manage],
+        },
+        children: teamRoutes,
       },
       {
         path: 'audit-logs',

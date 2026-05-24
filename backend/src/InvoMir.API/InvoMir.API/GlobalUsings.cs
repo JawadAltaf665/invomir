@@ -53,6 +53,14 @@ global using InvoMir.Application.Features.Subscriptions.Commands.CreateSubscript
 global using InvoMir.Application.Features.Subscriptions.DTOs;
 global using InvoMir.Application.Features.Subscriptions.Queries.GetCurrentSubscription;
 global using InvoMir.Application.Features.Subscriptions.Queries.GetSubscriptionPlans;
+global using InvoMir.Application.Features.Team.Commands.AcceptTeamInvitation;
+global using InvoMir.Application.Features.Team.Commands.CancelTeamInvitation;
+global using InvoMir.Application.Features.Team.Commands.ChangeTeamMemberRole;
+global using InvoMir.Application.Features.Team.Commands.InviteTeamMember;
+global using InvoMir.Application.Features.Team.Commands.RemoveTeamMember;
+global using InvoMir.Application.Features.Team.DTOs;
+global using InvoMir.Application.Features.Team.Queries.ListTeamInvitations;
+global using InvoMir.Application.Features.Team.Queries.ListTeamMembers;
 global using InvoMir.Application.Features.Users.Commands.ChangeCurrentUserPassword;
 global using InvoMir.Application.Features.Users.Commands.UpdateCurrentUser;
 global using InvoMir.Application.Features.Users.Commands.UploadCurrentUserLogo;

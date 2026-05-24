@@ -15,6 +15,7 @@ public interface IAppDbContext
     DbSet<InvoiceItem> InvoiceItems { get; }
     DbSet<Payment> Payments { get; }
     DbSet<Subscription> Subscriptions { get; }
+    DbSet<TeamInvitation> TeamInvitations { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken);
 }
