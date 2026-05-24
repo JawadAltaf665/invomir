@@ -1,15 +1,25 @@
-using System.Globalization;
 using InvoMir.Application.Features.Reports.DTOs;
 
 namespace InvoMir.Application.Features.Reports.Queries.GetMonthlyReports;
 
-public sealed class GetMonthlyReportsQueryHandler(IAppDbContext context)
+public sealed class GetMonthlyReportsQueryHandler(
+    IAppDbContext context,
+    ICurrentUserContext currentUserContext,
+    ICurrencyConversionService currencyConversionService)
     : IRequestHandler<GetMonthlyReportsQuery, MonthlyReportsDto>
 {
+    private static readonly string[] OutstandingStatuses =
+    [
+        InvoiceConstants.Statuses.Sent,
+        InvoiceConstants.Statuses.Viewed,
+        InvoiceConstants.Statuses.Overdue
+    ];
+
     public async Task<MonthlyReportsDto> Handle(
         GetMonthlyReportsQuery request,
         CancellationToken cancellationToken)
     {
+        var workspaceCurrency = await GetWorkspaceCurrencyAsync(cancellationToken);
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
         var periods = BuildPeriods(request);
         var start = periods[0].Start;
@@ -17,45 +27,68 @@ public sealed class GetMonthlyReportsQueryHandler(IAppDbContext context)
         var paidStart = start.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
         var paidEnd = end.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
 
-        var issueRows = await context.Invoices
+        var issueInvoices = await context.Invoices
             .AsNoTracking()
             .Where(invoice => invoice.IssueDate >= start && invoice.IssueDate < end)
-            .GroupBy(invoice => new { invoice.IssueDate.Year, invoice.IssueDate.Month })
-            .Select(group => new MonthlyAccumulator(
-                group.Key.Year,
-                group.Key.Month,
-                group.Sum(invoice =>
-                    invoice.Status == InvoiceConstants.Statuses.Sent ||
-                    invoice.Status == InvoiceConstants.Statuses.Viewed ||
-                    invoice.Status == InvoiceConstants.Statuses.Overdue
-                        ? invoice.Total
-                        : 0),
-                group.Sum(invoice =>
-                    invoice.Status == InvoiceConstants.Statuses.Overdue ||
-                    (invoice.DueDate < today &&
-                        (invoice.Status == InvoiceConstants.Statuses.Sent ||
-                         invoice.Status == InvoiceConstants.Statuses.Viewed))
-                        ? invoice.Total
-                        : 0),
-                group.Count()))
+            .Select(invoice => new ReportInvoiceSnapshot(
+                invoice.Status,
+                invoice.Total,
+                invoice.Currency,
+                invoice.IssueDate,
+                invoice.DueDate,
+                invoice.PaidAt))
             .ToListAsync(cancellationToken);
 
-        var paidRows = await context.Invoices
+        var paidInvoices = await context.Invoices
             .AsNoTracking()
             .Where(invoice =>
                 invoice.Status == InvoiceConstants.Statuses.Paid &&
                 invoice.PaidAt != null &&
                 invoice.PaidAt >= paidStart &&
                 invoice.PaidAt < paidEnd)
-            .GroupBy(invoice => new { invoice.PaidAt!.Value.Year, invoice.PaidAt.Value.Month })
-            .Select(group => new PaidAccumulator(
-                group.Key.Year,
-                group.Key.Month,
-                group.Sum(invoice => invoice.Total)))
+            .Select(invoice => new ReportInvoiceSnapshot(
+                invoice.Status,
+                invoice.Total,
+                invoice.Currency,
+                invoice.IssueDate,
+                invoice.DueDate,
+                invoice.PaidAt))
             .ToListAsync(cancellationToken);
 
-        var issueByMonth = issueRows.ToDictionary(row => ToMonthKey(row.Year, row.Month));
-        var paidByMonth = paidRows.ToDictionary(row => ToMonthKey(row.Year, row.Month));
+        var convertedIssueInvoices = await ConvertInvoicesAsync(
+            issueInvoices,
+            workspaceCurrency,
+            cancellationToken);
+        var convertedPaidInvoices = await ConvertInvoicesAsync(
+            paidInvoices,
+            workspaceCurrency,
+            cancellationToken);
+
+        var issueByMonth = convertedIssueInvoices
+            .GroupBy(invoice => ToMonthKey(invoice.IssueDate.Year, invoice.IssueDate.Month))
+            .Select(group => new MonthlyAccumulator(
+                group.Key,
+                RoundMoney(group
+                    .Where(invoice => OutstandingStatuses.Contains(invoice.Status))
+                    .Sum(invoice => invoice.Total)),
+                RoundMoney(group
+                    .Where(invoice =>
+                        invoice.Status == InvoiceConstants.Statuses.Overdue ||
+                        (invoice.DueDate < today &&
+                            (invoice.Status == InvoiceConstants.Statuses.Sent ||
+                             invoice.Status == InvoiceConstants.Statuses.Viewed)))
+                    .Sum(invoice => invoice.Total)),
+                group.Count()))
+            .ToDictionary(row => row.Month);
+
+        var paidByMonth = convertedPaidInvoices
+            .Where(invoice => invoice.PaidAt is not null)
+            .GroupBy(invoice => ToMonthKey(invoice.PaidAt!.Value.Year, invoice.PaidAt.Value.Month))
+            .Select(group => new PaidAccumulator(
+                group.Key,
+                RoundMoney(group.Sum(invoice => invoice.Total))))
+            .ToDictionary(row => row.Month);
+
         var months = periods
             .Select(period =>
             {
@@ -72,7 +105,49 @@ public sealed class GetMonthlyReportsQueryHandler(IAppDbContext context)
             })
             .ToList();
 
-        return new MonthlyReportsDto(months);
+        return new MonthlyReportsDto(workspaceCurrency, months);
+    }
+
+    private async Task<string> GetWorkspaceCurrencyAsync(CancellationToken cancellationToken)
+    {
+        var userId = currentUserContext.UserId
+            ?? throw new UnauthorizedAccessException("User context is not available.");
+
+        var currency = await context.Users
+            .AsNoTracking()
+            .Where(user => user.Id == userId)
+            .Select(user => user.Currency)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (currency is null)
+            throw new NotFoundException(nameof(User), userId);
+
+        return NormalizeCurrency(currency);
+    }
+
+    private async Task<List<ConvertedReportInvoiceSnapshot>> ConvertInvoicesAsync(
+        IReadOnlyList<ReportInvoiceSnapshot> invoices,
+        string workspaceCurrency,
+        CancellationToken cancellationToken)
+    {
+        if (invoices.Count == 0)
+            return [];
+
+        var conversions = await currencyConversionService.ConvertAsync(
+            invoices
+                .Select(invoice => new CurrencyAmount(invoice.Total, invoice.Currency))
+                .ToList(),
+            workspaceCurrency,
+            cancellationToken);
+
+        return invoices
+            .Zip(conversions, (invoice, conversion) => new ConvertedReportInvoiceSnapshot(
+                invoice.Status,
+                conversion.ConvertedAmount,
+                invoice.IssueDate,
+                invoice.DueDate,
+                invoice.PaidAt))
+            .ToList();
     }
 
     private static List<ReportPeriod> BuildPeriods(GetMonthlyReportsQuery request)
@@ -96,6 +171,18 @@ public sealed class GetMonthlyReportsQueryHandler(IAppDbContext context)
             .ToList();
     }
 
+    private static string NormalizeCurrency(string currency)
+    {
+        return string.IsNullOrWhiteSpace(currency)
+            ? "USD"
+            : currency.Trim().ToUpperInvariant();
+    }
+
+    private static decimal RoundMoney(decimal amount)
+    {
+        return decimal.Round(amount, 2, MidpointRounding.AwayFromZero);
+    }
+
     private static string ToMonthKey(int year, int month)
     {
         return FormattableString.Invariant($"{year:D4}-{month:D2}");
@@ -103,15 +190,28 @@ public sealed class GetMonthlyReportsQueryHandler(IAppDbContext context)
 
     private sealed record ReportPeriod(DateOnly Start);
 
+    private sealed record ReportInvoiceSnapshot(
+        string Status,
+        decimal Total,
+        string Currency,
+        DateOnly IssueDate,
+        DateOnly DueDate,
+        DateTime? PaidAt);
+
+    private sealed record ConvertedReportInvoiceSnapshot(
+        string Status,
+        decimal Total,
+        DateOnly IssueDate,
+        DateOnly DueDate,
+        DateTime? PaidAt);
+
     private sealed record MonthlyAccumulator(
-        int Year,
-        int Month,
+        string Month,
         decimal Outstanding,
         decimal Overdue,
         int InvoiceCount);
 
     private sealed record PaidAccumulator(
-        int Year,
-        int Month,
+        string Month,
         decimal Paid);
 }

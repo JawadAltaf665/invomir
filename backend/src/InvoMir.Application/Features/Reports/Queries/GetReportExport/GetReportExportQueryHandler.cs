@@ -8,6 +8,7 @@ namespace InvoMir.Application.Features.Reports.Queries.GetReportExport;
 public sealed class GetReportExportQueryHandler(
     IAppDbContext context,
     ICurrentUserContext currentUserContext,
+    ICurrencyConversionService currencyConversionService,
     IPdfService pdfService)
     : IRequestHandler<GetReportExportQuery, ReportExportDto>
 {
@@ -18,16 +19,20 @@ public sealed class GetReportExportQueryHandler(
         GetReportExportQuery request,
         CancellationToken cancellationToken)
     {
-        await EnsureCanExportAsync(cancellationToken);
-
+        var workspaceCurrency = await EnsureCanExportAsync(cancellationToken);
         var format = NormalizeFormat(request.Format);
         var status = NormalizeStatus(request.Status);
-        var rows = await QueryRowsAsync(request.From, request.To, status, cancellationToken);
+        var rows = await QueryRowsAsync(
+            request.From,
+            request.To,
+            status,
+            workspaceCurrency,
+            cancellationToken);
         var fileName = BuildFileName(request.From, request.To, format);
 
         if (format == "pdf")
         {
-            var html = BuildPdfHtml(request.From, request.To, status, rows);
+            var html = BuildPdfHtml(request.From, request.To, status, workspaceCurrency, rows);
             var pdfBytes = await pdfService.GeneratePdfAsync(html, cancellationToken);
             return new ReportExportDto(pdfBytes, fileName, PdfContentType);
         }
@@ -35,7 +40,7 @@ public sealed class GetReportExportQueryHandler(
         return new ReportExportDto(BuildCsv(rows), fileName, CsvContentType);
     }
 
-    private async Task EnsureCanExportAsync(CancellationToken cancellationToken)
+    private async Task<string> EnsureCanExportAsync(CancellationToken cancellationToken)
     {
         var userId = currentUserContext.UserId
             ?? throw new UnauthorizedAccessException("User context is not available.");
@@ -46,7 +51,8 @@ public sealed class GetReportExportQueryHandler(
             .Select(user => new
             {
                 user.Plan,
-                user.TrialEndsAt
+                user.TrialEndsAt,
+                user.Currency
             })
             .FirstOrDefaultAsync(cancellationToken);
 
@@ -56,12 +62,15 @@ public sealed class GetReportExportQueryHandler(
         var trialActive = entitlement.TrialEndsAt is not null && entitlement.TrialEndsAt > DateTime.UtcNow;
         if (entitlement.Plan == AuthConstants.Plans.Free && !trialActive)
             throw new ForbiddenException("Report export requires an active trial or paid plan.");
+
+        return NormalizeCurrency(entitlement.Currency);
     }
 
     private async Task<List<ReportExportInvoiceDto>> QueryRowsAsync(
         DateOnly from,
         DateOnly to,
         string? status,
+        string workspaceCurrency,
         CancellationToken cancellationToken)
     {
         var query = context.Invoices
@@ -71,10 +80,10 @@ public sealed class GetReportExportQueryHandler(
         if (!string.IsNullOrWhiteSpace(status))
             query = query.Where(invoice => invoice.Status == status);
 
-        return await query
+        var rows = await query
             .OrderBy(invoice => invoice.IssueDate)
             .ThenBy(invoice => invoice.InvoiceNumber)
-            .Select(invoice => new ReportExportInvoiceDto(
+            .Select(invoice => new ReportExportInvoiceSnapshot(
                 invoice.Id,
                 invoice.InvoiceNumber,
                 invoice.Client.Name,
@@ -89,12 +98,44 @@ public sealed class GetReportExportQueryHandler(
                 invoice.SentAt,
                 invoice.PaidAt))
             .ToListAsync(cancellationToken);
+
+        if (rows.Count == 0)
+            return [];
+
+        var conversions = await currencyConversionService.ConvertAsync(
+            rows
+                .Select(row => new CurrencyAmount(row.Total, row.Currency))
+                .ToList(),
+            workspaceCurrency,
+            cancellationToken);
+
+        return rows
+            .Zip(conversions, (row, conversion) =>
+            {
+                var exchangeRate = conversion.ExchangeRate;
+
+                return new ReportExportInvoiceDto(
+                    row.Id,
+                    row.InvoiceNumber,
+                    row.ClientName,
+                    row.Status,
+                    row.IssueDate,
+                    row.DueDate,
+                    workspaceCurrency,
+                    RoundMoney(row.Subtotal * exchangeRate),
+                    RoundMoney(row.TaxAmount * exchangeRate),
+                    RoundMoney(row.DiscountAmount * exchangeRate),
+                    conversion.ConvertedAmount,
+                    row.SentAt,
+                    row.PaidAt);
+            })
+            .ToList();
     }
 
     private static byte[] BuildCsv(IReadOnlyList<ReportExportInvoiceDto> rows)
     {
         var builder = new StringBuilder();
-        builder.AppendLine("Invoice Number,Client,Status,Issue Date,Due Date,Currency,Subtotal,Tax,Discount,Total,Sent At,Paid At");
+        builder.AppendLine("Invoice Number,Client,Status,Issue Date,Due Date,Reporting Currency,Subtotal,Tax,Discount,Total,Sent At,Paid At");
 
         foreach (var row in rows)
         {
@@ -121,6 +162,7 @@ public sealed class GetReportExportQueryHandler(
         DateOnly from,
         DateOnly to,
         string? status,
+        string workspaceCurrency,
         IReadOnlyList<ReportExportInvoiceDto> rows)
     {
         var total = rows.Sum(row => row.Total);
@@ -143,7 +185,7 @@ public sealed class GetReportExportQueryHandler(
                   <td>{Html(row.IssueDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture))}</td>
                   <td>{Html(row.DueDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture))}</td>
                   <td>{Html(row.Currency)}</td>
-                  <td class="numeric">{Html(FormatDecimal(row.Total))}</td>
+                  <td class="numeric">{Html(FormatMoney(row.Total, row.Currency))}</td>
                   <td>{Html(FormatDateTime(row.PaidAt))}</td>
                 </tr>
                 """));
@@ -176,9 +218,9 @@ public sealed class GetReportExportQueryHandler(
               </div>
               <div class="summary">
                 <div><span class="label">Invoices</span><div class="value">{{rows.Count}}</div></div>
-                <div><span class="label">Total</span><div class="value">{{Html(FormatDecimal(total))}}</div></div>
-                <div><span class="label">Paid</span><div class="value">{{Html(FormatDecimal(paidTotal))}}</div></div>
-                <div><span class="label">Outstanding</span><div class="value">{{Html(FormatDecimal(outstandingTotal))}}</div></div>
+                <div><span class="label">Total</span><div class="value">{{Html(FormatMoney(total, workspaceCurrency))}}</div></div>
+                <div><span class="label">Paid</span><div class="value">{{Html(FormatMoney(paidTotal, workspaceCurrency))}}</div></div>
+                <div><span class="label">Outstanding</span><div class="value">{{Html(FormatMoney(outstandingTotal, workspaceCurrency))}}</div></div>
               </div>
               <table>
                 <thead>
@@ -212,6 +254,13 @@ public sealed class GetReportExportQueryHandler(
             : status.Trim().ToLowerInvariant();
     }
 
+    private static string NormalizeCurrency(string currency)
+    {
+        return string.IsNullOrWhiteSpace(currency)
+            ? "USD"
+            : currency.Trim().ToUpperInvariant();
+    }
+
     private static string BuildFileName(DateOnly from, DateOnly to, string format)
     {
         return FormattableString.Invariant($"invomir-report-{from:yyyy-MM-dd}-{to:yyyy-MM-dd}.{format}");
@@ -220,6 +269,16 @@ public sealed class GetReportExportQueryHandler(
     private static string FormatDecimal(decimal value)
     {
         return value.ToString("0.00", CultureInfo.InvariantCulture);
+    }
+
+    private static string FormatMoney(decimal value, string currency)
+    {
+        return FormattableString.Invariant($"{currency} {FormatDecimal(value)}");
+    }
+
+    private static decimal RoundMoney(decimal amount)
+    {
+        return decimal.Round(amount, 2, MidpointRounding.AwayFromZero);
     }
 
     private static string FormatDateTime(DateTime? value)
@@ -238,4 +297,19 @@ public sealed class GetReportExportQueryHandler(
     {
         return WebUtility.HtmlEncode(value ?? string.Empty);
     }
+
+    private sealed record ReportExportInvoiceSnapshot(
+        Guid Id,
+        string InvoiceNumber,
+        string ClientName,
+        string Status,
+        DateOnly IssueDate,
+        DateOnly DueDate,
+        string Currency,
+        decimal Subtotal,
+        decimal TaxAmount,
+        decimal DiscountAmount,
+        decimal Total,
+        DateTime? SentAt,
+        DateTime? PaidAt);
 }

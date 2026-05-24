@@ -2,7 +2,10 @@ using InvoMir.Application.Features.Dashboard.DTOs;
 
 namespace InvoMir.Application.Features.Dashboard.Queries.GetDashboard;
 
-public sealed class GetDashboardQueryHandler(IAppDbContext context)
+public sealed class GetDashboardQueryHandler(
+    IAppDbContext context,
+    ICurrentUserContext currentUserContext,
+    ICurrencyConversionService currencyConversionService)
     : IRequestHandler<GetDashboardQuery, DashboardDto>
 {
     private static readonly string[] OutstandingStatuses =
@@ -16,85 +19,124 @@ public sealed class GetDashboardQueryHandler(IAppDbContext context)
         GetDashboardQuery request,
         CancellationToken cancellationToken)
     {
+        var userId = currentUserContext.UserId
+            ?? throw new UnauthorizedAccessException("User context is not available.");
+
+        var workspace = await context.Users
+            .AsNoTracking()
+            .Where(user => user.Id == userId)
+            .Select(user => new DashboardWorkspace(user.Currency, user.Role))
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (workspace is null)
+            throw new NotFoundException(nameof(User), userId);
+
+        var workspaceCurrency = NormalizeCurrency(workspace.Currency);
+        var workspaceRole = ResolveWorkspaceRole(workspace.Role);
         var utcNow = DateTime.UtcNow;
         var today = DateOnly.FromDateTime(utcNow);
         var thisMonthStart = new DateTime(utcNow.Year, utcNow.Month, 1, 0, 0, 0, DateTimeKind.Utc);
         var nextMonthStart = thisMonthStart.AddMonths(1);
         var lastMonthStart = thisMonthStart.AddMonths(-1);
 
-        var invoices = context.Invoices.AsNoTracking();
-
-        var thisMonthRevenue = await invoices
-            .Where(invoice =>
-                invoice.Status == InvoiceConstants.Statuses.Paid &&
-                invoice.PaidAt != null &&
-                invoice.PaidAt >= thisMonthStart &&
-                invoice.PaidAt < nextMonthStart)
-            .SumAsync(invoice => (decimal?)invoice.Total, cancellationToken) ?? 0;
-
-        var lastMonthRevenue = await invoices
-            .Where(invoice =>
-                invoice.Status == InvoiceConstants.Statuses.Paid &&
-                invoice.PaidAt != null &&
-                invoice.PaidAt >= lastMonthStart &&
-                invoice.PaidAt < thisMonthStart)
-            .SumAsync(invoice => (decimal?)invoice.Total, cancellationToken) ?? 0;
-
-        var allTimeRevenue = await invoices
-            .Where(invoice => invoice.Status == InvoiceConstants.Statuses.Paid)
-            .SumAsync(invoice => (decimal?)invoice.Total, cancellationToken) ?? 0;
-
-        var outstanding = await invoices
-            .Where(invoice => OutstandingStatuses.Contains(invoice.Status))
-            .SumAsync(invoice => (decimal?)invoice.Total, cancellationToken) ?? 0;
-
-        var overdue = await invoices
-            .Where(invoice =>
-                invoice.Status == InvoiceConstants.Statuses.Overdue ||
-                (invoice.DueDate < today &&
-                    (invoice.Status == InvoiceConstants.Statuses.Sent ||
-                     invoice.Status == InvoiceConstants.Statuses.Viewed)))
-            .SumAsync(invoice => (decimal?)invoice.Total, cancellationToken) ?? 0;
-
-        var counts = await invoices
-            .GroupBy(invoice => invoice.Status)
-            .Select(group => new StatusCount(group.Key, group.Count()))
-            .ToListAsync(cancellationToken);
-
-        var recentInvoices = await invoices
-            .OrderByDescending(invoice => invoice.CreationTime)
-            .Select(invoice => new DashboardRecentInvoiceDto(
+        var invoiceRows = await context.Invoices
+            .AsNoTracking()
+            .Select(invoice => new DashboardInvoiceSnapshot(
                 invoice.Id,
-                invoice.InvoiceNumber,
+                invoice.ClientId,
                 invoice.Client.Name,
+                invoice.InvoiceNumber,
                 invoice.Status,
                 invoice.Total,
                 invoice.Currency,
                 invoice.DueDate,
                 invoice.SentAt,
-                invoice.PaidAt))
-            .Take(10)
+                invoice.PaidAt,
+                invoice.CreationTime))
             .ToListAsync(cancellationToken);
 
-        var topClientRevenueRows = await invoices
+        var convertedInvoices = await ConvertInvoicesAsync(
+            invoiceRows,
+            workspaceCurrency,
+            cancellationToken);
+
+        var thisMonthRevenue = RoundMoney(convertedInvoices
+            .Where(invoice =>
+                invoice.Status == InvoiceConstants.Statuses.Paid &&
+                invoice.PaidAt is not null &&
+                invoice.PaidAt >= thisMonthStart &&
+                invoice.PaidAt < nextMonthStart)
+            .Sum(invoice => invoice.Total));
+
+        var lastMonthRevenue = RoundMoney(convertedInvoices
+            .Where(invoice =>
+                invoice.Status == InvoiceConstants.Statuses.Paid &&
+                invoice.PaidAt is not null &&
+                invoice.PaidAt >= lastMonthStart &&
+                invoice.PaidAt < thisMonthStart)
+            .Sum(invoice => invoice.Total));
+
+        var allTimeRevenue = RoundMoney(convertedInvoices
             .Where(invoice => invoice.Status == InvoiceConstants.Statuses.Paid)
-            .GroupBy(invoice => invoice.ClientId)
-            .Select(group => new
-            {
-                ClientId = group.Key,
-                Revenue = group.Sum(invoice => invoice.Total)
-            })
-            .OrderByDescending(client => client.Revenue)
-            .Take(5)
-            .ToListAsync(cancellationToken);
+            .Sum(invoice => invoice.Total));
 
-        var topClientRevenue = topClientRevenueRows
-            .Select(client => new TopClientRevenue(client.ClientId, client.Revenue))
+        var outstanding = RoundMoney(convertedInvoices
+            .Where(invoice => OutstandingStatuses.Contains(invoice.Status))
+            .Sum(invoice => invoice.Total));
+
+        var overdue = RoundMoney(convertedInvoices
+            .Where(invoice =>
+                invoice.Status == InvoiceConstants.Statuses.Overdue ||
+                (invoice.DueDate < today &&
+                    (invoice.Status == InvoiceConstants.Statuses.Sent ||
+                     invoice.Status == InvoiceConstants.Statuses.Viewed)))
+            .Sum(invoice => invoice.Total));
+
+        var counts = convertedInvoices
+            .GroupBy(invoice => invoice.Status)
+            .Select(group => new StatusCount(group.Key, group.Count()))
             .ToList();
 
-        var topClients = await BuildTopClientsAsync(topClientRevenue, cancellationToken);
+        var recentInvoices = convertedInvoices
+            .OrderByDescending(invoice => invoice.CreationTime)
+            .Select(invoice => new DashboardRecentInvoiceDto(
+                invoice.Id,
+                invoice.InvoiceNumber,
+                invoice.ClientName,
+                invoice.Status,
+                invoice.Total,
+                workspaceCurrency,
+                invoice.OriginalTotal,
+                invoice.OriginalCurrency,
+                invoice.ExchangeRate,
+                invoice.DueDate,
+                invoice.SentAt,
+                invoice.PaidAt))
+            .Take(10)
+            .ToList();
+
+        var topClients = convertedInvoices
+            .GroupBy(invoice => new
+            {
+                invoice.ClientId,
+                invoice.ClientName
+            })
+            .Select(group => new DashboardTopClientDto(
+                group.Key.ClientId,
+                group.Key.ClientName,
+                RoundMoney(group
+                    .Where(invoice => invoice.Status == InvoiceConstants.Statuses.Paid)
+                    .Sum(invoice => invoice.Total)),
+                RoundMoney(group.Sum(invoice => invoice.Total)),
+                group.Count()))
+            .OrderByDescending(client => client.Revenue)
+            .ThenByDescending(client => client.InvoiceVolume)
+            .Take(5)
+            .ToList();
 
         return new DashboardDto(
+            workspaceCurrency,
+            workspaceRole,
             new DashboardRevenueDto(thisMonthRevenue, lastMonthRevenue, allTimeRevenue),
             outstanding,
             overdue,
@@ -109,29 +151,36 @@ public sealed class GetDashboardQueryHandler(IAppDbContext context)
             topClients);
     }
 
-    private async Task<List<DashboardTopClientDto>> BuildTopClientsAsync(
-        IReadOnlyList<TopClientRevenue> topClientRevenue,
+    private async Task<List<ConvertedDashboardInvoiceSnapshot>> ConvertInvoicesAsync(
+        IReadOnlyList<DashboardInvoiceSnapshot> invoices,
+        string workspaceCurrency,
         CancellationToken cancellationToken)
     {
-        if (topClientRevenue.Count == 0)
+        if (invoices.Count == 0)
             return [];
 
-        var clientIds = topClientRevenue.Select(client => client.ClientId).ToArray();
-        var clientNames = await context.Clients
-            .AsNoTracking()
-            .Where(client => clientIds.Contains(client.Id))
-            .Select(client => new
-            {
-                client.Id,
-                client.Name
-            })
-            .ToDictionaryAsync(client => client.Id, client => client.Name, cancellationToken);
+        var conversions = await currencyConversionService.ConvertAsync(
+            invoices
+                .Select(invoice => new CurrencyAmount(invoice.Total, invoice.Currency))
+                .ToList(),
+            workspaceCurrency,
+            cancellationToken);
 
-        return topClientRevenue
-            .Select(client => new DashboardTopClientDto(
-                client.ClientId,
-                clientNames.GetValueOrDefault(client.ClientId, "Unknown Client"),
-                client.Revenue))
+        return invoices
+            .Zip(conversions, (invoice, conversion) => new ConvertedDashboardInvoiceSnapshot(
+                invoice.Id,
+                invoice.ClientId,
+                invoice.ClientName,
+                invoice.InvoiceNumber,
+                invoice.Status,
+                conversion.ConvertedAmount,
+                conversion.OriginalAmount,
+                conversion.OriginalCurrency,
+                conversion.ExchangeRate,
+                invoice.DueDate,
+                invoice.SentAt,
+                invoice.PaidAt,
+                invoice.CreationTime))
             .ToList();
     }
 
@@ -140,7 +189,54 @@ public sealed class GetDashboardQueryHandler(IAppDbContext context)
         return counts.FirstOrDefault(count => count.Status == status)?.Count ?? 0;
     }
 
-    private sealed record StatusCount(string Status, int Count);
+    private static string NormalizeCurrency(string currency)
+    {
+        return string.IsNullOrWhiteSpace(currency)
+            ? "USD"
+            : currency.Trim().ToUpperInvariant();
+    }
 
-    private sealed record TopClientRevenue(Guid ClientId, decimal Revenue);
+    private static string ResolveWorkspaceRole(string role)
+    {
+        return string.Equals(role, AuthConstants.Roles.SystemAdmin, StringComparison.OrdinalIgnoreCase)
+            ? AuthConstants.Roles.Owner
+            : role.Trim().ToLowerInvariant();
+    }
+
+    private static decimal RoundMoney(decimal amount)
+    {
+        return decimal.Round(amount, 2, MidpointRounding.AwayFromZero);
+    }
+
+    private sealed record DashboardWorkspace(string Currency, string Role);
+
+    private sealed record DashboardInvoiceSnapshot(
+        Guid Id,
+        Guid ClientId,
+        string ClientName,
+        string InvoiceNumber,
+        string Status,
+        decimal Total,
+        string Currency,
+        DateOnly DueDate,
+        DateTime? SentAt,
+        DateTime? PaidAt,
+        DateTime CreationTime);
+
+    private sealed record ConvertedDashboardInvoiceSnapshot(
+        Guid Id,
+        Guid ClientId,
+        string ClientName,
+        string InvoiceNumber,
+        string Status,
+        decimal Total,
+        decimal OriginalTotal,
+        string OriginalCurrency,
+        decimal ExchangeRate,
+        DateOnly DueDate,
+        DateTime? SentAt,
+        DateTime? PaidAt,
+        DateTime CreationTime);
+
+    private sealed record StatusCount(string Status, int Count);
 }

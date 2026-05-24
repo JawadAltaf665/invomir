@@ -56,7 +56,7 @@ public sealed class UpdateInvoiceCommandHandler(
             throw new BadRequestException("Due date must be on or after issue date.");
 
         var oldValues = ToAuditSnapshot(invoice);
-        var currency = NormalizeCurrency(request.Currency, userSettings.Currency);
+        var currency = NormalizeInvoiceCurrency(request.Currency, userSettings.Currency);
         var taxPercent = request.TaxPercent ?? userSettings.TaxPercent;
         var totals = InvoiceDraftCalculator.CalculateTotals(request.Items, taxPercent, request.Discount);
 
@@ -163,11 +163,13 @@ public sealed class UpdateInvoiceCommandHandler(
         };
     }
 
-    private static string NormalizeCurrency(string? requestedCurrency, string defaultCurrency)
+    private static string NormalizeInvoiceCurrency(string? requestedCurrency, string defaultCurrency)
     {
-        return string.IsNullOrWhiteSpace(requestedCurrency)
-            ? defaultCurrency.ToUpperInvariant().Trim()
-            : requestedCurrency.ToUpperInvariant().Trim();
+        var currency = string.IsNullOrWhiteSpace(requestedCurrency)
+            ? defaultCurrency
+            : requestedCurrency;
+
+        return currency.ToUpperInvariant().Trim();
     }
 
     private static string? NormalizeOptional(string? value)

@@ -30,7 +30,13 @@ public sealed class DuplicateInvoiceCommandHandler(
             throw new BadRequestException("Due date must be on or after issue date.");
 
         var invoiceNumber = await invoiceNumberService.GenerateNextAsync(tenantContext.TenantId, cancellationToken);
-        var duplicate = CreateDuplicateInvoice(userId, clientId, invoiceNumber, issueDate, dueDate, sourceInvoice);
+        var duplicate = CreateDuplicateInvoice(
+            userId,
+            clientId,
+            invoiceNumber,
+            issueDate,
+            dueDate,
+            sourceInvoice);
         context.Invoices.Add(duplicate);
 
         var duplicateItems = BuildItems(duplicate.Id, sourceItems);
