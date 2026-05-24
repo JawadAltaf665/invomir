@@ -150,7 +150,6 @@ public static class Permissions
         ..Client.All,
         ..Payment.All,
         ..Report.All,
-        ..AuditLog.All,
         ..Subscription.All,
         ..Team.All,
         ..Settings.All
@@ -159,6 +158,7 @@ public static class Permissions
     public static readonly string[] All =
     [
         ..OrganizationScoped,
+        ..AuditLog.All,
         ..System.All
     ];
 

@@ -1,6 +1,8 @@
 import { ChangeDetectionStrategy, Component, effect, inject, input, output } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
+import { MAT_DATE_LOCALE, provideNativeDateAdapter } from '@angular/material/core';
+import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
@@ -23,6 +25,7 @@ const guidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}
   imports: [
     ReactiveFormsModule,
     MatButtonModule,
+    MatDatepickerModule,
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
@@ -30,6 +33,7 @@ const guidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}
     LucideSearch,
   ],
   templateUrl: './audit-log-filters.component.html',
+  providers: [provideNativeDateAdapter(), { provide: MAT_DATE_LOCALE, useValue: 'en-GB' }],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AuditLogFiltersComponent {
@@ -54,8 +58,8 @@ export class AuditLogFiltersComponent {
     entityName: this.fb.nonNullable.control<AuditEntityFilter | string>('all'),
     action: this.fb.nonNullable.control<AuditActionFilter | string>('all'),
     entityId: this.fb.nonNullable.control('', Validators.pattern(guidPattern)),
-    from: this.fb.nonNullable.control(''),
-    to: this.fb.nonNullable.control(''),
+    from: this.fb.control<Date | null>(null),
+    to: this.fb.control<Date | null>(null),
     searchTerm: this.fb.nonNullable.control(''),
   });
 
@@ -67,8 +71,8 @@ export class AuditLogFiltersComponent {
           entityName: filters.entityName,
           action: filters.action,
           entityId: filters.entityId,
-          from: filters.from,
-          to: filters.to,
+          from: this.toDate(filters.from),
+          to: this.toDate(filters.to),
           searchTerm: filters.searchTerm,
         },
         { emitEvent: false },
@@ -82,13 +86,41 @@ export class AuditLogFiltersComponent {
       return;
     }
 
+    const rawValue = this.form.getRawValue();
+
     this.filtersChange.emit({
-      ...this.form.getRawValue(),
+      entityName: rawValue.entityName,
+      action: rawValue.action,
+      entityId: rawValue.entityId,
+      from: this.toFilterDate(rawValue.from),
+      to: this.toFilterDate(rawValue.to),
+      searchTerm: rawValue.searchTerm,
       page: 1,
     });
   }
 
   protected resetFilters(): void {
     this.resetRequested.emit();
+  }
+
+  private toDate(value: string): Date | null {
+    if (!value) {
+      return null;
+    }
+
+    const date = new Date(`${value}T00:00:00`);
+    return Number.isNaN(date.getTime()) ? null : date;
+  }
+
+  private toFilterDate(value: Date | null): string {
+    if (!value || Number.isNaN(value.getTime())) {
+      return '';
+    }
+
+    const year = value.getFullYear();
+    const month = `${value.getMonth() + 1}`.padStart(2, '0');
+    const day = `${value.getDate()}`.padStart(2, '0');
+
+    return `${year}-${month}-${day}`;
   }
 }

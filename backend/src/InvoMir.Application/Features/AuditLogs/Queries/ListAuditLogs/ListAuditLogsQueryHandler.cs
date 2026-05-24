@@ -47,6 +47,9 @@ public sealed class ListAuditLogsQueryHandler(
             query = query.Where(auditLog => auditLog.Action.ToLower() == action);
         }
 
+        if (!string.IsNullOrWhiteSpace(request.SearchTerm))
+            query = ApplySearch(query, request.SearchTerm.Trim().ToLowerInvariant(), isSystemAdmin);
+
         if (request.From.HasValue)
             query = query.Where(auditLog => auditLog.CreatedAt >= NormalizeUtc(request.From.Value));
 
@@ -74,8 +77,9 @@ public sealed class ListAuditLogsQueryHandler(
 
         var actors = await LoadActorsAsync(auditLogs, isSystemAdmin, cancellationToken);
         var tenants = await LoadTenantsAsync(auditLogs, isSystemAdmin, cancellationToken);
+        var entityLabels = await LoadEntityLabelsAsync(auditLogs, isSystemAdmin, cancellationToken);
         var items = auditLogs
-            .Select(auditLog => ToDto(auditLog, actors, tenants))
+            .Select(auditLog => ToDto(auditLog, actors, tenants, entityLabels))
             .ToList();
 
         return new PagedResult<AuditLogDto>(items, page, limit, totalCount);
@@ -94,6 +98,51 @@ public sealed class ListAuditLogsQueryHandler(
             .FirstOrDefaultAsync(cancellationToken);
 
         return string.Equals(role, AuthConstants.Roles.SystemAdmin, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private IQueryable<AuditLog> ApplySearch(
+        IQueryable<AuditLog> query,
+        string searchTerm,
+        bool isSystemAdmin)
+    {
+        var matchingUserIds = context.Users
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .Where(user =>
+                !user.IsDeleted &&
+                (
+                    user.Email.ToLower().Contains(searchTerm) ||
+                    user.FirstName.ToLower().Contains(searchTerm) ||
+                    user.LastName.ToLower().Contains(searchTerm)
+                ));
+
+        var matchingTenantIds = context.Tenants
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .Where(tenant =>
+                !tenant.IsDeleted &&
+                (
+                    tenant.Name.ToLower().Contains(searchTerm) ||
+                    tenant.Slug.ToLower().Contains(searchTerm)
+                ));
+
+        if (!isSystemAdmin)
+        {
+            var tenantId = tenantContext.TenantId;
+            matchingUserIds = matchingUserIds.Where(user => user.TenantId == tenantId);
+            matchingTenantIds = matchingTenantIds.Where(tenant => tenant.Id == tenantId);
+        }
+
+        var userIds = matchingUserIds.Select(user => user.Id);
+        var tenantIds = matchingTenantIds.Select(tenant => tenant.Id);
+
+        return query.Where(auditLog =>
+            auditLog.EntityName.ToLower().Contains(searchTerm) ||
+            auditLog.Action.ToLower().Contains(searchTerm) ||
+            (auditLog.IpAddress != null && auditLog.IpAddress.ToLower().Contains(searchTerm)) ||
+            (auditLog.UserAgent != null && auditLog.UserAgent.ToLower().Contains(searchTerm)) ||
+            (auditLog.UserId.HasValue && userIds.Contains(auditLog.UserId.Value)) ||
+            (auditLog.TenantId.HasValue && tenantIds.Contains(auditLog.TenantId.Value)));
     }
 
     private async Task<IReadOnlyDictionary<Guid, AuditActorSnapshot>> LoadActorsAsync(
@@ -159,10 +208,169 @@ public sealed class ListAuditLogsQueryHandler(
             .ToDictionaryAsync(tenant => tenant.TenantId, tenant => tenant.Name, cancellationToken);
     }
 
+    private async Task<IReadOnlyDictionary<EntityReferenceKey, string>> LoadEntityLabelsAsync(
+        IReadOnlyList<AuditLogSnapshot> auditLogs,
+        bool isSystemAdmin,
+        CancellationToken cancellationToken)
+    {
+        var keys = auditLogs
+            .Where(auditLog => auditLog.EntityId.HasValue)
+            .Select(auditLog => new EntityReferenceKey(
+                auditLog.EntityName.Trim().ToLowerInvariant(),
+                auditLog.EntityId!.Value))
+            .Distinct()
+            .ToList();
+
+        if (keys.Count == 0)
+            return new Dictionary<EntityReferenceKey, string>();
+
+        var labels = new Dictionary<EntityReferenceKey, string>();
+        var tenantId = tenantContext.TenantId;
+
+        await AddInvoiceLabelsAsync(labels, keys, isSystemAdmin, tenantId, cancellationToken);
+        await AddClientLabelsAsync(labels, keys, isSystemAdmin, tenantId, cancellationToken);
+        await AddUserLabelsAsync(labels, keys, isSystemAdmin, tenantId, cancellationToken);
+        await AddTeamInvitationLabelsAsync(labels, keys, isSystemAdmin, tenantId, cancellationToken);
+
+        return labels;
+    }
+
+    private async Task AddInvoiceLabelsAsync(
+        IDictionary<EntityReferenceKey, string> labels,
+        IReadOnlyCollection<EntityReferenceKey> keys,
+        bool isSystemAdmin,
+        Guid tenantId,
+        CancellationToken cancellationToken)
+    {
+        var ids = keys
+            .Where(key => key.EntityName == AuditConstants.Entities.Invoice.ToLowerInvariant())
+            .Select(key => key.EntityId)
+            .ToList();
+
+        if (ids.Count == 0)
+            return;
+
+        var query = context.Invoices
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .Where(invoice => !invoice.IsDeleted && ids.Contains(invoice.Id));
+
+        if (!isSystemAdmin)
+            query = query.Where(invoice => invoice.TenantId == tenantId);
+
+        var rows = await query
+            .Select(invoice => new { invoice.Id, invoice.InvoiceNumber })
+            .ToListAsync(cancellationToken);
+
+        foreach (var row in rows)
+            labels[new EntityReferenceKey(AuditConstants.Entities.Invoice.ToLowerInvariant(), row.Id)] = row.InvoiceNumber;
+    }
+
+    private async Task AddClientLabelsAsync(
+        IDictionary<EntityReferenceKey, string> labels,
+        IReadOnlyCollection<EntityReferenceKey> keys,
+        bool isSystemAdmin,
+        Guid tenantId,
+        CancellationToken cancellationToken)
+    {
+        var ids = keys
+            .Where(key => key.EntityName == AuditConstants.Entities.Client.ToLowerInvariant())
+            .Select(key => key.EntityId)
+            .ToList();
+
+        if (ids.Count == 0)
+            return;
+
+        var query = context.Clients
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .Where(client => !client.IsDeleted && ids.Contains(client.Id));
+
+        if (!isSystemAdmin)
+            query = query.Where(client => client.TenantId == tenantId);
+
+        var rows = await query
+            .Select(client => new { client.Id, client.Name, client.Email })
+            .ToListAsync(cancellationToken);
+
+        foreach (var row in rows)
+        {
+            var displayName = string.IsNullOrWhiteSpace(row.Name) ? row.Email : row.Name;
+            labels[new EntityReferenceKey(AuditConstants.Entities.Client.ToLowerInvariant(), row.Id)] = displayName;
+        }
+    }
+
+    private async Task AddUserLabelsAsync(
+        IDictionary<EntityReferenceKey, string> labels,
+        IReadOnlyCollection<EntityReferenceKey> keys,
+        bool isSystemAdmin,
+        Guid tenantId,
+        CancellationToken cancellationToken)
+    {
+        var ids = keys
+            .Where(key => key.EntityName == AuditConstants.Entities.User.ToLowerInvariant())
+            .Select(key => key.EntityId)
+            .ToList();
+
+        if (ids.Count == 0)
+            return;
+
+        var query = context.Users
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .Where(user => !user.IsDeleted && ids.Contains(user.Id));
+
+        if (!isSystemAdmin)
+            query = query.Where(user => user.TenantId == tenantId);
+
+        var rows = await query
+            .Select(user => new { user.Id, user.Email, user.FirstName, user.LastName })
+            .ToListAsync(cancellationToken);
+
+        foreach (var row in rows)
+        {
+            var name = $"{row.FirstName} {row.LastName}".Trim();
+            labels[new EntityReferenceKey(AuditConstants.Entities.User.ToLowerInvariant(), row.Id)] =
+                string.IsNullOrWhiteSpace(name) ? row.Email : name;
+        }
+    }
+
+    private async Task AddTeamInvitationLabelsAsync(
+        IDictionary<EntityReferenceKey, string> labels,
+        IReadOnlyCollection<EntityReferenceKey> keys,
+        bool isSystemAdmin,
+        Guid tenantId,
+        CancellationToken cancellationToken)
+    {
+        var ids = keys
+            .Where(key => key.EntityName == AuditConstants.Entities.TeamInvitation.ToLowerInvariant())
+            .Select(key => key.EntityId)
+            .ToList();
+
+        if (ids.Count == 0)
+            return;
+
+        var query = context.TeamInvitations
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .Where(invitation => !invitation.IsDeleted && ids.Contains(invitation.Id));
+
+        if (!isSystemAdmin)
+            query = query.Where(invitation => invitation.TenantId == tenantId);
+
+        var rows = await query
+            .Select(invitation => new { invitation.Id, invitation.Email })
+            .ToListAsync(cancellationToken);
+
+        foreach (var row in rows)
+            labels[new EntityReferenceKey(AuditConstants.Entities.TeamInvitation.ToLowerInvariant(), row.Id)] = row.Email;
+    }
+
     private static AuditLogDto ToDto(
         AuditLogSnapshot auditLog,
         IReadOnlyDictionary<Guid, AuditActorSnapshot> actors,
-        IReadOnlyDictionary<Guid, string> tenants)
+        IReadOnlyDictionary<Guid, string> tenants,
+        IReadOnlyDictionary<EntityReferenceKey, string> entityLabels)
     {
         var actor = auditLog.UserId.HasValue && actors.TryGetValue(auditLog.UserId.Value, out var currentActor)
             ? currentActor
@@ -170,6 +378,13 @@ public sealed class ListAuditLogsQueryHandler(
         var tenantName = auditLog.TenantId.HasValue && tenants.TryGetValue(auditLog.TenantId.Value, out var currentTenantName)
             ? currentTenantName
             : null;
+        var entityLabelKey = auditLog.EntityId.HasValue
+            ? new EntityReferenceKey(auditLog.EntityName.Trim().ToLowerInvariant(), auditLog.EntityId.Value)
+            : default;
+        var entityDisplayName = auditLog.EntityId.HasValue &&
+            entityLabels.TryGetValue(entityLabelKey, out var currentEntityLabel)
+                ? currentEntityLabel
+                : null;
 
         return new AuditLogDto(
             auditLog.Id,
@@ -180,6 +395,7 @@ public sealed class ListAuditLogsQueryHandler(
             actor?.Name,
             auditLog.EntityName,
             auditLog.EntityId,
+            entityDisplayName,
             auditLog.Action,
             ParseJsonValue(auditLog.OldValues),
             ParseJsonValue(auditLog.NewValues),
@@ -235,4 +451,8 @@ public sealed class ListAuditLogsQueryHandler(
     private sealed record AuditTenantSnapshot(
         Guid TenantId,
         string Name);
+
+    private readonly record struct EntityReferenceKey(
+        string EntityName,
+        Guid EntityId);
 }

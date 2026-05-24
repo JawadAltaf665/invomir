@@ -8,5 +8,6 @@ public sealed record ListAuditLogsQuery(
     string? Action = null,
     DateTime? From = null,
     DateTime? To = null,
+    string? SearchTerm = null,
     int Page = 1,
     int Limit = 20) : IRequest<PagedResult<AuditLogDto>>;

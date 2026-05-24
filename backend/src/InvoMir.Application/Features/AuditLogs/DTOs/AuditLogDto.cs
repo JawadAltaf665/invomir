@@ -9,6 +9,7 @@ public sealed record AuditLogDto(
     string? UserName,
     string EntityName,
     Guid? EntityId,
+    string? EntityDisplayName,
     string Action,
     object? OldValues,
     object? NewValues,

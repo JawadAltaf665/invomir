@@ -43,6 +43,19 @@ export class AuditLogListStore {
     };
   });
 
+  readonly hasActiveFilters = computed(() => {
+    const filters = this.filters();
+
+    return Boolean(
+      filters.entityName !== 'all' ||
+        filters.action !== 'all' ||
+        filters.entityId.trim() ||
+        filters.from ||
+        filters.to ||
+        filters.searchTerm.trim(),
+    );
+  });
+
   readonly rows = computed<readonly AuditLogListItemView[]>(() => {
     const result = this.result();
 
@@ -50,29 +63,7 @@ export class AuditLogListStore {
       return [];
     }
 
-    const rows = result.items.map((auditLog) => toAuditLogView(auditLog));
-    const searchTerm = this.filters().searchTerm.trim().toLowerCase();
-
-    if (!searchTerm) {
-      return rows;
-    }
-
-    return rows.filter((auditLog) =>
-      [
-        auditLog.actorName,
-        auditLog.actorMeta,
-        auditLog.workspaceName,
-        auditLog.workspaceMeta,
-        auditLog.entityName,
-        auditLog.entityLabel,
-        auditLog.actionLabel,
-        auditLog.summary,
-        auditLog.ipAddressDisplay,
-      ]
-        .join(' ')
-        .toLowerCase()
-        .includes(searchTerm),
-    );
+    return result.items.map((auditLog) => toAuditLogView(auditLog));
   });
 
   loadAuditLogs(overrides: Partial<AuditLogListFilters> = {}): void {

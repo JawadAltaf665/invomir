@@ -44,6 +44,7 @@ export interface AuditLogDto {
   userName: string | null;
   entityName: string;
   entityId: string | null;
+  entityDisplayName: string | null;
   action: string;
   oldValues: unknown;
   newValues: unknown;
@@ -58,13 +59,12 @@ export interface AuditLogListQuery {
   action: AuditActionFilter | string;
   from: string;
   to: string;
+  searchTerm: string;
   page: number;
   limit: number;
 }
 
-export interface AuditLogListFilters extends AuditLogListQuery {
-  searchTerm: string;
-}
+export type AuditLogListFilters = AuditLogListQuery;
 
 export interface AuditLogListItemView {
   id: string;
@@ -74,6 +74,7 @@ export interface AuditLogListItemView {
   workspaceMeta: string;
   entityName: string;
   entityLabel: string;
+  entityMeta: string;
   entityId: string | null;
   entityLink: string[] | null;
   action: string;

@@ -14,15 +14,27 @@
       </p>
     </div>
 
-    <button
-      mat-stroked-button
-      type="button"
-      [disabled]="auditLogStore.isLoading()"
-      (click)="refresh()"
-    >
-      <svg lucideRefreshCcw class="size-4" aria-hidden="true"></svg>
-      Refresh
-    </button>
+    <div class="flex flex-col gap-3 sm:flex-row">
+      <button
+        mat-stroked-button
+        type="button"
+        [disabled]="auditLogStore.isLoading() || auditLogStore.rows().length === 0"
+        (click)="exportCurrentPageCsv()"
+      >
+        <svg lucideDownload class="size-4" aria-hidden="true"></svg>
+        Export CSV
+      </button>
+
+      <button
+        mat-stroked-button
+        type="button"
+        [disabled]="auditLogStore.isLoading()"
+        (click)="refresh()"
+      >
+        <svg lucideRefreshCcw class="size-4" aria-hidden="true"></svg>
+        Refresh
+      </button>
+    </div>
   </div>
 
   @if (auditLogStore.errorMessages().length > 0) {
@@ -60,8 +72,10 @@
       [totalPages]="auditLogStore.pageInfo().totalPages"
       [totalCount]="auditLogStore.pageInfo().totalCount"
       [isSystemScope]="isSystemAdmin()"
+      [hasActiveFilters]="auditLogStore.hasActiveFilters()"
       (pageRequested)="changePage($event)"
       (pageSizeRequested)="changePageSize($event)"
+      (resetRequested)="resetFilters()"
     />
   </div>
 </section>

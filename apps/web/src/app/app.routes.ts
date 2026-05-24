@@ -165,7 +165,7 @@ export const routes: Routes = [
         path: 'audit-logs',
         canActivate: [permissionGuard],
         data: {
-          permissions: [permissions.auditLog.view],
+          permissions: [permissions.system.access],
         },
         children: auditLogRoutes,
       },
