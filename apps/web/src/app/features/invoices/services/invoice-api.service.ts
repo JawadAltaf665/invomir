@@ -30,8 +30,17 @@ export class InvoiceApiService {
     });
   }
 
-  getInvoice(id: string): Observable<ApiResponse<InvoiceDetailDto>> {
-    return this.http.get<ApiResponse<InvoiceDetailDto>>(apiUrl(`/api/invoices/${id}`));
+  getInvoice(
+    id: string,
+    options: { useWorkspaceCurrency?: boolean } = {},
+  ): Observable<ApiResponse<InvoiceDetailDto>> {
+    const params = options.useWorkspaceCurrency
+      ? new HttpParams().set('useWorkspaceCurrency', true)
+      : undefined;
+
+    return this.http.get<ApiResponse<InvoiceDetailDto>>(apiUrl(`/api/invoices/${id}`), {
+      params,
+    });
   }
 
   createInvoice(request: InvoiceSaveRequest): Observable<ApiResponse<InvoiceDetailDto>> {
@@ -145,6 +154,26 @@ export class InvoiceApiService {
 
     if (query.to) {
       params = params.set('to', query.to);
+    }
+
+    if (query.searchTerm?.trim()) {
+      params = params.set('q', query.searchTerm.trim());
+    }
+
+    if (query.minAmount !== null && query.minAmount !== undefined) {
+      params = params.set('minAmount', query.minAmount);
+    }
+
+    if (query.maxAmount !== null && query.maxAmount !== undefined) {
+      params = params.set('maxAmount', query.maxAmount);
+    }
+
+    if (query.sortBy) {
+      params = params.set('sortBy', query.sortBy);
+    }
+
+    if (query.sortDirection) {
+      params = params.set('sortDirection', query.sortDirection);
     }
 
     return params;
