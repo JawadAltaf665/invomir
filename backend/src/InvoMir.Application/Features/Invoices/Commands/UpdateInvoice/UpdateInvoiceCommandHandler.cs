@@ -41,7 +41,7 @@ public sealed class UpdateInvoiceCommandHandler(
         var userSettings = await context.Users
             .AsNoTracking()
             .Where(user => user.Id == userId)
-            .Select(user => new { user.Currency, user.TaxPercent })
+            .Select(user => new { user.TaxPercent })
             .FirstOrDefaultAsync(cancellationToken);
 
         if (userSettings is null)
@@ -56,7 +56,7 @@ public sealed class UpdateInvoiceCommandHandler(
             throw new BadRequestException("Due date must be on or after issue date.");
 
         var oldValues = ToAuditSnapshot(invoice);
-        var currency = NormalizeInvoiceCurrency(request.Currency, userSettings.Currency);
+        var currency = NormalizeInvoiceCurrency(invoice.Currency);
         var taxPercent = request.TaxPercent ?? userSettings.TaxPercent;
         var totals = InvoiceDraftCalculator.CalculateTotals(request.Items, taxPercent, request.Discount);
 
@@ -163,12 +163,8 @@ public sealed class UpdateInvoiceCommandHandler(
         };
     }
 
-    private static string NormalizeInvoiceCurrency(string? requestedCurrency, string defaultCurrency)
+    private static string NormalizeInvoiceCurrency(string currency)
     {
-        var currency = string.IsNullOrWhiteSpace(requestedCurrency)
-            ? defaultCurrency
-            : requestedCurrency;
-
         return currency.ToUpperInvariant().Trim();
     }
 
