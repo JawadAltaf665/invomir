@@ -7,5 +7,9 @@ public sealed record InvoiceListItemDto(
     string Status,
     decimal Total,
     string Currency,
+    decimal OriginalTotal,
+    string OriginalCurrency,
+    decimal ExchangeRate,
+    DateTimeOffset? RatesUpdatedAt,
     DateOnly DueDate,
     DateTime? SentAt);
