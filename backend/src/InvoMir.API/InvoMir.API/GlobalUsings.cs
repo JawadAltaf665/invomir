@@ -64,6 +64,7 @@ global using InvoMir.Application.Features.Team.Queries.ListTeamMembers;
 global using InvoMir.Application.Features.Users.Commands.ChangeCurrentUserPassword;
 global using InvoMir.Application.Features.Users.Commands.UpdateCurrentUser;
 global using InvoMir.Application.Features.Users.Commands.UploadCurrentUserLogo;
+global using InvoMir.Application.Features.Users.Commands.UploadCurrentUserProfilePicture;
 global using InvoMir.Application.Features.Users.DTOs;
 global using InvoMir.Application.Features.Users.Queries.GetCurrentUser;
 global using InvoMir.Application.Features.Users.Queries.GetCurrentUserPermissions;

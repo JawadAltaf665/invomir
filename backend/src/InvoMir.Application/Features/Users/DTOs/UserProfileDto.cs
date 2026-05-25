@@ -7,6 +7,7 @@ public sealed record UserProfileDto(
     string LastName,
     string BusinessName,
     string? LogoUrl,
+    string? ProfilePictureUrl,
     string Currency,
     decimal TaxPercent,
     string Plan,

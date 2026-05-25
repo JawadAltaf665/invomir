@@ -72,6 +72,12 @@ export class SettingsPageComponent implements OnInit {
     });
   }
 
+  protected uploadProfilePicture(file: File): void {
+    this.settingsStore.uploadProfilePicture(file).subscribe({
+      error: () => undefined,
+    });
+  }
+
   protected changePassword(request: ChangePasswordRequest): void {
     this.settingsStore.changePassword(request).subscribe({
       next: () => {

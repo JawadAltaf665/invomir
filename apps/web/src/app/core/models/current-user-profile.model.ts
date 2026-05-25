@@ -7,6 +7,7 @@ export interface CurrentUserProfileDto {
   lastName: string;
   businessName: string;
   logoUrl: string | null;
+  profilePictureUrl: string | null;
   currency: SupportedCurrency | string;
   taxPercent: number;
   plan: string;

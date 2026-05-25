@@ -7,17 +7,82 @@
       <div class="h-16 animate-pulse rounded-xl bg-neutral-100"></div>
     </div>
   } @else if (profile(); as currentProfile) {
-    <div class="flex items-start gap-4">
-      <div class="grid size-11 place-items-center rounded-2xl bg-primary/10 text-primary">
-        <svg lucideUsers class="size-5" aria-hidden="true"></svg>
+    <div class="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+      <div class="flex min-w-0 items-start gap-4">
+        <div
+          class="grid size-14 shrink-0 place-items-center overflow-hidden rounded-2xl bg-primary/10 text-sm font-semibold text-primary"
+        >
+          @if (displayProfilePictureUrl()) {
+            <img
+              class="h-full w-full object-cover"
+              [src]="displayProfilePictureUrl()"
+              alt="Profile picture"
+            />
+          } @else {
+            <span>{{ profileInitials() }}</span>
+          }
+        </div>
+        <div class="min-w-0">
+          <h2 class="text-lg font-semibold text-neutral-900">Account profile</h2>
+          <p class="mt-1 text-sm text-neutral-500">
+            {{ formatProfileName(currentProfile.firstName, currentProfile.lastName) }}
+          </p>
+        </div>
       </div>
-      <div class="min-w-0">
-        <h2 class="text-lg font-semibold text-neutral-900">Account profile</h2>
-        <p class="mt-1 text-sm text-neutral-500">
-          {{ formatProfileName(currentProfile.firstName, currentProfile.lastName) }}
-        </p>
+
+      <div class="flex shrink-0 flex-col items-start gap-2 sm:items-end">
+        <input
+          #profilePictureInput
+          class="hidden"
+          type="file"
+          [accept]="acceptedFileTypes"
+          [disabled]="!canManage() || isUploading()"
+          (change)="selectProfilePicture($event)"
+        />
+
+        @if (canManage()) {
+          <button
+            mat-stroked-button
+            type="button"
+            [disabled]="isUploading()"
+            (click)="profilePictureInput.click()"
+          >
+            <svg lucideUpload class="size-4" aria-hidden="true"></svg>
+            Upload photo
+          </button>
+        } @else {
+          <span
+            class="inline-flex h-10 items-center justify-center rounded-xl border border-neutral-200 px-4 text-sm font-medium text-neutral-500"
+          >
+            Settings permission required
+          </span>
+        }
       </div>
     </div>
+
+    @if (isUploading()) {
+      <div class="mt-5">
+        <mat-progress-bar mode="determinate" [value]="progress()" />
+        <p class="mt-2 text-xs text-neutral-500">{{ progress() }}% uploaded</p>
+      </div>
+    }
+
+    @if (localErrorMessages().length > 0 || errorMessages().length > 0) {
+      <div class="mt-5 rounded-2xl border border-red-200 bg-red-50 p-4">
+        @for (error of localErrorMessages(); track error) {
+          <p class="text-sm font-medium text-red-700">{{ error }}</p>
+        }
+        @for (error of errorMessages(); track error) {
+          <p class="text-sm font-medium text-red-700">{{ error }}</p>
+        }
+      </div>
+    }
+
+    @if (successMessage()) {
+      <div class="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+        <p class="text-sm font-medium text-emerald-700">{{ successMessage() }}</p>
+      </div>
+    }
 
     <dl class="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
       <div class="rounded-2xl bg-neutral-50 p-4">

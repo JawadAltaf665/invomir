@@ -44,6 +44,13 @@
     <app-account-profile-card
       [profile]="settingsStore.profile()"
       [isLoading]="settingsStore.isLoading() && !settingsStore.profile()"
+      [canManage]="canManageSettings()"
+      [isUploading]="settingsStore.isUploadingProfilePicture()"
+      [progress]="settingsStore.profilePictureUploadProgress()"
+      [cacheKey]="settingsStore.profilePictureVersion()"
+      [errorMessages]="settingsStore.profilePictureErrorMessages()"
+      [successMessage]="settingsStore.profilePictureSuccessMessage()"
+      (profilePictureSelected)="uploadProfilePicture($event)"
     />
 
     <app-logo-upload-card

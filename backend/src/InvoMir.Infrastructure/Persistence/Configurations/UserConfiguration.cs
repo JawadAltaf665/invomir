@@ -15,6 +15,7 @@ public sealed class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(user => user.Role).HasMaxLength(20).IsRequired().HasDefaultValue(AuthConstants.Roles.Owner);
         builder.Property(user => user.Plan).HasMaxLength(30).IsRequired().HasDefaultValue(AuthConstants.Plans.Free);
         builder.Property(user => user.LogoUrl).HasMaxLength(500);
+        builder.Property(user => user.ProfilePictureUrl).HasMaxLength(500);
         builder.Property(user => user.Currency).HasMaxLength(10).IsRequired().HasDefaultValue("USD");
         builder.Property(user => user.TaxPercent).HasColumnType("decimal(5,2)").HasDefaultValue(0);
         builder.Property(user => user.StripeAccountId).HasMaxLength(100);

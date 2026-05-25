@@ -44,6 +44,27 @@ export class DashboardComponent implements OnInit {
   private readonly authSession = inject(AuthSessionService);
   private readonly platformId = inject(PLATFORM_ID);
   private readonly workspaceCurrencyRefresh = inject(WorkspaceCurrencyRefreshService);
+  private observedSessionKey = this.dashboardSessionKey();
+  private readonly reloadOnAuthenticatedUserChange = effect(() => {
+    const sessionKey = this.dashboardSessionKey();
+
+    if (sessionKey === this.observedSessionKey) {
+      return;
+    }
+
+    this.observedSessionKey = sessionKey;
+
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
+
+    if (!sessionKey) {
+      this.dashboardStore.clear();
+      return;
+    }
+
+    this.dashboardStore.load(true);
+  });
   private observedCurrencyRefreshVersion = this.workspaceCurrencyRefresh.version();
   private readonly refreshOnWorkspaceCurrencyChange = effect(() => {
     const version = this.workspaceCurrencyRefresh.version();
@@ -154,5 +175,10 @@ export class DashboardComponent implements OnInit {
 
   private toWorkspaceRoleLabel(value: string): string {
     return this.toTitleCase(value === 'system_admin' ? 'owner' : value);
+  }
+
+  private dashboardSessionKey(): string | null {
+    const user = this.authSession.user();
+    return user?.id && user.tenantId ? `${user.tenantId}:${user.id}` : null;
   }
 }

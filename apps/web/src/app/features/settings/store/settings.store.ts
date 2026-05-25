@@ -4,10 +4,12 @@ import { Observable, catchError, filter, finalize, map, tap, throwError } from '
 
 import { ApiResponseError, extractApiErrors } from '../../../core/errors/api-response-error';
 import { ApiResponse } from '../../../core/models/api-response.model';
+import { CurrentUserProfileRefreshService } from '../../../core/services/current-user-profile-refresh.service';
 import {
   ChangePasswordRequest,
   UpdateUserProfileRequest,
   UserLogoDto,
+  UserProfilePictureDto,
   UserProfileDto,
 } from '../models/settings.models';
 import { SettingsApiService } from '../services/settings-api.service';
@@ -15,6 +17,7 @@ import { SettingsApiService } from '../services/settings-api.service';
 @Injectable({ providedIn: 'root' })
 export class SettingsStore {
   private readonly settingsApi = inject(SettingsApiService);
+  private readonly currentUserProfileRefresh = inject(CurrentUserProfileRefreshService);
 
   private readonly profileSignal = signal<UserProfileDto | null>(null);
   private readonly isLoadingSignal = signal(false);
@@ -29,6 +32,12 @@ export class SettingsStore {
   private readonly logoErrorMessagesSignal = signal<readonly string[]>([]);
   private readonly logoSuccessMessageSignal = signal('');
   private readonly logoVersionSignal = signal(Date.now());
+
+  private readonly isUploadingProfilePictureSignal = signal(false);
+  private readonly profilePictureUploadProgressSignal = signal(0);
+  private readonly profilePictureErrorMessagesSignal = signal<readonly string[]>([]);
+  private readonly profilePictureSuccessMessageSignal = signal('');
+  private readonly profilePictureVersionSignal = signal(Date.now());
 
   private readonly isChangingPasswordSignal = signal(false);
   private readonly passwordErrorMessagesSignal = signal<readonly string[]>([]);
@@ -48,6 +57,12 @@ export class SettingsStore {
   readonly logoSuccessMessage = this.logoSuccessMessageSignal.asReadonly();
   readonly logoVersion = this.logoVersionSignal.asReadonly();
 
+  readonly isUploadingProfilePicture = this.isUploadingProfilePictureSignal.asReadonly();
+  readonly profilePictureUploadProgress = this.profilePictureUploadProgressSignal.asReadonly();
+  readonly profilePictureErrorMessages = this.profilePictureErrorMessagesSignal.asReadonly();
+  readonly profilePictureSuccessMessage = this.profilePictureSuccessMessageSignal.asReadonly();
+  readonly profilePictureVersion = this.profilePictureVersionSignal.asReadonly();
+
   readonly isChangingPassword = this.isChangingPasswordSignal.asReadonly();
   readonly passwordErrorMessages = this.passwordErrorMessagesSignal.asReadonly();
   readonly passwordSuccessMessage = this.passwordSuccessMessageSignal.asReadonly();
@@ -57,6 +72,7 @@ export class SettingsStore {
       this.isLoading() ||
       this.isSavingProfile() ||
       this.isUploadingLogo() ||
+      this.isUploadingProfilePicture() ||
       this.isChangingPassword(),
   );
 
@@ -78,6 +94,7 @@ export class SettingsStore {
         next: (profile) => {
           this.profileSignal.set(profile);
           this.logoVersionSignal.set(Date.now());
+          this.profilePictureVersionSignal.set(Date.now());
         },
         error: (error) => this.loadErrorMessagesSignal.set(extractApiErrors(error)),
       });
@@ -130,6 +147,38 @@ export class SettingsStore {
         return throwError(() => error);
       }),
       finalize(() => this.isUploadingLogoSignal.set(false)),
+    );
+  }
+
+  uploadProfilePicture(file: File): Observable<UserProfilePictureDto> {
+    this.isUploadingProfilePictureSignal.set(true);
+    this.profilePictureUploadProgressSignal.set(0);
+    this.profilePictureErrorMessagesSignal.set([]);
+    this.profilePictureSuccessMessageSignal.set('');
+
+    return this.settingsApi.uploadProfilePicture(file).pipe(
+      tap((event) => {
+        if (event.type === HttpEventType.UploadProgress) {
+          const progress = event.total ? Math.round((event.loaded / event.total) * 100) : 50;
+          this.profilePictureUploadProgressSignal.set(progress);
+        }
+      }),
+      filter((event) => event.type === HttpEventType.Response),
+      map((event) => this.unwrap(event.body, 'Profile picture could not be uploaded.')),
+      tap((profilePicture) => {
+        this.profileSignal.update((profile) =>
+          profile ? { ...profile, profilePictureUrl: profilePicture.profilePictureUrl } : profile,
+        );
+        this.profilePictureVersionSignal.set(Date.now());
+        this.profilePictureUploadProgressSignal.set(100);
+        this.profilePictureSuccessMessageSignal.set('Profile picture uploaded successfully.');
+        this.currentUserProfileRefresh.notifyProfileChanged();
+      }),
+      catchError((error) => {
+        this.profilePictureErrorMessagesSignal.set(extractApiErrors(error));
+        return throwError(() => error);
+      }),
+      finalize(() => this.isUploadingProfilePictureSignal.set(false)),
     );
   }
 

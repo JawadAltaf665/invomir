@@ -7,6 +7,7 @@ export interface UserProfileDto {
   lastName: string;
   businessName: string;
   logoUrl: string | null;
+  profilePictureUrl: string | null;
   currency: SupportedCurrency | string;
   taxPercent: number;
   plan: string;
@@ -20,6 +21,10 @@ export interface UserProfileDto {
 
 export interface UserLogoDto {
   logoUrl: string;
+}
+
+export interface UserProfilePictureDto {
+  profilePictureUrl: string;
 }
 
 export interface UpdateUserProfileRequest {
