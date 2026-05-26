@@ -11,4 +11,5 @@ public sealed record ClientDetailDto(
     string? Notes,
     bool IsActive,
     decimal TotalRevenue,
+    string Currency,
     PagedResult<ClientInvoiceSummaryDto> Invoices);
