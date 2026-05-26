@@ -10,7 +10,12 @@ import {
   ClientPageResult,
 } from '../models/client.models';
 import { ClientApiService } from '../services/client-api.service';
-import { formatClientInvoiceCount, formatClientMetric } from '../utils/client-formatters';
+import {
+  clientInitials,
+  formatClientCurrency,
+  formatClientDate,
+  formatClientInvoiceCount,
+} from '../utils/client-formatters';
 
 const defaultFilters: ClientListFilters = {
   q: null,
@@ -105,9 +110,28 @@ export class ClientListStore {
       id: client.id,
       name: client.name,
       email: client.email,
+      avatarInitials: clientInitials(client.name),
       companyDisplay: client.company || 'Not set',
-      totalRevenueDisplay: formatClientMetric(client.totalRevenue),
+      totalRevenueDisplay: formatClientCurrency(client.totalRevenue, client.currency),
       invoiceCountDisplay: formatClientInvoiceCount(client.invoiceCount),
+      invoiceStatusSummaryDisplay: this.invoiceStatusSummary(client),
+      lastInvoiceDisplay: formatClientDate(client.lastInvoiceAt),
     };
+  }
+
+  private invoiceStatusSummary(client: ClientListItemDto): string {
+    const statuses = [
+      ['draft', client.draftInvoiceCount],
+      ['sent', client.sentInvoiceCount],
+      ['viewed', client.viewedInvoiceCount],
+      ['paid', client.paidInvoiceCount],
+      ['overdue', client.overdueInvoiceCount],
+      ['cancelled', client.cancelledInvoiceCount],
+    ] as const;
+
+    return statuses
+      .filter(([, count]) => count > 0)
+      .map(([status, count]) => `${count} ${status}`)
+      .join(', ');
   }
 }

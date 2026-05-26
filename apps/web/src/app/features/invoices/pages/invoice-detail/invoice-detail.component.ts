@@ -8,6 +8,7 @@ import {
   effect,
   inject,
   signal,
+  untracked,
 } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDividerModule } from '@angular/material/divider';
@@ -165,7 +166,7 @@ export class InvoiceDetailComponent implements OnInit {
     this.observedCurrencyRefreshVersion = version;
 
     if (isPlatformBrowser(this.platformId)) {
-      this.loadInvoice(this.invoice()?.id ?? this.route.snapshot.paramMap.get('id'));
+      untracked(() => this.loadInvoice(this.invoice()?.id ?? this.route.snapshot.paramMap.get('id')));
     }
   });
 

@@ -6,7 +6,15 @@ export interface ClientListItemDto {
   email: string;
   company: string | null;
   totalRevenue: number;
+  currency: string;
   invoiceCount: number;
+  draftInvoiceCount: number;
+  sentInvoiceCount: number;
+  viewedInvoiceCount: number;
+  paidInvoiceCount: number;
+  overdueInvoiceCount: number;
+  cancelledInvoiceCount: number;
+  lastInvoiceAt: string | null;
 }
 
 export interface ClientDto {
@@ -32,6 +40,7 @@ export interface ClientInvoiceSummaryDto {
 
 export interface ClientDetailDto extends ClientDto {
   totalRevenue: number;
+  currency: string;
   invoices: PagedResult<ClientInvoiceSummaryDto>;
 }
 
@@ -59,9 +68,12 @@ export interface ClientListItemView {
   id: string;
   name: string;
   email: string;
+  avatarInitials: string;
   companyDisplay: string;
   totalRevenueDisplay: string;
   invoiceCountDisplay: string;
+  invoiceStatusSummaryDisplay: string;
+  lastInvoiceDisplay: string;
 }
 
 export interface ClientInvoiceSummaryView {

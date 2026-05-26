@@ -8,11 +8,6 @@ const dateFormatter = new Intl.DateTimeFormat('en-US', {
   year: 'numeric',
 });
 
-export function formatClientMetric(value: number | null | undefined): string {
-  const safeValue = Number(value ?? 0);
-  return metricFormatter.format(Number.isFinite(safeValue) ? safeValue : 0);
-}
-
 export function formatClientInvoiceCount(value: number | null | undefined): string {
   const safeValue = Number(value ?? 0);
   const count = Number.isFinite(safeValue) ? safeValue : 0;
@@ -42,6 +37,22 @@ export function formatClientCurrency(value: number | null | undefined, currency:
     currencyDisplay: 'code',
     maximumFractionDigits: 2,
   }).format(Number.isFinite(safeValue) ? safeValue : 0);
+}
+
+export function clientInitials(name: string | null | undefined): string {
+  const parts = (name ?? '')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+
+  if (parts.length === 0) {
+    return 'CL';
+  }
+
+  return parts
+    .slice(0, 2)
+    .map((part) => part.charAt(0).toUpperCase())
+    .join('');
 }
 
 export function clientInvoiceStatusLabel(status: string): string {
