@@ -9,7 +9,6 @@ import {
   ForgotPasswordRequest,
   LoginRequest,
   LogoutRequest,
-  RefreshTokenRequest,
   RegisterRequest,
   ResetPasswordRequest,
   VerifyEmailRequest
@@ -31,8 +30,8 @@ export class AuthApiService {
     });
   }
 
-  refresh(request: RefreshTokenRequest): Observable<ApiResponse<AuthTokenDto>> {
-    return this.http.post<ApiResponse<AuthTokenDto>>(apiUrl('/api/auth/refresh'), request, {
+  refresh(): Observable<ApiResponse<AuthTokenDto>> {
+    return this.http.post<ApiResponse<AuthTokenDto>>(apiUrl('/api/auth/refresh'), {}, {
       withCredentials: true
     });
   }

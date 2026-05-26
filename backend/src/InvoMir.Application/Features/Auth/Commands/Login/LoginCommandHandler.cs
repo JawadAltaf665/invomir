@@ -73,7 +73,6 @@ public sealed class LoginCommandHandler(
 
         var tokenDto = new AuthTokenDto(
             accessToken.Token,
-            rawRefreshToken,
             accessToken.ExpiresAt,
             user.Id,
             user.TenantId,

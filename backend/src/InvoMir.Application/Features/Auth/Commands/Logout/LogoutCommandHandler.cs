@@ -16,9 +16,7 @@ public sealed class LogoutCommandHandler(
         var userId = currentUserContext.UserId
             ?? throw new UnauthorizedAccessException("User context is not available.");
 
-        var rawRefreshToken = string.IsNullOrWhiteSpace(request.RefreshToken)
-            ? authCookieService.GetRefreshToken()
-            : request.RefreshToken.Trim();
+        var rawRefreshToken = authCookieService.GetRefreshToken();
 
         if (!request.AllDevices && string.IsNullOrWhiteSpace(rawRefreshToken))
             return ApiResponse<string>.Fail("No refresh token provided.");

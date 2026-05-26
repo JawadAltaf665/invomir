@@ -82,7 +82,6 @@ public sealed partial class RegisterCommandHandler(
 
         var tokenDto = new AuthTokenDto(
             accessToken.Token,
-            rawRefreshToken,
             accessToken.ExpiresAt,
             user.Id,
             tenant.Id,

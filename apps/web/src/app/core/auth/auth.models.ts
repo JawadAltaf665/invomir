@@ -12,7 +12,6 @@ export const supportedCurrencies: readonly SupportedCurrency[] = ['USD', 'PKR', 
 
 export interface AuthTokenDto {
   accessToken: string;
-  refreshToken: string;
   accessTokenExpiresAt: string;
   userId: string;
   tenantId: string;
@@ -57,12 +56,7 @@ export interface RegisterRequest {
   taxPercent: number;
 }
 
-export interface RefreshTokenRequest {
-  refreshToken?: string;
-}
-
 export interface LogoutRequest {
-  refreshToken?: string;
   allDevices: boolean;
 }
 
