@@ -15,6 +15,7 @@ public sealed class PaymentPagesController(ISender mediator) : ControllerBase
         CancellationToken cancellationToken)
     {
         var page = await mediator.Send(new GetPaymentPageQuery(token), cancellationToken);
+        await mediator.Send(new TrackInvoiceViewCommand(token), cancellationToken);
         return Content(RenderPaymentPage(page), "text/html");
     }
 

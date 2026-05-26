@@ -5,6 +5,7 @@ import {
   OnInit,
   PLATFORM_ID,
   computed,
+  effect,
   inject,
   signal,
 } from '@angular/core';
@@ -32,6 +33,7 @@ import { AuthSessionService } from '../../../../core/auth/auth-session.service';
 import { ApiResponseError, extractApiErrors } from '../../../../core/errors/api-response-error';
 import { ApiResponse } from '../../../../core/models/api-response.model';
 import { permissions } from '../../../../core/permissions/permissions';
+import { WorkspaceCurrencyRefreshService } from '../../../../core/services/workspace-currency-refresh.service';
 import { InvoiceStatusBadgeComponent } from '../../components/invoice-status-badge/invoice-status-badge.component';
 import { InvoiceTotalsSummaryComponent } from '../../components/invoice-totals-summary/invoice-totals-summary.component';
 import { InvoiceDetailDto } from '../../models/invoice.models';
@@ -74,6 +76,7 @@ export class InvoiceDetailComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly platformId = inject(PLATFORM_ID);
+  private readonly workspaceCurrencyRefresh = inject(WorkspaceCurrencyRefreshService);
 
   protected readonly invoice = signal<InvoiceDetailDto | null>(null);
   protected readonly isLoading = signal(false);
@@ -151,6 +154,20 @@ export class InvoiceDetailComponent implements OnInit {
   protected readonly hasMoreActions = computed(
     () => this.hasNonDestructiveActions() || this.canDelete(),
   );
+  private observedCurrencyRefreshVersion = this.workspaceCurrencyRefresh.version();
+  private readonly refreshOnWorkspaceCurrencyChange = effect(() => {
+    const version = this.workspaceCurrencyRefresh.version();
+
+    if (version === this.observedCurrencyRefreshVersion) {
+      return;
+    }
+
+    this.observedCurrencyRefreshVersion = version;
+
+    if (isPlatformBrowser(this.platformId)) {
+      this.loadInvoice(this.invoice()?.id ?? this.route.snapshot.paramMap.get('id'));
+    }
+  });
 
   ngOnInit(): void {
     if (!isPlatformBrowser(this.platformId)) {
@@ -294,7 +311,7 @@ export class InvoiceDetailComponent implements OnInit {
     this.errorMessages.set([]);
 
     this.invoiceApi
-      .getInvoice(invoiceId)
+      .getInvoice(invoiceId, { useWorkspaceCurrency: true })
       .pipe(
         map((response) => this.unwrap(response, 'Invoice request failed.')),
         finalize(() => this.isLoading.set(false)),

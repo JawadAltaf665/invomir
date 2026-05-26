@@ -9,6 +9,5 @@ public sealed record UpdateInvoiceCommand : IRequest<InvoiceDetailDto>
     public decimal? TaxPercent { get; init; }
     public DiscountDto? Discount { get; init; }
     public string? Notes { get; init; }
-    public string? Currency { get; init; }
     public List<InvoiceItemInputDto> Items { get; init; } = [];
 }

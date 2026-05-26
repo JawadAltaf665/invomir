@@ -22,12 +22,6 @@ public sealed class CreateInvoiceCommandValidator : AbstractValidator<CreateInvo
             .When(command => command.TaxPercent.HasValue)
             .WithMessage("Tax percent must be between 0 and 100.");
 
-        RuleFor(command => command.Currency)
-            .Length(3).When(command => command.Currency is not null)
-            .WithMessage("Currency must be a 3-letter ISO code.")
-            .Must(currency => currency is null || AuthConstants.SupportedCurrencies.Contains(currency.ToUpperInvariant()))
-            .WithMessage("Currency is not supported.");
-
         RuleFor(command => command.Discount)
             .SetValidator(new DiscountDtoValidator()!)
             .When(command => command.Discount is not null);
