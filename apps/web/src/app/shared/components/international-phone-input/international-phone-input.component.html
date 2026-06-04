@@ -1,83 +1,86 @@
-<div class="w-full">
-  <div class="mb-2 flex items-center gap-2">
-    <label for="international-phone-number" class="text-sm font-medium text-neutral-700">
+<mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-full">
+  <mat-label>
+    <span class="inline-flex items-center gap-2">
       {{ label() }}
-    </label>
-    @if (optional()) {
-      <span
-        class="inline-flex rounded-full border border-neutral-200 bg-neutral-50 px-2 py-0.5 text-[10px] font-medium text-neutral-500"
-      >
-        Optional
-      </span>
-    }
-  </div>
+      @if (optional()) {
+        <span
+          class="rounded-full border border-neutral-200 bg-neutral-50 px-2 py-0.5 text-[10px] font-medium text-neutral-500"
+        >
+          Optional
+        </span>
+      }
+    </span>
+  </mat-label>
 
-  <div
-    class="flex min-h-14 w-full items-center overflow-hidden rounded-xl border bg-white transition focus-within:ring-1"
-    [ngClass]="
-      hasError()
-        ? 'border-red-500 focus-within:border-red-500 focus-within:ring-red-500'
-        : 'border-neutral-300 hover:border-neutral-400 focus-within:border-primary focus-within:ring-primary'
-    "
+  <button
+    matTextPrefix
+    type="button"
+    aria-label="Choose country code"
+    class="mr-3 inline-flex h-9 min-w-24 items-center justify-between gap-2 border-r border-neutral-200 pr-3 text-sm font-medium text-neutral-700 transition hover:text-neutral-900 disabled:cursor-not-allowed disabled:text-neutral-400"
+    [matMenuTriggerFor]="countryMenu"
+    [disabled]="isDisabled() || isLoadingCountries() || !!countryErrorMessage()"
+    (menuOpened)="prepareCountryMenu()"
   >
-    <div class="relative w-36 shrink-0 border-r border-neutral-200 sm:w-40">
-      <input
-        type="text"
-        autocomplete="off"
-        aria-label="Country code"
-        class="h-14 w-full bg-transparent px-4 pr-9 text-sm font-medium text-neutral-700 outline-none disabled:cursor-not-allowed disabled:bg-neutral-50 disabled:text-neutral-400"
-        [formControl]="countryQuery"
-        [matAutocomplete]="countryAutocomplete"
-        [disabled]="isDisabled() || isLoadingCountries()"
-        (blur)="markTouched()"
-      />
-      <svg
-        lucideChevronDown
-        class="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-neutral-400"
-        aria-hidden="true"
-      ></svg>
-    </div>
+    <span>{{ compactCountryLabel(selectedCountry()) || 'Code' }}</span>
+    <svg lucideChevronDown class="size-4 shrink-0 text-neutral-400" aria-hidden="true"></svg>
+  </button>
 
+  <input
+    matInput
+    id="international-phone-number"
+    type="tel"
+    inputmode="numeric"
+    autocomplete="tel"
+    pattern="[0-9]*"
+    maxlength="15"
+    aria-label="Phone number"
+    placeholder="Phone number"
+    [formControl]="nationalNumber"
+    [disabled]="isDisabled() || isLoadingCountries() || !!countryErrorMessage()"
+    (blur)="markTouched()"
+  />
+
+  @if (countryErrorMessage()) {
+    <mat-error>{{ countryErrorMessage() }}</mat-error>
+  } @else if (phoneErrorMessage()) {
+    <mat-error>{{ phoneErrorMessage() }}</mat-error>
+  } @else if (normalizedPreview()) {
+    <mat-hint>Stored as {{ normalizedPreview() }}</mat-hint>
+  }
+</mat-form-field>
+
+<mat-menu #countryMenu="matMenu" xPosition="after" yPosition="below">
+  <div
+    class="w-80 max-w-[calc(100vw-2rem)] px-2 pb-2"
+    (click)="$event.stopPropagation()"
+  >
     <input
-      id="international-phone-number"
-      type="tel"
-      inputmode="numeric"
-      autocomplete="tel"
-      pattern="[0-9]*"
-      maxlength="15"
-      aria-label="Phone number"
-      placeholder="Phone number"
-      class="h-14 min-w-0 flex-1 bg-transparent px-4 text-sm text-neutral-900 outline-none placeholder:text-neutral-400 disabled:cursor-not-allowed disabled:bg-neutral-50 disabled:text-neutral-400"
-      [formControl]="nationalNumber"
-      [disabled]="isDisabled() || isLoadingCountries() || !!countryErrorMessage()"
-      (blur)="markTouched()"
+      cdkFocusInitial
+      type="search"
+      autocomplete="off"
+      aria-label="Search country or calling code"
+      placeholder="Search country or code"
+      class="h-10 w-full rounded-xl border border-neutral-200 bg-white px-3 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/20"
+      [formControl]="countryQuery"
+      (keydown)="handleCountrySearchKeydown($event)"
     />
   </div>
 
-  <mat-autocomplete
-    #countryAutocomplete="matAutocomplete"
-    autoActiveFirstOption
-    [displayWith]="displayCountry"
-    (closed)="restoreSelectedCountry()"
-    (optionSelected)="selectCountry($event)"
-  >
+  <div class="max-h-72 overflow-y-auto">
     @for (country of filteredCountries(); track country.iso2 + country.dialCode) {
-      <mat-option [value]="country">
+      <button mat-menu-item type="button" (click)="selectCountryOption(country)">
         <span class="flex min-w-0 items-center justify-between gap-4">
           <span class="min-w-0 truncate">{{ country.name }}</span>
-          <span class="shrink-0 text-xs font-medium text-neutral-500">
+          <span class="flex shrink-0 items-center gap-2 text-xs font-medium text-neutral-500">
             {{ country.iso2 }} +{{ country.dialCode }}
+            @if (selectedCountry()?.iso2 === country.iso2) {
+              <svg lucideCheck class="size-4 text-primary" aria-hidden="true"></svg>
+            }
           </span>
         </span>
-      </mat-option>
+      </button>
+    } @empty {
+      <p class="px-4 py-6 text-center text-sm text-neutral-500">No countries found.</p>
     }
-  </mat-autocomplete>
-
-  @if (countryErrorMessage()) {
-    <p class="mt-2 text-xs font-medium text-red-600">{{ countryErrorMessage() }}</p>
-  } @else if (phoneErrorMessage()) {
-    <p class="mt-2 text-xs font-medium text-red-600">{{ phoneErrorMessage() }}</p>
-  } @else if (normalizedPreview()) {
-    <p class="mt-2 text-xs text-neutral-500">Stored as {{ normalizedPreview() }}</p>
-  }
-</div>
+  </div>
+</mat-menu>
