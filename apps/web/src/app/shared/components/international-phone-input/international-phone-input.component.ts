@@ -25,8 +25,7 @@ import {
   MatAutocompleteModule,
   MatAutocompleteSelectedEvent,
 } from '@angular/material/autocomplete';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
+import { LucideChevronDown } from '@lucide/angular';
 
 import { extractApiErrors } from '../../../core/errors/api-response-error';
 import { LookupApiService } from '../../../core/services/lookup-api.service';
@@ -40,13 +39,7 @@ const internationalPhonePattern = /^\+[1-9]\d{4,14}$/;
   host: {
     class: 'block w-full',
   },
-  imports: [
-    NgClass,
-    ReactiveFormsModule,
-    MatAutocompleteModule,
-    MatFormFieldModule,
-    MatInputModule,
-  ],
+  imports: [NgClass, ReactiveFormsModule, MatAutocompleteModule, LucideChevronDown],
   providers: [
     {
       provide: NG_VALUE_ACCESSOR,
@@ -65,6 +58,7 @@ const internationalPhonePattern = /^\+[1-9]\d{4,14}$/;
 export class InternationalPhoneInputComponent implements ControlValueAccessor, Validator, OnInit {
   readonly label = input('Phone');
   readonly defaultCountryIso = input('PK');
+  readonly optional = input(true);
 
   protected readonly countryQuery = new FormControl<CallingCountry | string>('', {
     nonNullable: true,
@@ -113,6 +107,9 @@ export class InternationalPhoneInputComponent implements ControlValueAccessor, V
     const country = this.selectedCountry();
     return country && digits ? `+${country.dialCode}${digits}` : '';
   });
+  protected readonly hasError = computed(
+    () => Boolean(this.countryErrorMessage()) || Boolean(this.phoneErrorMessage()),
+  );
 
   private readonly lookupApi = inject(LookupApiService);
   private readonly destroyRef = inject(DestroyRef);
@@ -193,7 +190,7 @@ export class InternationalPhoneInputComponent implements ControlValueAccessor, V
       return '';
     }
 
-    return typeof value === 'string' ? value : this.countryLabel(value);
+    return typeof value === 'string' ? value : this.compactCountryLabel(value);
   };
 
   protected selectCountry(event: MatAutocompleteSelectedEvent): void {
@@ -208,6 +205,14 @@ export class InternationalPhoneInputComponent implements ControlValueAccessor, V
     }
 
     return `${country.name} (+${country.dialCode})`;
+  }
+
+  protected compactCountryLabel(country: CallingCountry | null): string {
+    if (!country) {
+      return '';
+    }
+
+    return `${country.iso2} +${country.dialCode}`;
   }
 
   protected markTouched(): void {
