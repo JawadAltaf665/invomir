@@ -9,6 +9,7 @@ import {
   effect,
   inject,
   signal,
+  untracked,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
@@ -121,6 +122,7 @@ export class InvoiceFormComponent implements OnInit {
   protected readonly errorMessages = signal<readonly string[]>([]);
   protected readonly clientOptions = signal<readonly InvoiceClientListItemDto[]>([]);
   protected readonly editingInvoice = signal<InvoiceDetailDto | null>(null);
+  private readonly invoiceCurrency = signal('USD');
   private observedCurrencyRefreshVersion = this.workspaceCurrencyRefresh.version();
 
   protected readonly isEditMode = computed(() => !!this.editingInvoice());
@@ -175,7 +177,7 @@ export class InvoiceFormComponent implements OnInit {
     this.observedCurrencyRefreshVersion = version;
 
     if (isPlatformBrowser(this.platformId) && !this.isEditMode()) {
-      this.loadWorkspaceDefaults(false);
+      untracked(() => this.loadWorkspaceDefaults(false));
     }
   });
 
@@ -262,7 +264,7 @@ export class InvoiceFormComponent implements OnInit {
   }
 
   protected currentCurrency(): string {
-    return this.form.controls.currency.value || 'USD';
+    return this.invoiceCurrency();
   }
 
   protected formatCurrency(value: number): string {
@@ -308,9 +310,28 @@ export class InvoiceFormComponent implements OnInit {
       .listClients()
       .pipe(map((response) => this.unwrapPaged(response, 'Clients could not be loaded.')))
       .subscribe({
-        next: (result) => this.clientOptions.set(result.items),
+        next: (result) => {
+          this.clientOptions.set(result.items);
+          this.applyClientFromQuery();
+        },
         error: (error) => this.errorMessages.set(extractApiErrors(error)),
       });
+  }
+
+  private applyClientFromQuery(): void {
+    if (this.isEditMode() || this.form.controls.clientId.value) {
+      return;
+    }
+
+    const clientId = this.route.snapshot.queryParamMap.get('clientId');
+
+    if (!clientId) {
+      return;
+    }
+
+    if (this.clientOptions().some((client) => client.id === clientId)) {
+      this.form.controls.clientId.setValue(clientId);
+    }
   }
 
   private loadWorkspaceDefaults(isEditingInvoice: boolean): void {
@@ -322,7 +343,7 @@ export class InvoiceFormComponent implements OnInit {
           const currency = profile.currency.toUpperCase();
 
           if (!isEditingInvoice) {
-            this.form.controls.currency.setValue(currency, { emitEvent: false });
+            this.setInvoiceCurrency(currency);
             this.form.controls.taxPercent.setValue(profile.taxPercent, { emitEvent: false });
           }
         },
@@ -374,12 +395,12 @@ export class InvoiceFormComponent implements OnInit {
       clientId: invoice.client.id,
       dueDate: this.toDate(invoice.dueDate),
       paymentTerms: '',
-      currency: invoice.currency,
       taxPercent: invoice.taxPercent,
       discountType: 'fixed',
       discountValue: invoice.discountAmount,
       notes: invoice.notes ?? '',
     });
+    this.setInvoiceCurrency(invoice.currency);
 
     if (invoice.status !== 'draft') {
       this.form.disable({ emitEvent: false });
@@ -403,6 +424,12 @@ export class InvoiceFormComponent implements OnInit {
         invoiceCount: 0,
       },
     ]);
+  }
+
+  private setInvoiceCurrency(currency: string): void {
+    const normalizedCurrency = currency?.trim().toUpperCase() || 'USD';
+    this.invoiceCurrency.set(normalizedCurrency);
+    this.form.controls.currency.setValue(normalizedCurrency, { emitEvent: false });
   }
 
   private createItemGroup(item: Partial<InvoiceItemInputDto> = {}): InvoiceItemFormGroup {

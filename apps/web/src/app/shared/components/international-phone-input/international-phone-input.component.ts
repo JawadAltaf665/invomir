@@ -1,4 +1,4 @@
-import { NgClass } from '@angular/common';
+import { A11yModule } from '@angular/cdk/a11y';
 import {
   ChangeDetectionStrategy,
   computed,
@@ -21,12 +21,10 @@ import {
   ValidationErrors,
   Validator,
 } from '@angular/forms';
-import {
-  MatAutocompleteModule,
-  MatAutocompleteSelectedEvent,
-} from '@angular/material/autocomplete';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { MatMenuModule } from '@angular/material/menu';
+import { LucideCheck, LucideChevronDown } from '@lucide/angular';
 
 import { extractApiErrors } from '../../../core/errors/api-response-error';
 import { LookupApiService } from '../../../core/services/lookup-api.service';
@@ -41,11 +39,13 @@ const internationalPhonePattern = /^\+[1-9]\d{4,14}$/;
     class: 'block w-full',
   },
   imports: [
-    NgClass,
+    A11yModule,
     ReactiveFormsModule,
-    MatAutocompleteModule,
     MatFormFieldModule,
     MatInputModule,
+    MatMenuModule,
+    LucideCheck,
+    LucideChevronDown,
   ],
   providers: [
     {
@@ -65,10 +65,9 @@ const internationalPhonePattern = /^\+[1-9]\d{4,14}$/;
 export class InternationalPhoneInputComponent implements ControlValueAccessor, Validator, OnInit {
   readonly label = input('Phone');
   readonly defaultCountryIso = input('PK');
+  readonly optional = input(true);
 
-  protected readonly countryQuery = new FormControl<CallingCountry | string>('', {
-    nonNullable: true,
-  });
+  protected readonly countryQuery = new FormControl('', { nonNullable: true });
   protected readonly nationalNumber = new FormControl('', { nonNullable: true });
   protected readonly countries = signal<readonly CallingCountry[]>([]);
   protected readonly selectedCountry = signal<CallingCountry | null>(null);
@@ -113,7 +112,6 @@ export class InternationalPhoneInputComponent implements ControlValueAccessor, V
     const country = this.selectedCountry();
     return country && digits ? `+${country.dialCode}${digits}` : '';
   });
-
   private readonly lookupApi = inject(LookupApiService);
   private readonly destroyRef = inject(DestroyRef);
   private onChange: (value: string) => void = () => undefined;
@@ -126,7 +124,7 @@ export class InternationalPhoneInputComponent implements ControlValueAccessor, V
     this.nationalNumber.addValidators(() => this.currentValidationErrors());
 
     this.countryQuery.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value) => {
-      this.countrySearch.set(typeof value === 'string' ? value : this.countryLabel(value));
+      this.countrySearch.set(value);
     });
 
     this.nationalNumber.valueChanges
@@ -188,43 +186,33 @@ export class InternationalPhoneInputComponent implements ControlValueAccessor, V
     this.onValidatorChange = fn;
   }
 
-  protected displayCountry = (value: CallingCountry | string | null): string => {
-    if (!value) {
-      return '';
-    }
-
-    return typeof value === 'string' ? value : this.countryLabel(value);
-  };
-
-  protected selectCountry(event: MatAutocompleteSelectedEvent): void {
-    const country = event.option.value as CallingCountry;
+  protected selectCountryOption(country: CallingCountry): void {
     this.setCountry(country, true);
     this.markTouched();
   }
 
-  protected countryLabel(country: CallingCountry | null): string {
+  protected prepareCountryMenu(): void {
+    this.countryQuery.setValue('');
+  }
+
+  protected handleCountrySearchKeydown(event: KeyboardEvent): void {
+    if (event.key !== 'Escape') {
+      event.stopPropagation();
+    }
+  }
+
+  protected compactCountryLabel(country: CallingCountry | null): string {
     if (!country) {
       return '';
     }
 
-    return `${country.name} (+${country.dialCode})`;
+    return `${country.iso2} +${country.dialCode}`;
   }
 
   protected markTouched(): void {
     this.nationalNumber.markAsTouched();
     this.onTouched();
     this.refreshValidation();
-  }
-
-  protected restoreSelectedCountry(): void {
-    const country = this.selectedCountry();
-
-    if (!country) {
-      return;
-    }
-
-    this.countryQuery.setValue(country, { emitEvent: false });
-    this.countrySearch.set(this.countryLabel(country));
   }
 
   private loadCountries(): void {
@@ -312,8 +300,6 @@ export class InternationalPhoneInputComponent implements ControlValueAccessor, V
 
   private setCountry(country: CallingCountry, emitChange: boolean): void {
     this.selectedCountry.set(country);
-    this.countryQuery.setValue(country, { emitEvent: false });
-    this.countrySearch.set(this.countryLabel(country));
 
     if (emitChange) {
       this.emitValue();

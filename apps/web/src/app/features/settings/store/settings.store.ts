@@ -5,6 +5,7 @@ import { Observable, catchError, filter, finalize, map, tap, throwError } from '
 import { ApiResponseError, extractApiErrors } from '../../../core/errors/api-response-error';
 import { ApiResponse } from '../../../core/models/api-response.model';
 import { CurrentUserProfileRefreshService } from '../../../core/services/current-user-profile-refresh.service';
+import { WorkspaceCurrencyRefreshService } from '../../../core/services/workspace-currency-refresh.service';
 import {
   ChangePasswordRequest,
   UpdateUserProfileRequest,
@@ -18,6 +19,7 @@ import { SettingsApiService } from '../services/settings-api.service';
 export class SettingsStore {
   private readonly settingsApi = inject(SettingsApiService);
   private readonly currentUserProfileRefresh = inject(CurrentUserProfileRefreshService);
+  private readonly workspaceCurrencyRefresh = inject(WorkspaceCurrencyRefreshService);
 
   private readonly profileSignal = signal<UserProfileDto | null>(null);
   private readonly isLoadingSignal = signal(false);
@@ -104,12 +106,18 @@ export class SettingsStore {
     this.isSavingProfileSignal.set(true);
     this.profileErrorMessagesSignal.set([]);
     this.profileSuccessMessageSignal.set('');
+    const previousCurrency = this.normalizeCurrency(this.profile()?.currency);
 
     return this.settingsApi.updateCurrentUser(request).pipe(
       map((response) => this.unwrap(response, 'Profile could not be updated.')),
       tap((profile) => {
         this.profileSignal.set(profile);
         this.profileSuccessMessageSignal.set('Profile updated successfully.');
+        this.currentUserProfileRefresh.notifyProfileChanged();
+
+        if (this.normalizeCurrency(profile.currency) !== previousCurrency) {
+          this.workspaceCurrencyRefresh.notifyCurrencyChanged();
+        }
       }),
       catchError((error) => {
         this.profileErrorMessagesSignal.set(extractApiErrors(error));
@@ -205,5 +213,9 @@ export class SettingsStore {
     }
 
     return response.data;
+  }
+
+  private normalizeCurrency(currency: string | null | undefined): string {
+    return currency?.trim().toUpperCase() || '';
   }
 }

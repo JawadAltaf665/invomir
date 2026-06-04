@@ -76,6 +76,7 @@
       [totalPages]="clientStore.pageInfo().totalPages"
       [totalCount]="clientStore.pageInfo().totalCount"
       [canCreate]="canCreateClient()"
+      [canCreateInvoice]="canCreateInvoice()"
       [canUpdate]="canUpdateClient()"
       [canDelete]="canDeleteClient()"
       (pageRequested)="changePage($event)"

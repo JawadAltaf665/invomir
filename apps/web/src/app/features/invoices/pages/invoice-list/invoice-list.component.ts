@@ -8,6 +8,7 @@ import {
   effect,
   inject,
   signal,
+  untracked,
 } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { Router } from '@angular/router';
@@ -58,7 +59,7 @@ export class InvoiceListComponent implements OnInit {
     this.observedCurrencyRefreshVersion = version;
 
     if (isPlatformBrowser(this.platformId)) {
-      this.invoiceStore.loadInvoices({ page: this.invoiceStore.filters().page });
+      untracked(() => this.invoiceStore.loadInvoices({ page: this.invoiceStore.filters().page }));
     }
   });
 
