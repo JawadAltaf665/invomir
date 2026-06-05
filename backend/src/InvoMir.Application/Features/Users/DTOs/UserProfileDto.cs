@@ -9,6 +9,7 @@ public sealed record UserProfileDto(
     string? LogoUrl,
     string? ProfilePictureUrl,
     string Currency,
+    string PreferredLanguage,
     decimal TaxPercent,
     string Plan,
     string Role,
