@@ -6,7 +6,7 @@
         <span
           class="rounded-full border border-neutral-200 bg-neutral-50 px-2 py-0.5 text-[10px] font-medium text-neutral-500"
         >
-          Optional
+          {{ 'common.optional' | translate }}
         </span>
       }
     </span>
@@ -15,13 +15,13 @@
   <button
     matTextPrefix
     type="button"
-    aria-label="Choose country code"
+    [attr.aria-label]="'phone.chooseCountryCode' | translate"
     class="mr-3 inline-flex h-9 min-w-24 items-center justify-between gap-2 border-r border-neutral-200 pr-3 text-sm font-medium text-neutral-700 transition hover:text-neutral-900 disabled:cursor-not-allowed disabled:text-neutral-400"
     [matMenuTriggerFor]="countryMenu"
     [disabled]="isDisabled() || isLoadingCountries() || !!countryErrorMessage()"
     (menuOpened)="prepareCountryMenu()"
   >
-    <span>{{ compactCountryLabel(selectedCountry()) || 'Code' }}</span>
+    <span>{{ compactCountryLabel(selectedCountry()) || ('phone.code' | translate) }}</span>
     <svg lucideChevronDown class="size-4 shrink-0 text-neutral-400" aria-hidden="true"></svg>
   </button>
 
@@ -33,8 +33,8 @@
     autocomplete="tel"
     pattern="[0-9]*"
     maxlength="15"
-    aria-label="Phone number"
-    placeholder="Phone number"
+    [attr.aria-label]="'phone.number' | translate"
+    [placeholder]="'phone.number' | translate"
     [formControl]="nationalNumber"
     [disabled]="isDisabled() || isLoadingCountries() || !!countryErrorMessage()"
     (blur)="markTouched()"
@@ -45,21 +45,18 @@
   } @else if (phoneErrorMessage()) {
     <mat-error>{{ phoneErrorMessage() }}</mat-error>
   } @else if (normalizedPreview()) {
-    <mat-hint>Stored as {{ normalizedPreview() }}</mat-hint>
+    <mat-hint>{{ 'phone.storedAs' | translate: { number: normalizedPreview() } }}</mat-hint>
   }
 </mat-form-field>
 
 <mat-menu #countryMenu="matMenu" xPosition="after" yPosition="below">
-  <div
-    class="w-80 max-w-[calc(100vw-2rem)] px-2 pb-2"
-    (click)="$event.stopPropagation()"
-  >
+  <div class="w-80 max-w-[calc(100vw-2rem)] px-2 pb-2" (click)="$event.stopPropagation()">
     <input
       cdkFocusInitial
       type="search"
       autocomplete="off"
-      aria-label="Search country or calling code"
-      placeholder="Search country or code"
+      [attr.aria-label]="'phone.searchCountry' | translate"
+      [placeholder]="'phone.searchPlaceholder' | translate"
       class="h-10 w-full rounded-xl border border-neutral-200 bg-white px-3 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-primary focus:ring-2 focus:ring-primary/20"
       [formControl]="countryQuery"
       (keydown)="handleCountrySearchKeydown($event)"
@@ -80,7 +77,9 @@
         </span>
       </button>
     } @empty {
-      <p class="px-4 py-6 text-center text-sm text-neutral-500">No countries found.</p>
+      <p class="px-4 py-6 text-center text-sm text-neutral-500">
+        {{ 'phone.noCountries' | translate }}
+      </p>
     }
   </div>
 </mat-menu>

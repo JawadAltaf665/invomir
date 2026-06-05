@@ -58,10 +58,8 @@ import {
 import { InvoiceApiService } from '../../services/invoice-api.service';
 import {
   calculateInvoiceDraftTotals,
-  discountTypeLabel,
   formatInvoiceDate,
   formatInvoiceCurrency,
-  paymentTermsLabel,
 } from '../../utils/invoice-formatters';
 import { InvoiceTotalsSummaryComponent } from '../../components/invoice-totals-summary/invoice-totals-summary.component';
 
@@ -83,10 +81,14 @@ type InvoiceFormGroup = FormGroup<{
   items: FormArray<InvoiceItemFormGroup>;
 }>;
 
+import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
+import { TranslationService } from '../../../../core/i18n/translation.service';
+
 @Component({
   selector: 'app-invoice-form',
   standalone: true,
   imports: [
+    TranslatePipe,
     ReactiveFormsModule,
     MatButtonModule,
     MatDatepickerModule,
@@ -115,6 +117,7 @@ export class InvoiceFormComponent implements OnInit {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly destroyRef = inject(DestroyRef);
   private readonly workspaceCurrencyRefresh = inject(WorkspaceCurrencyRefreshService);
+  private readonly translation = inject(TranslationService);
 
   protected readonly isLoading = signal(false);
   protected readonly isSubmitting = signal(false);
@@ -127,23 +130,34 @@ export class InvoiceFormComponent implements OnInit {
 
   protected readonly isEditMode = computed(() => !!this.editingInvoice());
   protected readonly title = computed(() =>
-    this.isEditMode() ? `Edit ${this.editingInvoice()?.invoiceNumber ?? 'invoice'}` : 'New invoice',
+    this.isEditMode()
+      ? `${this.translation.translate('common.edit')} ${this.editingInvoice()?.invoiceNumber ?? this.translation.translate('invoices.invoice')}`
+      : this.translation.translate('invoices.new'),
   );
   protected readonly invoiceNumberLabel = computed(
-    () => this.editingInvoice()?.invoiceNumber ?? 'Assigned on save',
+    () =>
+      this.editingInvoice()?.invoiceNumber ?? this.translation.translate('invoices.assignedOnSave'),
   );
   protected readonly issueDateLabel = computed(() =>
-    formatInvoiceDate(this.editingInvoice()?.issueDate ?? this.toFilterDate(this.issueDate())),
+    formatInvoiceDate(
+      this.editingInvoice()?.issueDate ?? this.toFilterDate(this.issueDate()),
+      this.translation.language(),
+      this.translation.translate('common.notSet'),
+    ),
   );
 
-  protected readonly paymentTermOptions = invoicePaymentTerms.map((terms) => ({
-    value: terms,
-    label: paymentTermsLabel(terms),
-  }));
-  protected readonly discountTypeOptions = invoiceDiscountTypes.map((type) => ({
-    value: type,
-    label: discountTypeLabel(type),
-  }));
+  protected readonly paymentTermOptions = computed(() =>
+    invoicePaymentTerms.map((terms) => ({
+      value: terms,
+      label: this.translation.translate(`paymentTerms.${terms}`),
+    })),
+  );
+  protected readonly discountTypeOptions = computed(() =>
+    invoiceDiscountTypes.map((type) => ({
+      value: type,
+      label: this.translation.translate(`discountTypes.${type}`),
+    })),
+  );
 
   protected readonly form: InvoiceFormGroup = new FormGroup(
     {
@@ -268,7 +282,7 @@ export class InvoiceFormComponent implements OnInit {
   }
 
   protected formatCurrency(value: number): string {
-    return formatInvoiceCurrency(value, this.currentCurrency());
+    return formatInvoiceCurrency(value, this.currentCurrency(), this.translation.language());
   }
 
   protected isDueDateAutoCalculated(): boolean {
@@ -277,8 +291,8 @@ export class InvoiceFormComponent implements OnInit {
 
   protected dueDateHint(): string {
     return this.isDueDateAutoCalculated()
-      ? 'Calculated automatically.'
-      : 'Required when payment terms are not selected.';
+      ? this.translation.translate('invoices.dueDateCalculated')
+      : this.translation.translate('invoices.dueDateHint');
   }
 
   protected hasDiscountValue(): boolean {

@@ -24,6 +24,7 @@ import { finalize, map } from 'rxjs';
 import { AuthSessionService } from '../../../../core/auth/auth-session.service';
 import { ApiResponseError, extractApiErrors } from '../../../../core/errors/api-response-error';
 import { ApiResponse } from '../../../../core/models/api-response.model';
+import { TranslationService } from '../../../../core/i18n/translation.service';
 import { permissions } from '../../../../core/permissions/permissions';
 import { WorkspaceCurrencyRefreshService } from '../../../../core/services/workspace-currency-refresh.service';
 import { ClientInvoiceHistoryComponent } from '../../components/client-invoice-history/client-invoice-history.component';
@@ -31,15 +32,17 @@ import { ClientDetailDto, ClientInvoiceSummaryDto } from '../../models/client.mo
 import { ClientApiService } from '../../services/client-api.service';
 import {
   clientInvoiceStatusClass,
-  clientInvoiceStatusLabel,
   formatClientCurrency,
   formatClientDate,
 } from '../../utils/client-formatters';
+
+import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
 
 @Component({
   selector: 'app-client-details',
   standalone: true,
   imports: [
+    TranslatePipe,
     NgClass,
     MatButtonModule,
     RouterLink,
@@ -60,6 +63,7 @@ export class ClientDetailsComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly platformId = inject(PLATFORM_ID);
   private readonly workspaceCurrencyRefresh = inject(WorkspaceCurrencyRefreshService);
+  private readonly translation = inject(TranslationService);
 
   protected readonly client = signal<ClientDetailDto | null>(null);
   protected readonly isLoading = signal(false);
@@ -149,7 +153,9 @@ export class ClientDetailsComponent implements OnInit {
       return;
     }
 
-    const confirmed = window.confirm(`Delete ${client.name}?`);
+    const confirmed = window.confirm(
+      this.translation.translate('clients.confirmDelete', { name: client.name }),
+    );
 
     if (!confirmed) {
       return;
@@ -168,15 +174,17 @@ export class ClientDetailsComponent implements OnInit {
   }
 
   protected formatMetric(value: number, currency: string): string {
-    return formatClientCurrency(value, currency);
+    return formatClientCurrency(value, currency, this.translation.language());
   }
 
   protected formatField(value: string | null | undefined): string {
-    return value?.trim() || 'Not set';
+    return value?.trim() || this.translation.translate('common.notSet');
   }
 
   protected clientStatusLabel(client: ClientDetailDto): string {
-    return client.isActive ? 'Active' : 'Inactive';
+    return client.isActive
+      ? this.translation.translate('common.active')
+      : this.translation.translate('common.inactive');
   }
 
   private loadClient(
@@ -208,10 +216,18 @@ export class ClientDetailsComponent implements OnInit {
       id: invoice.id,
       invoiceNumber: invoice.invoiceNumber,
       status: invoice.status,
-      statusLabel: clientInvoiceStatusLabel(invoice.status),
+      statusLabel: this.translation.translate(`invoiceStatus.${invoice.status.toLowerCase()}`),
       statusClass: clientInvoiceStatusClass(invoice.status),
-      totalDisplay: formatClientCurrency(invoice.total, invoice.currency),
-      dueDateDisplay: formatClientDate(invoice.dueDate),
+      totalDisplay: formatClientCurrency(
+        invoice.total,
+        invoice.currency,
+        this.translation.language(),
+      ),
+      dueDateDisplay: formatClientDate(
+        invoice.dueDate,
+        this.translation.language(),
+        this.translation.translate('common.notSet'),
+      ),
     };
   }
 

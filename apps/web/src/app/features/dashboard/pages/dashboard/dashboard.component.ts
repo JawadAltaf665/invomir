@@ -11,6 +11,7 @@ import {
 import { MatButtonModule } from '@angular/material/button';
 
 import { AuthSessionService } from '../../../../core/auth/auth-session.service';
+import { TranslationService } from '../../../../core/i18n/translation.service';
 import { permissions } from '../../../../core/permissions/permissions';
 import { WorkspaceCurrencyRefreshService } from '../../../../core/services/workspace-currency-refresh.service';
 import { InvoiceAnalyticsComponent } from '../../components/invoice-analytics/invoice-analytics.component';
@@ -23,10 +24,13 @@ import { SubscriptionStatusComponent } from '../../components/subscription-statu
 import { DashboardAccountSummary } from '../../models/dashboard.models';
 import { DashboardStore } from '../../store/dashboard.store';
 
+import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
+
 @Component({
   selector: 'app-dashboard',
   standalone: true,
   imports: [
+    TranslatePipe,
     MatButtonModule,
     InvoiceAnalyticsComponent,
     MonthlyChartComponent,
@@ -42,6 +46,7 @@ import { DashboardStore } from '../../store/dashboard.store';
 export class DashboardComponent implements OnInit {
   protected readonly dashboardStore = inject(DashboardStore);
   private readonly authSession = inject(AuthSessionService);
+  private readonly translation = inject(TranslationService);
   private readonly platformId = inject(PLATFORM_ID);
   private readonly workspaceCurrencyRefresh = inject(WorkspaceCurrencyRefreshService);
   private observedSessionKey = this.dashboardSessionKey();
@@ -84,32 +89,36 @@ export class DashboardComponent implements OnInit {
   protected readonly skeletonRows = [1, 2, 3, 4, 5] as const;
   protected readonly greeting = computed(() => {
     const firstName = this.authSession.user()?.firstName;
-    return firstName ? `Good to see you, ${firstName}.` : 'Good to see you.';
+    return firstName
+      ? this.translation.translate('dashboard.greetingName', { name: firstName })
+      : this.translation.translate('dashboard.greeting');
   });
   protected readonly lastUpdatedLabel = computed(() => {
     const lastLoadedAt = this.dashboardStore.lastLoadedAt();
 
     if (!lastLoadedAt) {
-      return 'Not loaded yet';
+      return this.translation.translate('dashboard.notLoaded');
     }
 
     const ageSeconds = Math.max(0, Math.floor((Date.now() - lastLoadedAt.getTime()) / 1000));
 
     if (ageSeconds < 60) {
-      return 'Last updated: just now';
+      return this.translation.translate('dashboard.lastUpdatedNow');
     }
 
     const ageMinutes = Math.floor(ageSeconds / 60);
     if (ageMinutes < 60) {
-      return `Last updated: ${ageMinutes}m ago`;
+      return this.translation.translate('dashboard.lastUpdatedMinutes', { minutes: ageMinutes });
     }
 
-    return `Last updated: ${new Intl.DateTimeFormat('en-US', {
+    const date = new Intl.DateTimeFormat(this.translation.language(), {
       month: 'short',
       day: 'numeric',
       hour: 'numeric',
       minute: '2-digit',
-    }).format(lastLoadedAt)}`;
+    }).format(lastLoadedAt);
+
+    return this.translation.translate('dashboard.lastUpdatedAt', { date });
   });
 
   protected readonly accountSummary = computed<DashboardAccountSummary>(() => {
@@ -117,17 +126,37 @@ export class DashboardComponent implements OnInit {
     const dashboard = this.dashboardStore.dashboard();
 
     return {
-      name: user?.firstName ?? 'InvoMir user',
-      email: user?.email ?? 'Workspace account',
+      name: user?.firstName ?? 'InvoMir',
+      email: user?.email ?? this.translation.translate('layout.workspace'),
       role: this.toWorkspaceRoleLabel(dashboard?.workspaceRole ?? user?.role ?? 'member'),
       plan: this.toTitleCase(user?.plan ?? 'free'),
       trialLabel: this.formatTrialLabel(user?.trialEndsAt ?? null),
       accessBadges: [
-        { id: 'invoices', label: 'Invoices', permission: permissions.invoice.view },
-        { id: 'clients', label: 'Clients', permission: permissions.client.view },
-        { id: 'payments', label: 'Payments', permission: permissions.payment.view },
-        { id: 'reports', label: 'Reports', permission: permissions.report.view },
-        { id: 'billing', label: 'Billing', permission: permissions.subscription.manage },
+        {
+          id: 'invoices',
+          label: this.translation.translate('navigation.invoices'),
+          permission: permissions.invoice.view,
+        },
+        {
+          id: 'clients',
+          label: this.translation.translate('navigation.clients'),
+          permission: permissions.client.view,
+        },
+        {
+          id: 'payments',
+          label: this.translation.translate('navigation.payments'),
+          permission: permissions.payment.view,
+        },
+        {
+          id: 'reports',
+          label: this.translation.translate('navigation.reports'),
+          permission: permissions.report.view,
+        },
+        {
+          id: 'billing',
+          label: this.translation.translate('dashboard.billing'),
+          permission: permissions.subscription.manage,
+        },
       ]
         .filter((item) => this.authSession.hasPermission(item.permission))
         .map(({ id, label }) => ({ id, label })),
@@ -146,22 +175,24 @@ export class DashboardComponent implements OnInit {
 
   private formatTrialLabel(trialEndsAt: string | null): string {
     if (!trialEndsAt) {
-      return 'Active';
+      return this.translation.translate('dashboard.trialActive');
     }
 
     const date = new Date(trialEndsAt);
 
     if (Number.isNaN(date.getTime())) {
-      return 'Active';
+      return this.translation.translate('dashboard.trialActive');
     }
 
-    const label = new Intl.DateTimeFormat('en-US', {
+    const label = new Intl.DateTimeFormat(this.translation.language(), {
       month: 'short',
       day: 'numeric',
       year: 'numeric',
     }).format(date);
 
-    return date.getTime() >= Date.now() ? `Ends ${label}` : `Ended ${label}`;
+    return date.getTime() >= Date.now()
+      ? this.translation.translate('dashboard.trialEnds', { date: label })
+      : this.translation.translate('dashboard.trialEnded', { date: label });
   }
 
   private toTitleCase(value: string): string {
@@ -174,7 +205,10 @@ export class DashboardComponent implements OnInit {
   }
 
   private toWorkspaceRoleLabel(value: string): string {
-    return this.toTitleCase(value === 'system_admin' ? 'owner' : value);
+    const workspaceRole = value === 'system_admin' ? 'owner' : value;
+    const key = `roles.${workspaceRole}`;
+    const translated = this.translation.translate(key);
+    return translated === key ? this.toTitleCase(workspaceRole) : translated;
   }
 
   private dashboardSessionKey(): string | null {

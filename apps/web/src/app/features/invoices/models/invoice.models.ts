@@ -218,7 +218,14 @@ export interface InvoiceListItemView {
 
 export type InvoicePageResult = PagedResult<InvoiceListItemDto>;
 
-export type InvoiceListSortBy = 'created' | 'invoice' | 'client' | 'status' | 'due' | 'sent' | 'total';
+export type InvoiceListSortBy =
+  | 'created'
+  | 'invoice'
+  | 'client'
+  | 'status'
+  | 'due'
+  | 'sent'
+  | 'total';
 export type InvoiceListSortDirection = 'asc' | 'desc';
 
 export type InvoiceTableAction = 'send' | 'resend' | 'markPaid' | 'downloadPdf' | 'cancel';

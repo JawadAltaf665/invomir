@@ -20,11 +20,21 @@
         </colgroup>
         <thead>
           <tr class="border-b border-neutral-200">
-            <th class="px-5 py-3 text-left font-medium text-neutral-600">Client</th>
-            <th class="px-5 py-3 text-left font-medium text-neutral-600">Company</th>
-            <th class="px-5 py-3 text-right font-medium text-neutral-600">Paid revenue</th>
-            <th class="px-5 py-3 text-right font-medium text-neutral-600">Invoices</th>
-            <th class="px-5 py-3 text-right font-medium text-neutral-600">Actions</th>
+            <th class="px-5 py-3 text-left font-medium text-neutral-600">
+              {{ 'invoices.client' | translate }}
+            </th>
+            <th class="px-5 py-3 text-left font-medium text-neutral-600">
+              {{ 'clients.company' | translate }}
+            </th>
+            <th class="px-5 py-3 text-right font-medium text-neutral-600">
+              {{ 'clients.paidRevenue' | translate }}
+            </th>
+            <th class="px-5 py-3 text-right font-medium text-neutral-600">
+              {{ 'invoices.title' | translate }}
+            </th>
+            <th class="px-5 py-3 text-right font-medium text-neutral-600">
+              {{ 'common.actions' | translate }}
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -60,14 +70,16 @@
                 </span>
               </td>
               <td class="px-5 py-4 text-right text-neutral-600">
-                <span class="block font-medium text-neutral-900">{{ client.invoiceCountDisplay }}</span>
+                <span class="block font-medium text-neutral-900">{{
+                  client.invoiceCountDisplay
+                }}</span>
                 @if (client.invoiceStatusSummaryDisplay) {
                   <span class="mt-1 block text-xs text-neutral-500">
                     {{ client.invoiceStatusSummaryDisplay }}
                   </span>
                 }
                 <span class="mt-1 block text-xs text-neutral-500">
-                  Last: {{ client.lastInvoiceDisplay }}
+                  {{ 'clients.lastInvoice' | translate: { date: client.lastInvoiceDisplay } }}
                 </span>
               </td>
               <td class="px-5 py-4">
@@ -78,9 +90,9 @@
                     [matMenuTriggerFor]="clientActionsMenu"
                     (menuOpened)="openActionClientId.set(client.id)"
                     (menuClosed)="openActionClientId.set(null)"
-                    aria-label="Open client actions"
+                    [attr.aria-label]="'clients.openActions' | translate"
                   >
-                    Actions
+                    {{ 'common.actions' | translate }}
                     @if (openActionClientId() === client.id) {
                       <svg lucideChevronUp class="size-4" aria-hidden="true"></svg>
                     } @else {
@@ -91,7 +103,7 @@
                   <mat-menu #clientActionsMenu="matMenu" xPosition="before" yPosition="below">
                     <a mat-menu-item [routerLink]="['/app/clients', client.id]">
                       <svg lucideEye class="size-4" aria-hidden="true"></svg>
-                      <span>View client</span>
+                      <span>{{ 'clients.view' | translate }}</span>
                     </a>
 
                     @if (canCreateInvoice()) {
@@ -101,14 +113,14 @@
                         [queryParams]="{ clientId: client.id }"
                       >
                         <svg lucideFilePlus2 class="size-4" aria-hidden="true"></svg>
-                        <span>New invoice</span>
+                        <span>{{ 'invoices.new' | translate }}</span>
                       </a>
                     }
 
                     @if (canUpdate()) {
                       <a mat-menu-item [routerLink]="['/app/clients', client.id, 'edit']">
                         <svg lucideEdit3 class="size-4" aria-hidden="true"></svg>
-                        <span>Edit client</span>
+                        <span>{{ 'clients.edit' | translate }}</span>
                       </a>
                     }
 
@@ -121,7 +133,7 @@
                         (click)="deleteRequested.emit(client)"
                       >
                         <svg lucideTrash2 class="size-4" aria-hidden="true"></svg>
-                        <span>Delete client</span>
+                        <span>{{ 'clients.deleteAction' | translate }}</span>
                       </button>
                     }
                   </mat-menu>
@@ -134,7 +146,7 @@
     </div>
 
     <app-pagination
-      itemLabel="clients"
+      [itemLabel]="'clients.title' | translate"
       [page]="currentPage()"
       [pageSize]="pageSize()"
       [totalCount]="totalCount()"
@@ -148,9 +160,11 @@
       <div class="grid size-12 place-items-center rounded-2xl bg-primary/10 text-primary">
         <svg lucideUserPlus class="size-5" aria-hidden="true"></svg>
       </div>
-      <h3 class="mt-5 text-base font-semibold text-neutral-900">No clients found</h3>
+      <h3 class="mt-5 text-base font-semibold text-neutral-900">
+        {{ 'clients.noClients' | translate }}
+      </h3>
       <p class="mt-2 max-w-sm text-sm text-neutral-500">
-        Add a client profile before creating invoices or tracking payment history.
+        {{ 'clients.noClientsDescription' | translate }}
       </p>
       @if (canCreate()) {
         <button
@@ -160,8 +174,8 @@
           class="mt-6"
           (click)="createRequested.emit()"
         >
-          <svg lucideUserPlus class="size-4" aria-hidden="true"></svg>
-          New client
+          <svg lucideUserPlus class="size-4" aria-hidden="true"></svg
+          >{{ 'clients.new' | translate }}
         </button>
       }
     </div>

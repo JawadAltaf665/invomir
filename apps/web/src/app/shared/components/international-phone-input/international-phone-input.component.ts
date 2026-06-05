@@ -27,6 +27,8 @@ import { MatMenuModule } from '@angular/material/menu';
 import { LucideCheck, LucideChevronDown } from '@lucide/angular';
 
 import { extractApiErrors } from '../../../core/errors/api-response-error';
+import { TranslatePipe } from '../../../core/i18n/translate.pipe';
+import { TranslationService } from '../../../core/i18n/translation.service';
 import { LookupApiService } from '../../../core/services/lookup-api.service';
 import { CallingCountry } from '../../models/calling-country.model';
 
@@ -39,6 +41,7 @@ const internationalPhonePattern = /^\+[1-9]\d{4,14}$/;
     class: 'block w-full',
   },
   imports: [
+    TranslatePipe,
     A11yModule,
     ReactiveFormsModule,
     MatFormFieldModule,
@@ -97,14 +100,14 @@ export class InternationalPhoneInputComponent implements ControlValueAccessor, V
     }
 
     if (errors['internationalPhoneMin']) {
-      return 'Enter a complete international phone number.';
+      return this.translation.translate('phone.incomplete');
     }
 
     if (errors['internationalPhoneMax']) {
-      return 'Phone number cannot exceed 15 digits including country code.';
+      return this.translation.translate('phone.tooLong');
     }
 
-    return 'Enter a valid international phone number.';
+    return this.translation.translate('phone.invalid');
   });
 
   protected readonly normalizedPreview = computed(() => {
@@ -113,6 +116,7 @@ export class InternationalPhoneInputComponent implements ControlValueAccessor, V
     return country && digits ? `+${country.dialCode}${digits}` : '';
   });
   private readonly lookupApi = inject(LookupApiService);
+  private readonly translation = inject(TranslationService);
   private readonly destroyRef = inject(DestroyRef);
   private onChange: (value: string) => void = () => undefined;
   private onTouched: () => void = () => undefined;
@@ -233,7 +237,9 @@ export class InternationalPhoneInputComponent implements ControlValueAccessor, V
           this.isLoadingCountries.set(false);
         },
         error: (error) => {
-          this.countryErrorMessage.set(extractApiErrors(error)[0] ?? 'Countries failed to load.');
+          this.countryErrorMessage.set(
+            extractApiErrors(error)[0] ?? this.translation.translate('phone.countriesLoadError'),
+          );
           this.isLoadingCountries.set(false);
           this.refreshValidation();
         },

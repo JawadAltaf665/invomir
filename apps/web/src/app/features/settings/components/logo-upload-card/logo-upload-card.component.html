@@ -1,7 +1,9 @@
 <article class="h-full rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
   <div>
-    <h2 class="text-lg font-semibold text-neutral-900">Business logo</h2>
-    <p class="mt-1 text-sm text-neutral-500">Used on invoices, receipts, and payment pages.</p>
+    <h2 class="text-lg font-semibold text-neutral-900">
+      {{ 'settings.businessLogo' | translate }}
+    </h2>
+    <p class="mt-1 text-sm text-neutral-500">{{ 'settings.logoDescription' | translate }}</p>
   </div>
 
   <div
@@ -20,7 +22,7 @@
           <img
             class="h-full w-full object-contain p-2"
             [src]="displayLogoUrl()"
-            alt="Business logo"
+            [alt]="'settings.businessLogoAlt' | translate"
           />
         } @else {
           <svg lucideImage class="size-8 text-neutral-300" aria-hidden="true"></svg>
@@ -28,8 +30,8 @@
       </div>
 
       <div class="min-w-0 flex-1">
-        <p class="text-sm font-medium text-neutral-900">PNG, JPG, or SVG</p>
-        <p class="mt-1 text-xs text-neutral-500">Maximum upload size is 2MB.</p>
+        <p class="text-sm font-medium text-neutral-900">{{ 'settings.logoFormats' | translate }}</p>
+        <p class="mt-1 text-xs text-neutral-500">{{ 'settings.logoLimit' | translate }}</p>
 
         <div class="mt-4 flex flex-col gap-3 sm:flex-row">
           <input
@@ -48,14 +50,14 @@
               [disabled]="isUploading()"
               (click)="logoInput.click()"
             >
-              <svg lucideUpload class="size-4" aria-hidden="true"></svg>
-              Upload logo
+              <svg lucideUpload class="size-4" aria-hidden="true"></svg
+              >{{ 'settings.uploadLogo' | translate }}
             </button>
           } @else {
             <span
               class="inline-flex h-10 items-center justify-center rounded-xl border border-neutral-200 px-4 text-sm font-medium text-neutral-500"
             >
-              Settings permission required
+              {{ 'settings.permissionRequired' | translate }}
             </span>
           }
         </div>
@@ -65,7 +67,9 @@
     @if (isUploading()) {
       <div class="mt-5">
         <mat-progress-bar mode="determinate" [value]="progress()" />
-        <p class="mt-2 text-xs text-neutral-500">{{ progress() }}% uploaded</p>
+        <p class="mt-2 text-xs text-neutral-500">
+          {{ 'common.uploadedPercentage' | translate: { progress: progress() } }}
+        </p>
       </div>
     }
   </div>

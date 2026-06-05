@@ -2,12 +2,12 @@
   <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
     <div>
       <p class="text-xs font-medium uppercase tracking-normal text-neutral-500">
-        Workspace invoices
+        {{ 'invoices.eyebrow' | translate }}
       </p>
-      <h1 class="mt-2 text-2xl font-semibold tracking-tight text-neutral-900">Invoices</h1>
-      <p class="mt-2 text-sm text-neutral-500">
-        Create, send, and manage invoice lifecycle from draft to paid.
-      </p>
+      <h1 class="mt-2 text-2xl font-semibold tracking-tight text-neutral-900">
+        {{ 'invoices.title' | translate }}
+      </h1>
+      <p class="mt-2 text-sm text-neutral-500">{{ 'invoices.description' | translate }}</p>
     </div>
 
     <div class="flex flex-col gap-3 sm:flex-row">
@@ -17,14 +17,14 @@
         [disabled]="invoiceStore.isLoading()"
         (click)="refresh()"
       >
-        <svg lucideRefreshCcw class="size-4" aria-hidden="true"></svg>
-        Refresh
+        <svg lucideRefreshCcw class="size-4" aria-hidden="true"></svg
+        >{{ 'common.refresh' | translate }}
       </button>
 
       @if (canCreateInvoice()) {
         <button mat-flat-button color="primary" type="button" (click)="createInvoice()">
-          <svg lucideFilePlus2 class="size-4" aria-hidden="true"></svg>
-          New invoice
+          <svg lucideFilePlus2 class="size-4" aria-hidden="true"></svg
+          >{{ 'invoices.new' | translate }}
         </button>
       }
     </div>
@@ -34,7 +34,7 @@
     <div class="mt-6 rounded-2xl border border-red-200 bg-red-50 p-5 shadow-sm">
       <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div>
-          <p class="text-sm font-medium text-red-800">Invoice request could not be completed</p>
+          <p class="text-sm font-medium text-red-800">{{ 'invoices.requestError' | translate }}</p>
           <div class="mt-2 space-y-1">
             @for (error of invoiceStore.errorMessages(); track error) {
               <p class="text-xs text-red-600">{{ error }}</p>
@@ -46,7 +46,7 @@
         </div>
 
         <button mat-button type="button" [disabled]="invoiceStore.isLoading()" (click)="refresh()">
-          Retry
+          {{ 'common.retry' | translate }}
         </button>
       </div>
     </div>

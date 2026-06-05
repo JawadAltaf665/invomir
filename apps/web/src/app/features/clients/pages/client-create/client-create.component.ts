@@ -9,10 +9,12 @@ import { ClientFormComponent } from '../../components/client-form/client-form.co
 import { ClientDto, ClientSaveRequest } from '../../models/client.models';
 import { ClientApiService } from '../../services/client-api.service';
 
+import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
+
 @Component({
   selector: 'app-client-create',
   standalone: true,
-  imports: [RouterLink, ClientFormComponent, LucideArrowLeft],
+  imports: [TranslatePipe, RouterLink, ClientFormComponent, LucideArrowLeft],
   templateUrl: './client-create.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

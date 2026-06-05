@@ -3,10 +3,18 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { LucideArrowUpRight, LucideShieldCheck } from '@lucide/angular';
 
+import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
+
 @Component({
   selector: 'app-stripe-connect-card',
   standalone: true,
-  imports: [MatButtonModule, MatProgressSpinnerModule, LucideArrowUpRight, LucideShieldCheck],
+  imports: [
+    TranslatePipe,
+    MatButtonModule,
+    MatProgressSpinnerModule,
+    LucideArrowUpRight,
+    LucideShieldCheck,
+  ],
   templateUrl: './stripe-connect-card.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

@@ -3,6 +3,7 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { Observable, catchError, filter, finalize, map, tap, throwError } from 'rxjs';
 
 import { ApiResponseError, extractApiErrors } from '../../../core/errors/api-response-error';
+import { TranslationService } from '../../../core/i18n/translation.service';
 import { ApiResponse } from '../../../core/models/api-response.model';
 import { CurrentUserProfileRefreshService } from '../../../core/services/current-user-profile-refresh.service';
 import { WorkspaceCurrencyRefreshService } from '../../../core/services/workspace-currency-refresh.service';
@@ -18,6 +19,7 @@ import { SettingsApiService } from '../services/settings-api.service';
 @Injectable({ providedIn: 'root' })
 export class SettingsStore {
   private readonly settingsApi = inject(SettingsApiService);
+  private readonly translation = inject(TranslationService);
   private readonly currentUserProfileRefresh = inject(CurrentUserProfileRefreshService);
   private readonly workspaceCurrencyRefresh = inject(WorkspaceCurrencyRefreshService);
 
@@ -89,7 +91,9 @@ export class SettingsStore {
     this.settingsApi
       .getCurrentUser()
       .pipe(
-        map((response) => this.unwrap(response, 'Profile could not be loaded.')),
+        map((response) =>
+          this.unwrap(response, this.translation.translate('settings.profileLoadError')),
+        ),
         finalize(() => this.isLoadingSignal.set(false)),
       )
       .subscribe({
@@ -109,10 +113,12 @@ export class SettingsStore {
     const previousCurrency = this.normalizeCurrency(this.profile()?.currency);
 
     return this.settingsApi.updateCurrentUser(request).pipe(
-      map((response) => this.unwrap(response, 'Profile could not be updated.')),
+      map((response) =>
+        this.unwrap(response, this.translation.translate('settings.profileUpdateError')),
+      ),
       tap((profile) => {
         this.profileSignal.set(profile);
-        this.profileSuccessMessageSignal.set('Profile updated successfully.');
+        this.profileSuccessMessageSignal.set(this.translation.translate('settings.profileUpdated'));
         this.currentUserProfileRefresh.notifyProfileChanged();
 
         if (this.normalizeCurrency(profile.currency) !== previousCurrency) {
@@ -141,14 +147,16 @@ export class SettingsStore {
         }
       }),
       filter((event) => event.type === HttpEventType.Response),
-      map((event) => this.unwrap(event.body, 'Logo could not be uploaded.')),
+      map((event) =>
+        this.unwrap(event.body, this.translation.translate('settings.logoUploadError')),
+      ),
       tap((logo) => {
         this.profileSignal.update((profile) =>
           profile ? { ...profile, logoUrl: logo.logoUrl } : profile,
         );
         this.logoVersionSignal.set(Date.now());
         this.logoUploadProgressSignal.set(100);
-        this.logoSuccessMessageSignal.set('Logo uploaded successfully.');
+        this.logoSuccessMessageSignal.set(this.translation.translate('settings.logoUploaded'));
       }),
       catchError((error) => {
         this.logoErrorMessagesSignal.set(extractApiErrors(error));
@@ -172,14 +180,18 @@ export class SettingsStore {
         }
       }),
       filter((event) => event.type === HttpEventType.Response),
-      map((event) => this.unwrap(event.body, 'Profile picture could not be uploaded.')),
+      map((event) =>
+        this.unwrap(event.body, this.translation.translate('settings.profilePictureUploadError')),
+      ),
       tap((profilePicture) => {
         this.profileSignal.update((profile) =>
           profile ? { ...profile, profilePictureUrl: profilePicture.profilePictureUrl } : profile,
         );
         this.profilePictureVersionSignal.set(Date.now());
         this.profilePictureUploadProgressSignal.set(100);
-        this.profilePictureSuccessMessageSignal.set('Profile picture uploaded successfully.');
+        this.profilePictureSuccessMessageSignal.set(
+          this.translation.translate('settings.profilePictureUploaded'),
+        );
         this.currentUserProfileRefresh.notifyProfileChanged();
       }),
       catchError((error) => {
@@ -196,7 +208,9 @@ export class SettingsStore {
     this.passwordSuccessMessageSignal.set('');
 
     return this.settingsApi.changePassword(request).pipe(
-      map((response) => this.unwrap(response, 'Password could not be changed.')),
+      map((response) =>
+        this.unwrap(response, this.translation.translate('settings.passwordChangeError')),
+      ),
       tap((message) => this.passwordSuccessMessageSignal.set(message)),
       catchError((error) => {
         this.passwordErrorMessagesSignal.set(extractApiErrors(error));

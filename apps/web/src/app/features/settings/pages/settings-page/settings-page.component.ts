@@ -20,10 +20,13 @@ import { PasswordChangeFormComponent } from '../../components/password-change-fo
 import { ChangePasswordRequest, UpdateUserProfileRequest } from '../../models/settings.models';
 import { SettingsStore } from '../../store/settings.store';
 
+import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
+
 @Component({
   selector: 'app-settings-page',
   standalone: true,
   imports: [
+    TranslatePipe,
     MatButtonModule,
     AccountProfileCardComponent,
     BusinessProfileFormComponent,

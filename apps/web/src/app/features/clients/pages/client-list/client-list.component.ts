@@ -17,6 +17,7 @@ import { finalize } from 'rxjs';
 
 import { AuthSessionService } from '../../../../core/auth/auth-session.service';
 import { extractApiErrors } from '../../../../core/errors/api-response-error';
+import { TranslationService } from '../../../../core/i18n/translation.service';
 import { permissions } from '../../../../core/permissions/permissions';
 import { WorkspaceCurrencyRefreshService } from '../../../../core/services/workspace-currency-refresh.service';
 import { ClientSearchComponent } from '../../components/client-search/client-search.component';
@@ -25,10 +26,13 @@ import { ClientListFilters, ClientListItemView } from '../../models/client.model
 import { ClientApiService } from '../../services/client-api.service';
 import { ClientListStore } from '../../store/client-list.store';
 
+import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
+
 @Component({
   selector: 'app-client-list',
   standalone: true,
   imports: [
+    TranslatePipe,
     MatButtonModule,
     ClientSearchComponent,
     ClientTableComponent,
@@ -45,6 +49,7 @@ export class ClientListComponent implements OnInit {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly router = inject(Router);
   private readonly workspaceCurrencyRefresh = inject(WorkspaceCurrencyRefreshService);
+  private readonly translation = inject(TranslationService);
 
   protected readonly isDeleting = signal(false);
   protected readonly actionErrorMessages = signal<readonly string[]>([]);
@@ -113,7 +118,9 @@ export class ClientListComponent implements OnInit {
       return;
     }
 
-    const confirmed = window.confirm(`Delete ${client.name}?`);
+    const confirmed = window.confirm(
+      this.translation.translate('clients.confirmDelete', { name: client.name }),
+    );
 
     if (!confirmed) {
       return;

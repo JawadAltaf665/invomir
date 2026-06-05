@@ -2,12 +2,15 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
 
 import { DashboardOverdueSummary, DashboardTone } from '../../models/dashboard.models';
 
+import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
+
 @Component({
   selector: 'app-overdue-invoices',
   standalone: true,
   host: {
     class: 'block h-full',
   },
+  imports: [TranslatePipe],
   templateUrl: './overdue-invoices.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

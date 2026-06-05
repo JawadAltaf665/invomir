@@ -5,9 +5,9 @@
         routerLink="/app/invoices"
         class="inline-flex items-center text-sm font-medium text-neutral-500 transition hover:text-neutral-900"
       >
-        <svg lucideArrowLeft class="mr-2 size-4" aria-hidden="true"></svg>
-        Invoices
-      </a>
+        <svg lucideArrowLeft class="mr-2 size-4" aria-hidden="true"></svg
+        >{{ 'invoices.title' | translate }}</a
+      >
 
       @if (invoice(); as invoice) {
         <div class="mt-4 flex flex-wrap items-center gap-3">
@@ -17,26 +17,29 @@
           <app-invoice-status-badge [status]="invoice.status" />
         </div>
         <p class="mt-2 text-sm text-neutral-500">
-          {{ invoice.client.name }} &middot; Due {{ formatDate(invoice.dueDate) }}
+          {{ invoice.client.name }} &middot;
+          {{ 'invoices.dueWithDate' | translate: { date: formatDate(invoice.dueDate) } }}
         </p>
       } @else {
-        <h1 class="mt-4 text-2xl font-semibold tracking-tight text-neutral-900">Invoice</h1>
+        <h1 class="mt-4 text-2xl font-semibold tracking-tight text-neutral-900">
+          {{ 'invoices.invoice' | translate }}
+        </h1>
       }
     </div>
 
     <div class="flex flex-wrap gap-3">
       <button mat-stroked-button type="button" [disabled]="isLoading()" (click)="refresh()">
-        <svg lucideRefreshCcw class="size-4" aria-hidden="true"></svg>
-        Refresh
+        <svg lucideRefreshCcw class="size-4" aria-hidden="true"></svg
+        >{{ 'common.refresh' | translate }}
       </button>
       @if (invoice(); as invoice) {
         <button mat-stroked-button type="button" [disabled]="isMutating()" (click)="previewPdf()">
           <svg lucideEye class="size-4" aria-hidden="true"></svg>
-          Preview
+          {{ 'invoices.preview' | translate }}
         </button>
         <button mat-stroked-button type="button" [disabled]="isMutating()" (click)="downloadPdf()">
           <svg lucideDownload class="size-4" aria-hidden="true"></svg>
-          PDF
+          {{ 'invoices.pdf' | translate }}
         </button>
         @if (hasMoreActions()) {
           <button
@@ -44,9 +47,9 @@
             type="button"
             [disabled]="isMutating()"
             [matMenuTriggerFor]="invoiceActionsMenu"
-            aria-label="More invoice actions"
+            [attr.aria-label]="'invoices.moreActions' | translate"
           >
-            More actions
+            {{ 'invoices.moreActionsLabel' | translate }}
             <svg lucideChevronDown class="size-4" aria-hidden="true"></svg>
           </button>
 
@@ -54,37 +57,37 @@
             @if (canEdit()) {
               <a mat-menu-item [routerLink]="['/app/invoices', invoice.id, 'edit']">
                 <svg lucideEdit3 class="size-4" aria-hidden="true"></svg>
-                <span>Edit invoice</span>
+                <span>{{ 'invoices.edit' | translate }}</span>
               </a>
             }
             @if (canSend()) {
               <button mat-menu-item type="button" (click)="sendInvoice()">
                 <svg lucideSend class="size-4" aria-hidden="true"></svg>
-                <span>Send invoice</span>
+                <span>{{ 'invoices.send' | translate }}</span>
               </button>
             }
             @if (canResend()) {
               <button mat-menu-item type="button" (click)="resendInvoice()">
                 <svg lucideSend class="size-4" aria-hidden="true"></svg>
-                <span>Resend invoice</span>
+                <span>{{ 'invoices.resend' | translate }}</span>
               </button>
             }
             @if (canMarkPaid()) {
               <button mat-menu-item type="button" (click)="markPaid()">
                 <svg lucideBanknote class="size-4" aria-hidden="true"></svg>
-                <span>Mark paid</span>
+                <span>{{ 'invoices.markPaid' | translate }}</span>
               </button>
             }
             @if (canDuplicate()) {
               <button mat-menu-item type="button" (click)="duplicateInvoice()">
                 <svg lucideCopy class="size-4" aria-hidden="true"></svg>
-                <span>Duplicate</span>
+                <span>{{ 'invoices.duplicate' | translate }}</span>
               </button>
             }
             @if (canCancel()) {
               <button mat-menu-item type="button" (click)="cancelInvoice()">
                 <svg lucideBan class="size-4" aria-hidden="true"></svg>
-                <span>Cancel invoice</span>
+                <span>{{ 'invoices.cancelAction' | translate }}</span>
               </button>
             }
             @if (canDelete()) {
@@ -93,7 +96,7 @@
               }
               <button mat-menu-item type="button" class="text-red-700" (click)="deleteInvoice()">
                 <svg lucideTrash2 class="size-4" aria-hidden="true"></svg>
-                <span>Delete invoice</span>
+                <span>{{ 'invoices.deleteAction' | translate }}</span>
               </button>
             }
           </mat-menu>
@@ -104,7 +107,7 @@
 
   @if (errorMessages().length > 0) {
     <div class="mt-6 rounded-2xl border border-red-200 bg-red-50 p-5 shadow-sm">
-      <p class="text-sm font-medium text-red-800">Invoice action could not be completed</p>
+      <p class="text-sm font-medium text-red-800">{{ 'invoices.actionError' | translate }}</p>
       <div class="mt-2 space-y-1">
         @for (error of errorMessages(); track error) {
           <p class="text-xs text-red-600">{{ error }}</p>
@@ -134,7 +137,9 @@
         <article class="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
           <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
             <div>
-              <h2 class="text-lg font-semibold text-neutral-900">Line items</h2>
+              <h2 class="text-lg font-semibold text-neutral-900">
+                {{ 'invoices.lineItems' | translate }}
+              </h2>
               <p class="mt-1 text-sm text-neutral-500">
                 {{ invoice.items.length }} invoice {{ invoice.items.length === 1 ? 'row' : 'rows' }}
               </p>
@@ -157,10 +162,18 @@
               </colgroup>
               <thead>
                 <tr class="border-b border-neutral-200">
-                  <th class="px-4 py-3 text-left font-medium text-neutral-600">Description</th>
-                  <th class="px-4 py-3 text-right font-medium text-neutral-600">Qty</th>
-                  <th class="px-4 py-3 text-right font-medium text-neutral-600">Unit price</th>
-                  <th class="px-4 py-3 text-right font-medium text-neutral-600">Amount</th>
+                  <th class="px-4 py-3 text-left font-medium text-neutral-600">
+                    {{ 'invoices.descriptionField' | translate }}
+                  </th>
+                  <th class="px-4 py-3 text-right font-medium text-neutral-600">
+                    {{ 'invoices.qty' | translate }}
+                  </th>
+                  <th class="px-4 py-3 text-right font-medium text-neutral-600">
+                    {{ 'invoices.unitPrice' | translate }}
+                  </th>
+                  <th class="px-4 py-3 text-right font-medium text-neutral-600">
+                    {{ 'invoices.amount' | translate }}
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -186,27 +199,35 @@
         </article>
 
         <article class="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
-          <h2 class="text-lg font-semibold text-neutral-900">Client</h2>
+          <h2 class="text-lg font-semibold text-neutral-900">
+            {{ 'invoices.client' | translate }}
+          </h2>
           <div class="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
-              <p class="text-xs font-medium uppercase tracking-normal text-neutral-500">Name</p>
+              <p class="text-xs font-medium uppercase tracking-normal text-neutral-500">
+                {{ 'clients.name' | translate }}
+              </p>
               <p class="mt-1 text-sm font-semibold text-neutral-900">{{ invoice.client.name }}</p>
             </div>
             <div>
-              <p class="text-xs font-medium uppercase tracking-normal text-neutral-500">Email</p>
+              <p class="text-xs font-medium uppercase tracking-normal text-neutral-500">
+                {{ 'clients.email' | translate }}
+              </p>
               <p class="mt-1 text-sm text-neutral-700">{{ invoice.client.email }}</p>
             </div>
             @if (invoice.client.company) {
               <div>
                 <p class="text-xs font-medium uppercase tracking-normal text-neutral-500">
-                  Company
+                  {{ 'clients.company' | translate }}
                 </p>
                 <p class="mt-1 text-sm text-neutral-700">{{ invoice.client.company }}</p>
               </div>
             }
             @if (invoice.client.taxId) {
               <div>
-                <p class="text-xs font-medium uppercase tracking-normal text-neutral-500">Tax ID</p>
+                <p class="text-xs font-medium uppercase tracking-normal text-neutral-500">
+                  {{ 'clients.taxId' | translate }}
+                </p>
                 <p class="mt-1 text-sm text-neutral-700">{{ invoice.client.taxId }}</p>
               </div>
             }
@@ -215,7 +236,9 @@
 
         @if (invoice.notes) {
           <article class="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
-            <h2 class="text-lg font-semibold text-neutral-900">Notes</h2>
+            <h2 class="text-lg font-semibold text-neutral-900">
+              {{ 'invoices.notes' | translate }}
+            </h2>
             <p class="mt-4 whitespace-pre-line text-sm leading-6 text-neutral-600">
               {{ invoice.notes }}
             </p>
@@ -235,30 +258,32 @@
         />
 
         <article class="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
-          <h2 class="text-lg font-semibold text-neutral-900">Lifecycle</h2>
+          <h2 class="text-lg font-semibold text-neutral-900">
+            {{ 'invoices.lifecycle' | translate }}
+          </h2>
           <dl class="mt-5 space-y-4 text-sm">
             <div class="flex justify-between gap-4">
-              <dt class="text-neutral-500">Issued</dt>
+              <dt class="text-neutral-500">{{ 'invoices.issued' | translate }}</dt>
               <dd class="font-medium text-neutral-900">{{ formatDate(invoice.issueDate) }}</dd>
             </div>
             <div class="flex justify-between gap-4">
-              <dt class="text-neutral-500">Due</dt>
+              <dt class="text-neutral-500">{{ 'invoices.due' | translate }}</dt>
               <dd class="font-medium text-neutral-900">{{ formatDate(invoice.dueDate) }}</dd>
             </div>
             <div class="flex justify-between gap-4">
-              <dt class="text-neutral-500">Sent</dt>
+              <dt class="text-neutral-500">{{ 'invoices.sent' | translate }}</dt>
               <dd class="text-right font-medium text-neutral-900">
                 {{ formatDateTime(invoice.sentAt) }}
               </dd>
             </div>
             <div class="flex justify-between gap-4">
-              <dt class="text-neutral-500">Viewed</dt>
+              <dt class="text-neutral-500">{{ 'invoices.viewed' | translate }}</dt>
               <dd class="text-right font-medium text-neutral-900">
                 {{ formatDateTime(invoice.viewedAt) }}
               </dd>
             </div>
             <div class="flex justify-between gap-4">
-              <dt class="text-neutral-500">Paid</dt>
+              <dt class="text-neutral-500">{{ 'invoices.paid' | translate }}</dt>
               <dd class="text-right font-medium text-neutral-900">
                 {{ formatDateTime(invoice.paidAt) }}
               </dd>
@@ -272,9 +297,8 @@
                 [checked]="invoice.remindersEnabled"
                 [disabled]="isMutating()"
                 (change)="updateReminders($event.checked)"
+                >{{ 'invoices.reminders' | translate }}</mat-slide-toggle
               >
-                Reminders
-              </mat-slide-toggle>
             </div>
           }
         </article>

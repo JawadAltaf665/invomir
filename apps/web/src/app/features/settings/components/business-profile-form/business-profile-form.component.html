@@ -1,8 +1,10 @@
 <article class="h-full rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
   <div>
-    <h2 class="text-lg font-semibold text-neutral-900">Business profile</h2>
+    <h2 class="text-lg font-semibold text-neutral-900">
+      {{ 'settings.businessProfile' | translate }}
+    </h2>
     <p class="mt-1 text-sm text-neutral-500">
-      Configure invoice branding defaults used for new invoice drafts.
+      {{ 'settings.businessProfileDescription' | translate }}
     </p>
   </div>
 
@@ -22,19 +24,19 @@
 
   <form class="mt-6 space-y-5" [formGroup]="form" (ngSubmit)="submit()">
     <mat-form-field appearance="outline" class="w-full">
-      <mat-label>Business name</mat-label>
+      <mat-label>{{ 'settings.businessName' | translate }}</mat-label>
       <input matInput formControlName="businessName" maxlength="200" />
-      <mat-hint>Shown on invoices, receipts, and hosted payment pages.</mat-hint>
+      <mat-hint>{{ 'settings.businessNameHint' | translate }}</mat-hint>
       @if (form.controls.businessName.hasError('required')) {
-        <mat-error>Business name is required.</mat-error>
+        <mat-error>{{ 'settings.businessNameRequired' | translate }}</mat-error>
       } @else if (form.controls.businessName.hasError('maxlength')) {
-        <mat-error>Business name cannot exceed 200 characters.</mat-error>
+        <mat-error>{{ 'settings.businessNameLength' | translate }}</mat-error>
       }
     </mat-form-field>
 
     <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
       <mat-form-field appearance="outline" class="w-full">
-        <mat-label>Currency</mat-label>
+        <mat-label>{{ 'invoices.currency' | translate }}</mat-label>
         <mat-select formControlName="currency">
           @for (currency of currencyOptions; track currency.value) {
             <mat-option [value]="currency.value">
@@ -42,22 +44,22 @@
             </mat-option>
           }
         </mat-select>
-        <mat-hint>Default currency for new invoices.</mat-hint>
+        <mat-hint>{{ 'settings.currencyHint' | translate }}</mat-hint>
         @if (form.controls.currency.hasError('required')) {
-          <mat-error>Currency is required.</mat-error>
+          <mat-error>{{ 'settings.currencyRequired' | translate }}</mat-error>
         }
       </mat-form-field>
 
       <mat-form-field appearance="outline" class="w-full">
-        <mat-label>Tax percent</mat-label>
+        <mat-label>{{ 'invoices.taxPercent' | translate }}</mat-label>
         <input matInput type="number" min="0" max="100" step="0.01" formControlName="taxPercent" />
-        <mat-hint>Server accepts values from 0 to 100.</mat-hint>
+        <mat-hint>{{ 'settings.taxHint' | translate }}</mat-hint>
         @if (form.controls.taxPercent.hasError('required')) {
-          <mat-error>Tax percent is required.</mat-error>
+          <mat-error>{{ 'settings.taxRequired' | translate }}</mat-error>
         } @else if (
           form.controls.taxPercent.hasError('min') || form.controls.taxPercent.hasError('max')
         ) {
-          <mat-error>Tax percent must be between 0 and 100.</mat-error>
+          <mat-error>{{ 'invoices.taxRangeError' | translate }}</mat-error>
         }
       </mat-form-field>
     </div>
@@ -67,7 +69,7 @@
         <span
           class="inline-flex h-10 items-center justify-center rounded-xl border border-neutral-200 px-4 text-sm font-medium text-neutral-500"
         >
-          Settings permission required
+          {{ 'settings.permissionRequired' | translate }}
         </span>
       } @else {
         <button mat-flat-button color="primary" type="submit" [disabled]="isSaving()">
@@ -76,7 +78,7 @@
           } @else {
             <svg lucideSave class="size-4" aria-hidden="true"></svg>
           }
-          Save business profile
+          {{ 'settings.saveBusinessProfile' | translate }}
         </button>
       }
     </div>

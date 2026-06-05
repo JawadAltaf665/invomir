@@ -16,6 +16,8 @@ import {
 import { PaginationComponent } from '../../../../shared/components/pagination/pagination.component';
 import { ClientListItemView } from '../../models/client.models';
 
+import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
+
 @Component({
   selector: 'app-client-table',
   standalone: true,
@@ -23,6 +25,7 @@ import { ClientListItemView } from '../../models/client.models';
     class: 'block',
   },
   imports: [
+    TranslatePipe,
     MatButtonModule,
     MatDividerModule,
     MatMenuModule,

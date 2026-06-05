@@ -6,14 +6,6 @@ const statusClasses: Record<PaymentStatus, string> = {
   refunded: 'bg-amber-50 text-amber-700 ring-amber-200',
 };
 
-const methodLabels: Record<string, string> = {
-  card: 'Card',
-  cash: 'Cash',
-  bank_transfer: 'Bank transfer',
-  cheque: 'Cheque',
-  other: 'Other',
-};
-
 export function paymentStatusLabel(status: string): string {
   return toTitleCase(status);
 }
@@ -26,37 +18,37 @@ export function paymentStatusClass(status: string): string {
   return `inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset ${statusClass}`;
 }
 
-export function paymentMethodLabel(method: string): string {
-  return methodLabels[method.toLowerCase()] ?? toTitleCase(method);
-}
-
-export function formatPaymentCurrency(value: number, currency: string): string {
+export function formatPaymentCurrency(value: number, currency: string, locale = 'en'): string {
   const safeValue = Number.isFinite(value) ? value : 0;
 
   try {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat(locale, {
       style: 'currency',
       currency,
       currencyDisplay: 'code',
       maximumFractionDigits: 2,
     }).format(safeValue);
   } catch {
-    return `${currency} ${new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 }).format(safeValue)}`;
+    return `${currency} ${new Intl.NumberFormat(locale, { maximumFractionDigits: 2 }).format(safeValue)}`;
   }
 }
 
-export function formatPaymentDateTime(value: string | null | undefined): string {
+export function formatPaymentDateTime(
+  value: string | null | undefined,
+  locale = 'en',
+  notSetLabel = 'Not set',
+): string {
   if (!value) {
-    return 'Not set';
+    return notSetLabel;
   }
 
   const date = new Date(value);
 
   if (Number.isNaN(date.getTime())) {
-    return 'Not set';
+    return notSetLabel;
   }
 
-  return new Intl.DateTimeFormat('en-US', {
+  return new Intl.DateTimeFormat(locale, {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
@@ -68,8 +60,9 @@ export function formatPaymentDateTime(value: string | null | undefined): string 
 export function formatPaymentGatewayReference(
   stripePaymentIntentId: string | null,
   stripeChargeId: string | null,
+  manualEntryLabel = 'Manual entry',
 ): string {
-  return stripePaymentIntentId ?? stripeChargeId ?? 'Manual entry';
+  return stripePaymentIntentId ?? stripeChargeId ?? manualEntryLabel;
 }
 
 function toTitleCase(value: string): string {
