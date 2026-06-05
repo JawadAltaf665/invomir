@@ -18,6 +18,7 @@ import { Observable, finalize, map } from 'rxjs';
 import { AuthSessionService } from '../../../../core/auth/auth-session.service';
 import { ApiResponseError, extractApiErrors } from '../../../../core/errors/api-response-error';
 import { ApiResponse } from '../../../../core/models/api-response.model';
+import { TranslationService } from '../../../../core/i18n/translation.service';
 import { permissions } from '../../../../core/permissions/permissions';
 import { WorkspaceCurrencyRefreshService } from '../../../../core/services/workspace-currency-refresh.service';
 import { InvoiceFiltersComponent } from '../../components/invoice-filters/invoice-filters.component';
@@ -26,10 +27,13 @@ import { InvoiceApiService } from '../../services/invoice-api.service';
 import { InvoiceListFilters, InvoiceTableActionEvent } from '../../models/invoice.models';
 import { InvoiceListStore } from '../../store/invoice-list.store';
 
+import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
+
 @Component({
   selector: 'app-invoice-list',
   standalone: true,
   imports: [
+    TranslatePipe,
     MatButtonModule,
     InvoiceFiltersComponent,
     InvoiceTableComponent,
@@ -46,6 +50,7 @@ export class InvoiceListComponent implements OnInit {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly router = inject(Router);
   private readonly workspaceCurrencyRefresh = inject(WorkspaceCurrencyRefreshService);
+  private readonly translation = inject(TranslationService);
   protected readonly isActionRunning = signal(false);
   protected readonly actionErrorMessages = signal<readonly string[]>([]);
   private observedCurrencyRefreshVersion = this.workspaceCurrencyRefresh.version();
@@ -115,7 +120,13 @@ export class InvoiceListComponent implements OnInit {
         this.executeAction(this.invoiceApi.resendInvoice(event.invoice.id));
         return;
       case 'markPaid':
-        if (window.confirm(`Mark ${event.invoice.invoiceNumber} as paid?`)) {
+        if (
+          window.confirm(
+            this.translation.translate('invoices.confirmMarkPaid', {
+              invoiceNumber: event.invoice.invoiceNumber,
+            }),
+          )
+        ) {
           this.executeAction(this.invoiceApi.markPaid(event.invoice.id, { method: 'other' }));
         }
         return;
@@ -123,7 +134,13 @@ export class InvoiceListComponent implements OnInit {
         this.downloadPdf(event.invoice.id, event.invoice.invoiceNumber);
         return;
       case 'cancel':
-        if (window.confirm(`Cancel ${event.invoice.invoiceNumber}?`)) {
+        if (
+          window.confirm(
+            this.translation.translate('invoices.confirmCancel', {
+              invoiceNumber: event.invoice.invoiceNumber,
+            }),
+          )
+        ) {
           this.executeAction(this.invoiceApi.cancelInvoice(event.invoice.id));
         }
         return;

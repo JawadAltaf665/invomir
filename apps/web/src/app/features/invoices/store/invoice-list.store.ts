@@ -2,6 +2,7 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { finalize, map } from 'rxjs';
 
 import { ApiResponseError, extractApiErrors } from '../../../core/errors/api-response-error';
+import { TranslationService } from '../../../core/i18n/translation.service';
 import { ApiResponse, PagedResult } from '../../../core/models/api-response.model';
 import {
   InvoiceClientListItemDto,
@@ -15,7 +16,6 @@ import {
   formatInvoiceDate,
   formatInvoiceDateTime,
   invoiceStatusClass,
-  invoiceStatusLabel,
 } from '../utils/invoice-formatters';
 import { InvoiceApiService } from '../services/invoice-api.service';
 
@@ -36,6 +36,7 @@ const defaultFilters: InvoiceListFilters = {
 @Injectable({ providedIn: 'root' })
 export class InvoiceListStore {
   private readonly invoiceApi = inject(InvoiceApiService);
+  private readonly translation = inject(TranslationService);
   private readonly resultSignal = signal<InvoicePageResult | null>(null);
   private readonly filtersSignal = signal<InvoiceListFilters>(defaultFilters);
   private readonly clientsSignal = signal<readonly InvoiceClientListItemDto[]>([]);
@@ -78,12 +79,12 @@ export class InvoiceListStore {
 
     return Boolean(
       filters.status ||
-        filters.clientId ||
-        filters.from ||
-        filters.to ||
-        filters.searchTerm.trim() ||
-        filters.minAmount !== null ||
-        filters.maxAmount !== null,
+      filters.clientId ||
+      filters.from ||
+      filters.to ||
+      filters.searchTerm.trim() ||
+      filters.minAmount !== null ||
+      filters.maxAmount !== null,
     );
   });
 
@@ -177,12 +178,28 @@ export class InvoiceListStore {
       invoiceNumber: invoice.invoiceNumber,
       clientName: invoice.clientName,
       status: invoice.status,
-      statusLabel: invoiceStatusLabel(invoice.status),
+      statusLabel: this.translation.translate(`invoiceStatus.${invoice.status}`),
       statusClass: invoiceStatusClass(invoice.status),
-      totalDisplay: formatInvoiceCurrency(invoice.total, invoice.currency),
-      dueDateDisplay: formatInvoiceDate(invoice.dueDate),
-      sentAtDisplay: formatInvoiceDate(invoice.sentAt),
-      sentAtFullDisplay: formatInvoiceDateTime(invoice.sentAt),
+      totalDisplay: formatInvoiceCurrency(
+        invoice.total,
+        invoice.currency,
+        this.translation.language(),
+      ),
+      dueDateDisplay: formatInvoiceDate(
+        invoice.dueDate,
+        this.translation.language(),
+        this.translation.translate('common.notSet'),
+      ),
+      sentAtDisplay: formatInvoiceDate(
+        invoice.sentAt,
+        this.translation.language(),
+        this.translation.translate('common.notSet'),
+      ),
+      sentAtFullDisplay: formatInvoiceDateTime(
+        invoice.sentAt,
+        this.translation.language(),
+        this.translation.translate('common.notSet'),
+      ),
     };
   }
 
@@ -194,5 +211,4 @@ export class InvoiceListStore {
     const parsed = Number(value);
     return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
   }
-
 }

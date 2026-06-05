@@ -3,6 +3,7 @@ import {
   Component,
   OnDestroy,
   computed,
+  inject,
   input,
   output,
   signal,
@@ -12,6 +13,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { LucideShieldCheck, LucideUpload } from '@lucide/angular';
 
 import { UserProfileDto } from '../../models/settings.models';
+import { TranslationService } from '../../../../core/i18n/translation.service';
 import {
   acceptedProfilePictureExtensions,
   acceptedProfilePictureTypes,
@@ -24,17 +26,20 @@ import {
   resolveProfilePictureUrl,
 } from '../../utils/settings-formatters';
 
+import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
+
 @Component({
   selector: 'app-account-profile-card',
   standalone: true,
   host: {
     class: 'block h-full',
   },
-  imports: [MatButtonModule, MatProgressBarModule, LucideShieldCheck, LucideUpload],
+  imports: [TranslatePipe, MatButtonModule, MatProgressBarModule, LucideShieldCheck, LucideUpload],
   templateUrl: './account-profile-card.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AccountProfileCardComponent implements OnDestroy {
+  private readonly translation = inject(TranslationService);
   readonly profile = input<UserProfileDto | null>(null);
   readonly isLoading = input(false);
   readonly canManage = input(false);
@@ -47,8 +52,6 @@ export class AccountProfileCardComponent implements OnDestroy {
   readonly profilePictureSelected = output<File>();
 
   protected readonly formatProfileName = formatProfileName;
-  protected readonly formatSettingsDate = formatSettingsDate;
-  protected readonly formatSettingsDateTime = formatSettingsDateTime;
   protected readonly formatSettingsLabel = formatSettingsLabel;
   protected readonly acceptedFileTypes = [
     ...acceptedProfilePictureTypes,
@@ -79,6 +82,22 @@ export class AccountProfileCardComponent implements OnDestroy {
 
   ngOnDestroy(): void {
     this.clearPreview();
+  }
+
+  protected formatSettingsDate(value: string | null): string {
+    return formatSettingsDate(
+      value,
+      this.translation.language(),
+      this.translation.translate('common.notSet'),
+    );
+  }
+
+  protected formatSettingsDateTime(value: string | null): string {
+    return formatSettingsDateTime(
+      value,
+      this.translation.language(),
+      this.translation.translate('common.notSet'),
+    );
   }
 
   protected selectProfilePicture(event: Event): void {
@@ -113,11 +132,11 @@ export class AccountProfileCardComponent implements OnDestroy {
     const errors: string[] = [];
 
     if (!isAcceptedProfilePictureFile(file)) {
-      errors.push('Profile picture must be a PNG, JPG, or WEBP file.');
+      errors.push(this.translation.translate('settings.profilePictureTypeError'));
     }
 
     if (file.size > maxProfilePictureBytes) {
-      errors.push('Profile picture file must not exceed 2MB.');
+      errors.push(this.translation.translate('settings.profilePictureSizeError'));
     }
 
     return errors;

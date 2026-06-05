@@ -1,14 +1,14 @@
-<div class="min-h-dvh bg-neutral-50 text-neutral-900">
+<div class="min-h-dvh bg-neutral-50 text-neutral-900" [dir]="languagePreference.direction()">
   @if (isMobileSidebarOpen()) {
     <button
       type="button"
       class="fixed inset-0 z-30 bg-neutral-900/20 lg:hidden"
-      aria-label="Close navigation"
+      [attr.aria-label]="'layout.closeNavigation' | translate"
       (click)="closeMobileSidebar()"
     ></button>
   }
 
-  <aside [ngClass]="sidebarClass()" aria-label="Workspace navigation">
+  <aside [ngClass]="sidebarClass()" [attr.aria-label]="'layout.workspaceNavigation' | translate">
     <div
       class="relative flex h-16 items-center border-b border-neutral-200 px-4"
       [class.justify-between]="isSidebarExpanded()"
@@ -33,8 +33,8 @@
         <button
           type="button"
           class="hidden size-9 place-items-center rounded-xl text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-900 lg:grid"
-          aria-label="Collapse sidebar"
-          matTooltip="Collapse"
+          [attr.aria-label]="'layout.collapseSidebar' | translate"
+          [matTooltip]="'layout.collapse' | translate"
           (click)="toggleSidebar()"
         >
           <svg lucidePanelLeftClose class="size-4" aria-hidden="true"></svg>
@@ -42,9 +42,11 @@
       } @else {
         <button
           type="button"
-          class="absolute -right-4 top-1/2 hidden size-8 -translate-y-1/2 place-items-center rounded-xl border border-neutral-200 bg-white text-neutral-500 shadow-sm transition hover:bg-neutral-50 hover:text-neutral-900 lg:grid"
-          aria-label="Expand sidebar"
-          matTooltip="Expand"
+          class="absolute top-1/2 hidden size-8 -translate-y-1/2 place-items-center rounded-xl border border-neutral-200 bg-white text-neutral-500 shadow-sm transition hover:bg-neutral-50 hover:text-neutral-900 lg:grid"
+          [class.-left-4]="languagePreference.direction() === 'rtl'"
+          [class.-right-4]="languagePreference.direction() === 'ltr'"
+          [attr.aria-label]="'layout.expandSidebar' | translate"
+          [matTooltip]="'layout.expand' | translate"
           (click)="toggleSidebar()"
         >
           <svg lucidePanelLeftOpen class="size-4" aria-hidden="true"></svg>
@@ -56,7 +58,9 @@
       <div class="space-y-8">
         <div>
           @if (isSidebarExpanded()) {
-            <p class="px-3 text-xs font-medium text-neutral-500">Workspace</p>
+            <p class="px-3 text-xs font-medium text-neutral-500">
+              {{ 'layout.workspace' | translate }}
+            </p>
           }
 
           <div class="mt-3 space-y-1">
@@ -66,7 +70,7 @@
                   type="button"
                   class="flex h-10 w-full cursor-not-allowed items-center gap-3 rounded-xl px-3 text-sm font-medium text-neutral-400"
                   [class.justify-center]="!isSidebarExpanded()"
-                  [matTooltip]="isSidebarExpanded() ? '' : item.label"
+                  [matTooltip]="isSidebarExpanded() ? '' : navLabel(item)"
                   disabled
                 >
                   <ng-container
@@ -74,11 +78,11 @@
                     [ngTemplateOutletContext]="{ icon: item.icon }"
                   />
                   @if (isSidebarExpanded()) {
-                    <span class="truncate">{{ item.label }}</span>
+                    <span class="truncate">{{ item.labelKey | translate }}</span>
                     <span
                       class="ml-auto rounded-xl bg-neutral-100 px-2 py-1 text-xs font-medium text-neutral-500"
                     >
-                      Soon
+                      {{ 'common.soon' | translate }}
                     </span>
                   }
                 </button>
@@ -88,8 +92,8 @@
                   routerLinkActive="bg-primary/10 text-primary"
                   class="flex h-10 items-center gap-3 rounded-xl px-3 text-sm font-medium text-neutral-600 transition hover:bg-neutral-100 hover:text-neutral-900"
                   [class.justify-center]="!isSidebarExpanded()"
-                  [matTooltip]="isSidebarExpanded() ? '' : item.label"
-                  [attr.aria-label]="isSidebarExpanded() ? null : item.label"
+                  [matTooltip]="isSidebarExpanded() ? '' : navLabel(item)"
+                  [attr.aria-label]="isSidebarExpanded() ? null : navLabel(item)"
                   (click)="closeMobileSidebar()"
                 >
                   <ng-container
@@ -97,7 +101,7 @@
                     [ngTemplateOutletContext]="{ icon: item.icon }"
                   />
                   @if (isSidebarExpanded()) {
-                    <span class="truncate">{{ item.label }}</span>
+                    <span class="truncate">{{ item.labelKey | translate }}</span>
                   }
                 </a>
               }
@@ -108,7 +112,9 @@
         @if (visibleManageNavItems().length > 0) {
           <div>
             @if (isSidebarExpanded()) {
-              <p class="px-3 text-xs font-medium text-neutral-500">Manage</p>
+              <p class="px-3 text-xs font-medium text-neutral-500">
+                {{ 'layout.manage' | translate }}
+              </p>
             }
 
             <div class="mt-3 space-y-1">
@@ -118,7 +124,7 @@
                     type="button"
                     class="flex h-10 w-full cursor-not-allowed items-center gap-3 rounded-xl px-3 text-sm font-medium text-neutral-400"
                     [class.justify-center]="!isSidebarExpanded()"
-                    [matTooltip]="isSidebarExpanded() ? '' : item.label"
+                    [matTooltip]="isSidebarExpanded() ? '' : navLabel(item)"
                     disabled
                   >
                     <ng-container
@@ -126,11 +132,11 @@
                       [ngTemplateOutletContext]="{ icon: item.icon }"
                     />
                     @if (isSidebarExpanded()) {
-                      <span class="truncate">{{ item.label }}</span>
+                      <span class="truncate">{{ item.labelKey | translate }}</span>
                       <span
                         class="ml-auto rounded-xl bg-neutral-100 px-2 py-1 text-xs font-medium text-neutral-500"
                       >
-                        Soon
+                        {{ 'common.soon' | translate }}
                       </span>
                     }
                   </button>
@@ -140,8 +146,8 @@
                     routerLinkActive="bg-primary/10 text-primary"
                     class="flex h-10 items-center gap-3 rounded-xl px-3 text-sm font-medium text-neutral-600 transition hover:bg-neutral-100 hover:text-neutral-900"
                     [class.justify-center]="!isSidebarExpanded()"
-                    [matTooltip]="isSidebarExpanded() ? '' : item.label"
-                    [attr.aria-label]="isSidebarExpanded() ? null : item.label"
+                    [matTooltip]="isSidebarExpanded() ? '' : navLabel(item)"
+                    [attr.aria-label]="isSidebarExpanded() ? null : navLabel(item)"
                     (click)="closeMobileSidebar()"
                   >
                     <ng-container
@@ -149,7 +155,7 @@
                       [ngTemplateOutletContext]="{ icon: item.icon }"
                     />
                     @if (isSidebarExpanded()) {
-                      <span class="truncate">{{ item.label }}</span>
+                      <span class="truncate">{{ item.labelKey | translate }}</span>
                     }
                   </a>
                 }
@@ -166,13 +172,13 @@
         class="flex h-10 w-full items-center gap-3 rounded-xl px-3 text-sm font-medium text-neutral-600 transition hover:bg-neutral-100 hover:text-neutral-900 disabled:cursor-not-allowed disabled:opacity-60"
         [class.justify-center]="!isSidebarExpanded()"
         [disabled]="isLoggingOut()"
-        [matTooltip]="isSidebarExpanded() ? '' : 'Sign out'"
-        [attr.aria-label]="isSidebarExpanded() ? null : 'Sign out'"
+        [matTooltip]="isSidebarExpanded() ? '' : ('common.signOut' | translate)"
+        [attr.aria-label]="isSidebarExpanded() ? null : ('common.signOut' | translate)"
         (click)="logout()"
       >
         <svg lucideLogOut class="size-4 shrink-0" aria-hidden="true"></svg>
         @if (isSidebarExpanded()) {
-          <span>Sign out</span>
+          <span>{{ 'common.signOut' | translate }}</span>
         }
       </button>
     </div>
@@ -185,15 +191,17 @@
           <button
             type="button"
             class="grid size-9 place-items-center rounded-xl text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-900 lg:hidden"
-            aria-label="Open navigation"
+            [attr.aria-label]="'layout.openNavigation' | translate"
             (click)="openMobileSidebar()"
           >
             <svg lucideMenu class="size-4" aria-hidden="true"></svg>
           </button>
 
           <div>
-            <p class="text-sm font-semibold text-neutral-900">Workspace</p>
-            <p class="text-xs text-neutral-500">InvoMir dashboard</p>
+            <p class="text-sm font-semibold text-neutral-900">
+              {{ 'layout.workspace' | translate }}
+            </p>
+            <p class="text-xs text-neutral-500">{{ 'layout.invomirDashboard' | translate }}</p>
           </div>
         </div>
 
@@ -201,21 +209,47 @@
           <button
             type="button"
             class="inline-flex h-9 items-center gap-2 rounded-xl border border-neutral-200 bg-white px-3 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50 hover:text-neutral-900 disabled:cursor-not-allowed disabled:opacity-60"
-            aria-label="Workspace currency"
-            matTooltip="Workspace reporting currency"
+            [attr.aria-label]="'layout.workspaceCurrency' | translate"
+            [matTooltip]="'layout.workspaceReportingCurrency' | translate"
             [matMenuTriggerFor]="currencyMenu"
             [disabled]="isCurrencyLoading() || isCurrencySaving()"
           >
-            <svg lucideBadgeDollarSign class="size-4 shrink-0 text-primary" aria-hidden="true"></svg>
+            <svg
+              lucideBadgeDollarSign
+              class="size-4 shrink-0 text-primary"
+              aria-hidden="true"
+            ></svg>
             <span>{{ currencyLabel() }}</span>
-            <svg lucideChevronDown class="size-4 shrink-0 text-neutral-400" aria-hidden="true"></svg>
+            <svg
+              lucideChevronDown
+              class="size-4 shrink-0 text-neutral-400"
+              aria-hidden="true"
+            ></svg>
+          </button>
+
+          <button
+            type="button"
+            class="inline-flex h-9 items-center gap-2 rounded-xl border border-neutral-200 bg-white px-3 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50 hover:text-neutral-900 disabled:cursor-not-allowed disabled:opacity-60"
+            [attr.aria-label]="'layout.language' | translate"
+            [matTooltip]="'layout.language' | translate"
+            [matMenuTriggerFor]="languageMenu"
+            [disabled]="languagePreference.isLoading() || languagePreference.isSaving()"
+          >
+            <svg lucideLanguages class="size-4 shrink-0 text-primary" aria-hidden="true"></svg>
+            <span class="hidden xl:inline">{{ languagePreference.currentOption().label }}</span>
+            <span class="xl:hidden">{{ languagePreference.currentLanguage() }}</span>
+            <svg
+              lucideChevronDown
+              class="size-4 shrink-0 text-neutral-400"
+              aria-hidden="true"
+            ></svg>
           </button>
 
           <button
             type="button"
             class="grid size-9 place-items-center rounded-xl text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-900"
-            aria-label="Notifications"
-            matTooltip="Notifications"
+            [attr.aria-label]="'layout.notifications' | translate"
+            [matTooltip]="'layout.notifications' | translate"
           >
             <svg lucideBell class="size-4" aria-hidden="true"></svg>
           </button>
@@ -224,7 +258,7 @@
             routerLink="/app/settings"
             class="inline-flex min-w-0 items-center gap-2 rounded-xl px-2 py-1.5 text-right transition hover:bg-neutral-100"
             [matTooltip]="displayUserName() + ' - ' + displayUserRole()"
-            aria-label="Open profile settings"
+            [attr.aria-label]="'layout.openProfileSettings' | translate"
           >
             <div class="hidden min-w-0 md:block">
               <p class="max-w-36 truncate text-sm font-medium text-neutral-900">
@@ -240,7 +274,7 @@
                 <img
                   class="h-full w-full object-cover"
                   [src]="displayProfilePictureUrl()"
-                  alt="Profile picture"
+                  [alt]="'layout.profilePicture' | translate"
                 />
               } @else {
                 <span>{{ displayUserInitials() }}</span>
@@ -255,10 +289,14 @@
   </div>
 </div>
 
-<mat-menu #currencyMenu="matMenu" xPosition="before" yPosition="below">
+<mat-menu
+  #currencyMenu="matMenu"
+  [xPosition]="languagePreference.direction() === 'rtl' ? 'after' : 'before'"
+  yPosition="below"
+>
   <div class="px-3 py-2">
     <p class="text-xs font-medium uppercase tracking-normal text-neutral-500">
-      Workspace currency
+      {{ 'layout.workspaceCurrency' | translate }}
     </p>
   </div>
   @for (currency of currencyOptions; track currency) {
@@ -273,7 +311,7 @@
         <span>{{ currency }}</span>
         @if (currency === currentCurrency()) {
           <span class="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-            Active
+            {{ 'common.active' | translate }}
           </span>
         }
       </span>
@@ -282,6 +320,41 @@
   @if (currencyErrorMessages().length > 0) {
     <div class="border-t border-neutral-100 px-3 py-2">
       <p class="text-xs text-red-600">{{ currencyErrorMessages()[0] }}</p>
+    </div>
+  }
+</mat-menu>
+
+<mat-menu
+  #languageMenu="matMenu"
+  [xPosition]="languagePreference.direction() === 'rtl' ? 'after' : 'before'"
+  yPosition="below"
+>
+  <div class="px-3 py-2">
+    <p class="text-xs font-medium uppercase tracking-normal text-neutral-500">
+      {{ 'layout.language' | translate }}
+    </p>
+  </div>
+  @for (language of languagePreference.options; track language.code) {
+    <button
+      type="button"
+      mat-menu-item
+      class="text-sm"
+      [disabled]="languagePreference.isSaving()"
+      (click)="changeLanguage(language.code)"
+    >
+      <span class="flex w-full items-center justify-between gap-6">
+        <span [dir]="language.direction">{{ language.label }}</span>
+        @if (language.code === languagePreference.currentLanguage()) {
+          <span class="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+            {{ 'common.active' | translate }}
+          </span>
+        }
+      </span>
+    </button>
+  }
+  @if (languagePreference.errorMessages().length > 0) {
+    <div class="border-t border-neutral-100 px-3 py-2">
+      <p class="text-xs text-red-600">{{ languagePreference.errorMessages()[0] }}</p>
     </div>
   }
 </mat-menu>

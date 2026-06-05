@@ -2,7 +2,7 @@
   <header class="flex items-center gap-3">
     <a
       routerLink="/app/clients"
-      aria-label="Back to clients"
+      [attr.aria-label]="'clients.back' | translate"
       title="Back to clients"
       class="inline-flex size-9 shrink-0 items-center justify-center rounded-lg border border-neutral-200 bg-white text-neutral-500 transition hover:border-neutral-300 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
     >
@@ -10,11 +10,18 @@
     </a>
 
     <div class="min-w-0">
-      <h1 class="text-2xl font-semibold tracking-tight text-neutral-900">New client</h1>
-      <nav aria-label="Breadcrumb" class="mt-1 flex min-w-0 items-center gap-1 text-xs text-neutral-500">
-        <a routerLink="/app/clients" class="transition hover:text-neutral-900">Clients</a>
+      <h1 class="text-2xl font-semibold tracking-tight text-neutral-900">
+        {{ 'clients.new' | translate }}
+      </h1>
+      <nav
+        [attr.aria-label]="'clients.breadcrumb' | translate"
+        class="mt-1 flex min-w-0 items-center gap-1 text-xs text-neutral-500"
+      >
+        <a routerLink="/app/clients" class="transition hover:text-neutral-900">{{
+          'clients.title' | translate
+        }}</a>
         <span aria-hidden="true">/</span>
-        <span class="truncate">New client</span>
+        <span class="truncate">{{ 'clients.new' | translate }}</span>
       </nav>
     </div>
   </header>

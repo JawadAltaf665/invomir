@@ -31,24 +31,32 @@ export function formatProfileName(firstName: string, lastName: string): string {
   return fullName.length > 0 ? fullName : 'Account user';
 }
 
-export function formatSettingsDate(value: string | null): string {
+export function formatSettingsDate(
+  value: string | null,
+  locale = 'en',
+  notSetLabel = 'Not set',
+): string {
   if (!value) {
-    return 'Not set';
+    return notSetLabel;
   }
 
-  return new Intl.DateTimeFormat('en-US', {
+  return new Intl.DateTimeFormat(locale, {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
   }).format(new Date(value));
 }
 
-export function formatSettingsDateTime(value: string | null): string {
+export function formatSettingsDateTime(
+  value: string | null,
+  locale = 'en',
+  notSetLabel = 'Not set',
+): string {
   if (!value) {
-    return 'Not set';
+    return notSetLabel;
   }
 
-  return new Intl.DateTimeFormat('en-US', {
+  return new Intl.DateTimeFormat(locale, {
     month: 'short',
     day: 'numeric',
     year: 'numeric',

@@ -5,9 +5,11 @@
         <svg lucideShieldCheck class="size-5" aria-hidden="true"></svg>
       </div>
       <div class="min-w-0">
-        <h2 class="text-base font-semibold text-neutral-900">Stripe Connect</h2>
+        <h2 class="text-base font-semibold text-neutral-900">
+          {{ 'payments.stripeConnect' | translate }}
+        </h2>
         <p class="mt-1 max-w-2xl text-sm text-neutral-500">
-          Connect Stripe to collect card payments from public invoice payment pages.
+          {{ 'payments.stripeDescription' | translate }}
         </p>
       </div>
     </div>
@@ -25,13 +27,13 @@
         } @else {
           <svg lucideArrowUpRight class="size-4" aria-hidden="true"></svg>
         }
-        Connect Stripe
+        {{ 'payments.connectStripe' | translate }}
       </button>
     } @else {
       <span
         class="inline-flex h-10 items-center rounded-xl border border-neutral-200 px-4 text-sm font-medium text-neutral-500"
       >
-        Manage permission required
+        {{ 'payments.managePermissionRequired' | translate }}
       </span>
     }
   </div>

@@ -22,6 +22,8 @@ type PasswordFormGroup = FormGroup<{
   confirmPassword: FormControl<string>;
 }>;
 
+import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
+
 @Component({
   selector: 'app-password-change-form',
   standalone: true,
@@ -29,6 +31,7 @@ type PasswordFormGroup = FormGroup<{
     class: 'block h-full',
   },
   imports: [
+    TranslatePipe,
     ReactiveFormsModule,
     MatButtonModule,
     MatFormFieldModule,

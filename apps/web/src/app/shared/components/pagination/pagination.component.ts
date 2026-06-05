@@ -3,6 +3,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { LucideChevronLeft, LucideChevronRight } from '@lucide/angular';
+import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 
 type PaginationItem = number | 'ellipsis';
 
@@ -10,6 +11,7 @@ type PaginationItem = number | 'ellipsis';
   selector: 'app-pagination',
   standalone: true,
   imports: [
+    TranslatePipe,
     MatButtonModule,
     MatFormFieldModule,
     MatSelectModule,

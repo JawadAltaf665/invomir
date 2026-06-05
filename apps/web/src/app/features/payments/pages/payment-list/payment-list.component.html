@@ -2,12 +2,12 @@
   <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
     <div>
       <p class="text-xs font-medium uppercase tracking-normal text-neutral-500">
-        Workspace payments
+        {{ 'payments.eyebrow' | translate }}
       </p>
-      <h1 class="mt-2 text-2xl font-semibold tracking-tight text-neutral-900">Payments</h1>
-      <p class="mt-2 text-sm text-neutral-500">
-        Review invoice payment history, status outcomes, and Stripe collection readiness.
-      </p>
+      <h1 class="mt-2 text-2xl font-semibold tracking-tight text-neutral-900">
+        {{ 'payments.title' | translate }}
+      </h1>
+      <p class="mt-2 text-sm text-neutral-500">{{ 'payments.description' | translate }}</p>
     </div>
 
     <button
@@ -16,8 +16,8 @@
       [disabled]="paymentStore.isLoading()"
       (click)="refresh()"
     >
-      <svg lucideRefreshCcw class="size-4" aria-hidden="true"></svg>
-      Refresh
+      <svg lucideRefreshCcw class="size-4" aria-hidden="true"></svg
+      >{{ 'common.refresh' | translate }}
     </button>
   </div>
 
@@ -25,7 +25,7 @@
     <div class="mt-6 rounded-2xl border border-red-200 bg-red-50 p-5 shadow-sm">
       <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div>
-          <p class="text-sm font-medium text-red-800">Payments could not be loaded</p>
+          <p class="text-sm font-medium text-red-800">{{ 'payments.loadError' | translate }}</p>
           <div class="mt-2 space-y-1">
             @for (error of paymentStore.errorMessages(); track error) {
               <p class="text-xs text-red-600">{{ error }}</p>
@@ -34,7 +34,7 @@
         </div>
 
         <button mat-button type="button" [disabled]="paymentStore.isLoading()" (click)="refresh()">
-          Retry
+          {{ 'common.retry' | translate }}
         </button>
       </div>
     </div>

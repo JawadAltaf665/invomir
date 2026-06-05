@@ -28,6 +28,7 @@ public sealed class GetCurrentUserQueryHandler(
                     user.LogoUrl,
                     user.ProfilePictureUrl,
                     user.Currency,
+                    user.PreferredLanguage,
                     user.TaxPercent,
                     user.Plan,
                     user.Role,

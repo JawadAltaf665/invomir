@@ -1,4 +1,5 @@
 import { NgClass, NgTemplateOutlet, isPlatformBrowser } from '@angular/common';
+import { Dir } from '@angular/cdk/bidi';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -23,6 +24,7 @@ import {
   LucideFileText,
   LucideHistory,
   LucideLayoutDashboard,
+  LucideLanguages,
   LucideLogOut,
   LucideMenu,
   LucidePanelLeftClose,
@@ -44,6 +46,10 @@ import { apiUrl } from '../../core/config/api-url';
 import { CurrentUserApiService } from '../../core/services/current-user-api.service';
 import { CurrentUserProfileRefreshService } from '../../core/services/current-user-profile-refresh.service';
 import { WorkspaceCurrencyRefreshService } from '../../core/services/workspace-currency-refresh.service';
+import { LanguagePreferenceService } from '../../core/i18n/language-preference.service';
+import { TranslatePipe } from '../../core/i18n/translate.pipe';
+import { TranslationService } from '../../core/i18n/translation.service';
+import { SupportedLanguage } from '../../core/i18n/language.config';
 
 type SidebarIcon =
   | 'dashboard'
@@ -58,7 +64,7 @@ type SidebarIcon =
   | 'admin';
 
 interface SidebarNavItem {
-  label: string;
+  labelKey: string;
   route: string;
   icon: SidebarIcon;
   permissions: readonly Permission[];
@@ -71,6 +77,7 @@ interface SidebarNavItem {
   imports: [
     NgClass,
     NgTemplateOutlet,
+    Dir,
     MatButtonModule,
     MatMenuModule,
     MatTooltipModule,
@@ -85,6 +92,7 @@ interface SidebarNavItem {
     LucideFileText,
     LucideHistory,
     LucideLayoutDashboard,
+    LucideLanguages,
     LucideLogOut,
     LucideMenu,
     LucidePanelLeftClose,
@@ -93,6 +101,7 @@ interface SidebarNavItem {
     LucideSettings,
     LucideShieldCheck,
     LucideUsers,
+    TranslatePipe,
   ],
   templateUrl: './dashboard-layout.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -109,11 +118,13 @@ export class DashboardLayoutComponent implements OnInit {
   protected readonly currencyOptions = supportedCurrencies;
   protected readonly currentUserProfile = signal<CurrentUserProfileDto | null>(null);
   protected readonly profilePictureVersion = signal(Date.now());
+  protected readonly languagePreference = inject(LanguagePreferenceService);
   private readonly router = inject(Router);
   private readonly currentUserApi = inject(CurrentUserApiService);
   private readonly currentUserProfileRefresh = inject(CurrentUserProfileRefreshService);
   private readonly workspaceCurrencyRefresh = inject(WorkspaceCurrencyRefreshService);
   private readonly platformId = inject(PLATFORM_ID);
+  private readonly translation = inject(TranslationService);
 
   protected readonly currencyLabel = computed(() => this.currentCurrency());
   protected readonly displayUserName = computed(() => {
@@ -123,10 +134,10 @@ export class DashboardLayoutComponent implements OnInit {
       return this.formatFullName(profile.firstName, profile.lastName);
     }
 
-    return this.authSession.user()?.firstName ?? 'Account';
+    return this.authSession.user()?.firstName ?? this.translation.translate('common.account');
   });
   protected readonly displayUserRole = computed(() =>
-    this.formatLabel(this.currentUserProfile()?.role ?? this.authSession.role() ?? ''),
+    this.translateRole(this.currentUserProfile()?.role ?? this.authSession.role() ?? ''),
   );
   protected readonly displayProfilePictureUrl = computed(() =>
     this.resolveAssetUrl(
@@ -150,31 +161,31 @@ export class DashboardLayoutComponent implements OnInit {
 
   private readonly mainNavItems: readonly SidebarNavItem[] = [
     {
-      label: 'Dashboard',
+      labelKey: 'navigation.dashboard',
       route: '/app/dashboard',
       icon: 'dashboard',
       permissions: [permissions.dashboard.view],
     },
     {
-      label: 'Invoices',
+      labelKey: 'navigation.invoices',
       route: '/app/invoices',
       icon: 'invoices',
       permissions: [permissions.invoice.view],
     },
     {
-      label: 'Clients',
+      labelKey: 'navigation.clients',
       route: '/app/clients',
       icon: 'clients',
       permissions: [permissions.client.view],
     },
     {
-      label: 'Payments',
+      labelKey: 'navigation.payments',
       route: '/app/payments',
       icon: 'payments',
       permissions: [permissions.payment.view],
     },
     {
-      label: 'Reports',
+      labelKey: 'navigation.reports',
       route: '/app/reports',
       icon: 'reports',
       permissions: [permissions.report.view],
@@ -183,31 +194,31 @@ export class DashboardLayoutComponent implements OnInit {
 
   private readonly manageNavItems: readonly SidebarNavItem[] = [
     {
-      label: 'Subscriptions',
+      labelKey: 'navigation.subscriptions',
       route: '/app/subscriptions',
       icon: 'subscriptions',
       permissions: [permissions.subscription.view],
     },
     {
-      label: 'Team',
+      labelKey: 'navigation.team',
       route: '/app/team',
       icon: 'team',
       permissions: [permissions.team.manage],
     },
     {
-      label: 'Audit logs',
+      labelKey: 'navigation.auditLogs',
       route: '/app/audit-logs',
       icon: 'auditLogs',
       permissions: [permissions.system.access],
     },
     {
-      label: 'Settings',
+      labelKey: 'navigation.settings',
       route: '/app/settings',
       icon: 'settings',
       permissions: [permissions.settings.manage],
     },
     {
-      label: 'Admin',
+      labelKey: 'navigation.admin',
       route: '/app/admin/users',
       icon: 'admin',
       permissions: [permissions.system.access],
@@ -230,20 +241,30 @@ export class DashboardLayoutComponent implements OnInit {
   });
 
   protected readonly sidebarClass = computed(() => [
-    'fixed inset-y-0 left-0 z-40 flex flex-col border-r border-neutral-200 bg-white transition-all duration-200',
+    'fixed inset-y-0 z-40 flex flex-col border-neutral-200 bg-white transition-all duration-200',
+    this.languagePreference.direction() === 'rtl' ? 'right-0 border-l' : 'left-0 border-r',
     this.isSidebarExpanded() ? 'w-64' : 'w-20',
     this.isMobileSidebarOpen()
       ? 'translate-x-0 shadow-xl lg:shadow-none'
-      : '-translate-x-full lg:translate-x-0',
+      : this.languagePreference.direction() === 'rtl'
+        ? 'translate-x-full lg:translate-x-0'
+        : '-translate-x-full lg:translate-x-0',
   ]);
 
   protected readonly contentClass = computed(() => [
     'min-h-dvh transition-all duration-200',
-    this.isSidebarExpanded() ? 'lg:pl-64' : 'lg:pl-20',
+    this.languagePreference.direction() === 'rtl'
+      ? this.isSidebarExpanded()
+        ? 'lg:pr-64'
+        : 'lg:pr-20'
+      : this.isSidebarExpanded()
+        ? 'lg:pl-64'
+        : 'lg:pl-20',
   ]);
 
   ngOnInit(): void {
     if (isPlatformBrowser(this.platformId)) {
+      this.languagePreference.load();
       this.loadCurrentUserProfile();
     }
   }
@@ -332,6 +353,14 @@ export class DashboardLayoutComponent implements OnInit {
       });
   }
 
+  protected changeLanguage(language: SupportedLanguage): void {
+    this.languagePreference.changeLanguage(language);
+  }
+
+  protected navLabel(item: SidebarNavItem): string {
+    return this.translation.translate(item.labelKey);
+  }
+
   private toSupportedCurrency(value: string): SupportedCurrency {
     const normalized = value?.trim().toUpperCase();
 
@@ -351,18 +380,28 @@ export class DashboardLayoutComponent implements OnInit {
 
   private formatFullName(firstName: string, lastName: string): string {
     const fullName = `${firstName} ${lastName}`.trim();
-    return fullName.length > 0 ? fullName : 'Account';
+    return fullName.length > 0 ? fullName : this.translation.translate('common.account');
   }
 
   private formatLabel(value: string): string {
     if (!value) {
-      return 'Role not set';
+      return this.translation.translate('roles.notSet');
     }
 
     return value
       .split('_')
       .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
       .join(' ');
+  }
+
+  private translateRole(value: string): string {
+    if (!value) {
+      return this.translation.translate('roles.notSet');
+    }
+
+    const translationKey = `roles.${value}`;
+    const translatedRole = this.translation.translate(translationKey);
+    return translatedRole === translationKey ? this.formatLabel(value) : translatedRole;
   }
 
   private resolveAssetUrl(assetUrl: string | null, cacheKey: string | number): string | null {

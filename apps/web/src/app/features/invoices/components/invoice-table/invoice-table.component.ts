@@ -26,6 +26,8 @@ import {
 } from '../../models/invoice.models';
 import { InvoiceStatusBadgeComponent } from '../invoice-status-badge/invoice-status-badge.component';
 
+import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
+
 @Component({
   selector: 'app-invoice-table',
   standalone: true,
@@ -33,6 +35,7 @@ import { InvoiceStatusBadgeComponent } from '../invoice-status-badge/invoice-sta
     class: 'block',
   },
   imports: [
+    TranslatePipe,
     MatButtonModule,
     MatDividerModule,
     MatMenuModule,

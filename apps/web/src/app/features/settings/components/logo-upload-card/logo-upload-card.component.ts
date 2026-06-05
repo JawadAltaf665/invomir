@@ -3,6 +3,7 @@ import {
   Component,
   OnDestroy,
   computed,
+  inject,
   input,
   output,
   signal,
@@ -12,6 +13,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { LucideImage, LucideUpload } from '@lucide/angular';
 
 import { UserProfileDto } from '../../models/settings.models';
+import { TranslationService } from '../../../../core/i18n/translation.service';
 import {
   acceptedLogoExtensions,
   acceptedLogoTypes,
@@ -20,17 +22,20 @@ import {
   resolveLogoUrl,
 } from '../../utils/settings-formatters';
 
+import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
+
 @Component({
   selector: 'app-logo-upload-card',
   standalone: true,
   host: {
     class: 'block h-full',
   },
-  imports: [MatButtonModule, MatProgressBarModule, LucideImage, LucideUpload],
+  imports: [TranslatePipe, MatButtonModule, MatProgressBarModule, LucideImage, LucideUpload],
   templateUrl: './logo-upload-card.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LogoUploadCardComponent implements OnDestroy {
+  private readonly translation = inject(TranslationService);
   readonly profile = input<UserProfileDto | null>(null);
   readonly canManage = input(false);
   readonly isUploading = input(false);
@@ -116,11 +121,11 @@ export class LogoUploadCardComponent implements OnDestroy {
     const errors: string[] = [];
 
     if (!isAcceptedLogoFile(file)) {
-      errors.push('Logo must be a PNG, JPG, or SVG file.');
+      errors.push(this.translation.translate('settings.logoTypeError'));
     }
 
     if (file.size > maxLogoBytes) {
-      errors.push('Logo file must not exceed 2MB.');
+      errors.push(this.translation.translate('settings.logoSizeError'));
     }
 
     return errors;

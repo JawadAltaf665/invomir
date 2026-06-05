@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, effect, inject, input, output } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  output,
+} from '@angular/core';
 import {
   AbstractControl,
   FormBuilder,
@@ -20,7 +28,9 @@ import {
   InvoiceStatus,
   invoiceStatuses,
 } from '../../models/invoice.models';
-import { invoiceStatusLabel } from '../../utils/invoice-formatters';
+
+import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
+import { TranslationService } from '../../../../core/i18n/translation.service';
 
 @Component({
   selector: 'app-invoice-filters',
@@ -29,6 +39,7 @@ import { invoiceStatusLabel } from '../../utils/invoice-formatters';
     class: 'block',
   },
   imports: [
+    TranslatePipe,
     ReactiveFormsModule,
     MatButtonModule,
     MatDatepickerModule,
@@ -44,6 +55,7 @@ import { invoiceStatusLabel } from '../../utils/invoice-formatters';
 })
 export class InvoiceFiltersComponent {
   private readonly fb = inject(FormBuilder);
+  private readonly translation = inject(TranslationService);
 
   readonly filters = input.required<InvoiceListFilters>();
   readonly clients = input<readonly InvoiceClientListItemDto[]>([]);
@@ -53,10 +65,12 @@ export class InvoiceFiltersComponent {
   readonly filtersChange = output<Partial<InvoiceListFilters>>();
   readonly resetRequested = output<void>();
 
-  protected readonly statusOptions = invoiceStatuses.map((status) => ({
-    value: status,
-    label: invoiceStatusLabel(status),
-  }));
+  protected readonly statusOptions = computed(() =>
+    invoiceStatuses.map((status) => ({
+      value: status,
+      label: this.translation.translate(`invoiceStatus.${status}`),
+    })),
+  );
 
   protected readonly form = this.fb.nonNullable.group(
     {

@@ -45,50 +45,58 @@ export function discountTypeLabel(type: InvoiceDiscountType): string {
   return type === 'percent' ? 'Percent' : 'Fixed amount';
 }
 
-export function formatInvoiceCurrency(value: number, currency: string): string {
+export function formatInvoiceCurrency(value: number, currency: string, locale = 'en'): string {
   const safeValue = Number.isFinite(value) ? value : 0;
 
   try {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat(locale, {
       style: 'currency',
       currency,
       maximumFractionDigits: 2,
     }).format(safeValue);
   } catch {
-    return `${currency} ${new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 }).format(safeValue)}`;
+    return `${currency} ${new Intl.NumberFormat(locale, { maximumFractionDigits: 2 }).format(safeValue)}`;
   }
 }
 
-export function formatInvoiceDate(value: string | null | undefined): string {
+export function formatInvoiceDate(
+  value: string | null | undefined,
+  locale = 'en',
+  notSetLabel = 'Not set',
+): string {
   if (!value) {
-    return 'Not set';
+    return notSetLabel;
   }
 
   const date = new Date(value.length === 10 ? `${value}T00:00:00` : value);
 
   if (Number.isNaN(date.getTime())) {
-    return 'Not set';
+    return notSetLabel;
   }
 
-  return new Intl.DateTimeFormat('en-US', {
+  return new Intl.DateTimeFormat(locale, {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
   }).format(date);
 }
 
-export function formatInvoiceDateTime(value: string | null | undefined): string {
+export function formatInvoiceDateTime(
+  value: string | null | undefined,
+  locale = 'en',
+  notSetLabel = 'Not set',
+): string {
   if (!value) {
-    return 'Not set';
+    return notSetLabel;
   }
 
   const date = new Date(value);
 
   if (Number.isNaN(date.getTime())) {
-    return 'Not set';
+    return notSetLabel;
   }
 
-  return new Intl.DateTimeFormat('en-US', {
+  return new Intl.DateTimeFormat(locale, {
     month: 'short',
     day: 'numeric',
     year: 'numeric',

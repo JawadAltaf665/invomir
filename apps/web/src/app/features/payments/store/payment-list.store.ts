@@ -2,6 +2,7 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { finalize, map } from 'rxjs';
 
 import { ApiResponseError, extractApiErrors } from '../../../core/errors/api-response-error';
+import { TranslationService } from '../../../core/i18n/translation.service';
 import { ApiResponse } from '../../../core/models/api-response.model';
 import {
   PaymentHistoryItemDto,
@@ -14,9 +15,7 @@ import {
   formatPaymentCurrency,
   formatPaymentDateTime,
   formatPaymentGatewayReference,
-  paymentMethodLabel,
   paymentStatusClass,
-  paymentStatusLabel,
 } from '../utils/payment-formatters';
 
 const defaultFilters: PaymentListFilters = {
@@ -29,6 +28,7 @@ const defaultFilters: PaymentListFilters = {
 @Injectable({ providedIn: 'root' })
 export class PaymentListStore {
   private readonly paymentApi = inject(PaymentApiService);
+  private readonly translation = inject(TranslationService);
   private readonly resultSignal = signal<PaymentPageResult | null>(null);
   private readonly filtersSignal = signal<PaymentListFilters>(defaultFilters);
   private readonly isLoadingSignal = signal(false);
@@ -135,17 +135,26 @@ export class PaymentListStore {
       invoiceNumber: payment.invoiceNumber,
       clientId: payment.clientId,
       clientName: payment.clientName,
-      amountDisplay: formatPaymentCurrency(payment.amount, payment.currency),
-      methodLabel: paymentMethodLabel(payment.method),
+      amountDisplay: formatPaymentCurrency(
+        payment.amount,
+        payment.currency,
+        this.translation.language(),
+      ),
+      methodLabel: this.translation.translate(`paymentMethods.${payment.method.toLowerCase()}`),
       status: payment.status,
-      statusLabel: paymentStatusLabel(payment.status),
+      statusLabel: this.translation.translate(`paymentStatus.${payment.status.toLowerCase()}`),
       statusClass: paymentStatusClass(payment.status),
-      paidAtDisplay: formatPaymentDateTime(payment.paidAt),
+      paidAtDisplay: formatPaymentDateTime(
+        payment.paidAt,
+        this.translation.language(),
+        this.translation.translate('common.notSet'),
+      ),
       gatewayReferenceDisplay: formatPaymentGatewayReference(
         payment.stripePaymentIntentId,
         payment.stripeChargeId,
+        this.translation.translate('payments.manualEntry'),
       ),
-      noteDisplay: payment.note?.trim() || 'No note',
+      noteDisplay: payment.note?.trim() || this.translation.translate('payments.noNote'),
     };
   }
 }

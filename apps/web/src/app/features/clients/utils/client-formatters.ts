@@ -1,37 +1,33 @@
-const metricFormatter = new Intl.NumberFormat('en-US', {
-  maximumFractionDigits: 2,
-});
-
-const dateFormatter = new Intl.DateTimeFormat('en-US', {
-  month: 'short',
-  day: 'numeric',
-  year: 'numeric',
-});
-
-export function formatClientInvoiceCount(value: number | null | undefined): string {
-  const safeValue = Number(value ?? 0);
-  const count = Number.isFinite(safeValue) ? safeValue : 0;
-  return `${metricFormatter.format(count)} ${count === 1 ? 'invoice' : 'invoices'}`;
-}
-
-export function formatClientDate(value: string | null | undefined): string {
+export function formatClientDate(
+  value: string | null | undefined,
+  locale = 'en',
+  notSetLabel = 'Not set',
+): string {
   if (!value) {
-    return 'Not set';
+    return notSetLabel;
   }
 
   const date = new Date(value);
 
   if (Number.isNaN(date.getTime())) {
-    return 'Not set';
+    return notSetLabel;
   }
 
-  return dateFormatter.format(date);
+  return new Intl.DateTimeFormat(locale, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  }).format(date);
 }
 
-export function formatClientCurrency(value: number | null | undefined, currency: string): string {
+export function formatClientCurrency(
+  value: number | null | undefined,
+  currency: string,
+  locale = 'en',
+): string {
   const safeValue = Number(value ?? 0);
 
-  return new Intl.NumberFormat('en-US', {
+  return new Intl.NumberFormat(locale, {
     style: 'currency',
     currency,
     currencyDisplay: 'code',
@@ -40,10 +36,7 @@ export function formatClientCurrency(value: number | null | undefined, currency:
 }
 
 export function clientInitials(name: string | null | undefined): string {
-  const parts = (name ?? '')
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean);
+  const parts = (name ?? '').trim().split(/\s+/).filter(Boolean);
 
   if (parts.length === 0) {
     return 'CL';

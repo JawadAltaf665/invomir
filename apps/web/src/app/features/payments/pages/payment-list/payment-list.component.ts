@@ -23,10 +23,13 @@ import { PaymentListFilters } from '../../models/payment.models';
 import { PaymentApiService } from '../../services/payment-api.service';
 import { PaymentListStore } from '../../store/payment-list.store';
 
+import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
+
 @Component({
   selector: 'app-payment-list',
   standalone: true,
   imports: [
+    TranslatePipe,
     MatButtonModule,
     PaymentFiltersComponent,
     PaymentTableComponent,

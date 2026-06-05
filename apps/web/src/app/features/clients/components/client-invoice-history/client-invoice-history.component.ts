@@ -6,10 +6,12 @@ import { LucideFileText } from '@lucide/angular';
 import { PaginationComponent } from '../../../../shared/components/pagination/pagination.component';
 import { ClientInvoiceSummaryView } from '../../models/client.models';
 
+import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
+
 @Component({
   selector: 'app-client-invoice-history',
   standalone: true,
-  imports: [NgClass, RouterLink, PaginationComponent, LucideFileText],
+  imports: [TranslatePipe, NgClass, RouterLink, PaginationComponent, LucideFileText],
   templateUrl: './client-invoice-history.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

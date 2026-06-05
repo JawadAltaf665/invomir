@@ -2,9 +2,11 @@
   <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
     <div>
       <p class="text-xs font-medium uppercase tracking-normal text-neutral-500">
-        Workspace dashboard
+        {{ 'dashboard.eyebrow' | translate }}
       </p>
-      <h1 class="mt-2 text-2xl font-semibold tracking-tight text-neutral-900">Dashboard</h1>
+      <h1 class="mt-2 text-2xl font-semibold tracking-tight text-neutral-900">
+        {{ 'dashboard.title' | translate }}
+      </h1>
       <p class="mt-2 text-sm text-neutral-500">{{ greeting() }}</p>
     </div>
 
@@ -15,7 +17,7 @@
         [disabled]="dashboardStore.isLoading()"
         (click)="refreshDashboard()"
       >
-        Refresh
+        {{ 'common.refresh' | translate }}
       </button>
       <p class="text-xs text-neutral-500">{{ lastUpdatedLabel() }}</p>
     </div>
@@ -25,7 +27,7 @@
     <div class="mt-6 rounded-2xl border border-red-200 bg-red-50 p-5 shadow-sm">
       <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div>
-          <p class="text-sm font-medium text-red-800">Dashboard could not be loaded</p>
+          <p class="text-sm font-medium text-red-800">{{ 'dashboard.loadError' | translate }}</p>
           <div class="mt-2 space-y-1">
             @for (error of dashboardStore.errorMessages(); track error) {
               <p class="text-xs text-red-600">{{ error }}</p>
@@ -39,7 +41,7 @@
           [disabled]="dashboardStore.isLoading()"
           (click)="refreshDashboard()"
         >
-          Retry
+          {{ 'common.retry' | translate }}
         </button>
       </div>
     </div>
