@@ -22,6 +22,7 @@ public sealed class AppDbContext(
     public DbSet<Payment> Payments => Set<Payment>();
     public DbSet<Subscription> Subscriptions => Set<Subscription>();
     public DbSet<TeamInvitation> TeamInvitations => Set<TeamInvitation>();
+    public DbSet<Notification> Notifications => Set<Notification>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
