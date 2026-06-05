@@ -1,3 +1,5 @@
+using InvoMir.Application.Features.Notifications;
+
 namespace InvoMir.Application.Features.Invoices.Commands.MarkInvoicePaid;
 
 public sealed class MarkInvoicePaidCommandHandler(
@@ -7,7 +9,8 @@ public sealed class MarkInvoicePaidCommandHandler(
     IClientContext clientContext,
     IInvoiceReminderJobService invoiceReminderJobService,
     IEmailService emailService,
-    IAuditService auditService)
+    IAuditService auditService,
+    INotificationService notificationService)
     : IRequestHandler<MarkInvoicePaidCommand, InvoicePaymentDto>
 {
     private const string DefaultBusinessName = "InvoMir";
@@ -62,6 +65,27 @@ public sealed class MarkInvoicePaidCommandHandler(
             ToAuditSnapshot(invoice, payment, cancelledReminderJobCount),
             clientContext.IpAddress,
             clientContext.DeviceInfo,
+            cancellationToken);
+
+        await NotificationEventPublisher.CreateForRolesAsync(
+            notificationService,
+            invoice.TenantId,
+            NotificationEventPublisher.BillingOperatorRoles,
+            "Payment received",
+            $"{invoice.InvoiceNumber} was marked paid.",
+            NotificationConstants.Types.Payment,
+            NotificationConstants.Priorities.High,
+            $"/app/invoices/{invoice.Id}",
+            new
+            {
+                invoice.Id,
+                invoice.InvoiceNumber,
+                PaymentId = payment.Id,
+                payment.Amount,
+                payment.Currency,
+                payment.Method,
+                payment.PaidAt
+            },
             cancellationToken);
 
         return new InvoicePaymentDto(

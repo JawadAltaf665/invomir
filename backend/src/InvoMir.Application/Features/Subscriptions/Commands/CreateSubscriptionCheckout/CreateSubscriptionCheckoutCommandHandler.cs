@@ -1,3 +1,4 @@
+using InvoMir.Application.Features.Notifications;
 using InvoMir.Application.Features.Subscriptions.DTOs;
 
 namespace InvoMir.Application.Features.Subscriptions.Commands.CreateSubscriptionCheckout;
@@ -8,7 +9,8 @@ public sealed class CreateSubscriptionCheckoutCommandHandler(
     ITenantContext tenantContext,
     IClientContext clientContext,
     IStripeService stripeService,
-    IAuditService auditService)
+    IAuditService auditService,
+    INotificationService notificationService)
     : IRequestHandler<CreateSubscriptionCheckoutCommand, SubscriptionCheckoutDto>
 {
     public async Task<SubscriptionCheckoutDto> Handle(
@@ -72,6 +74,17 @@ public sealed class CreateSubscriptionCheckoutCommandHandler(
             ipAddress: clientContext.IpAddress,
             userAgent: clientContext.DeviceInfo,
             cancellationToken: cancellationToken);
+
+        await notificationService.CreateForUserAsync(
+            profile.TenantId,
+            profile.UserId,
+            "Checkout started",
+            $"{plan} {interval} checkout is ready.",
+            NotificationConstants.Types.Subscription,
+            NotificationConstants.Priorities.Low,
+            "/app/subscriptions",
+            new { plan, interval, checkoutSession.Id },
+            cancellationToken);
 
         return new SubscriptionCheckoutDto(checkoutSession.Url, checkoutSession.Id);
     }

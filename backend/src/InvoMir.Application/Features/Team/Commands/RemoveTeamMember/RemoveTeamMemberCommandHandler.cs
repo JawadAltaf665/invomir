@@ -1,3 +1,5 @@
+using InvoMir.Application.Features.Notifications;
+
 namespace InvoMir.Application.Features.Team.Commands.RemoveTeamMember;
 
 public sealed class RemoveTeamMemberCommandHandler(
@@ -5,7 +7,8 @@ public sealed class RemoveTeamMemberCommandHandler(
     ICurrentUserContext currentUserContext,
     ITenantContext tenantContext,
     IClientContext clientContext,
-    IAuditService auditService)
+    IAuditService auditService,
+    INotificationService notificationService)
     : IRequestHandler<RemoveTeamMemberCommand, bool>
 {
     public async Task<bool> Handle(
@@ -51,6 +54,22 @@ public sealed class RemoveTeamMemberCommandHandler(
             ipAddress: clientContext.IpAddress,
             userAgent: clientContext.DeviceInfo,
             cancellationToken: cancellationToken);
+
+        await notificationService.CreateForRoleAsync(
+            tenantContext.TenantId,
+            AuthConstants.Roles.Owner,
+            "Team member removed",
+            $"{member.Email} was removed from the workspace.",
+            NotificationConstants.Types.UserManagement,
+            NotificationConstants.Priorities.High,
+            "/app/team",
+            new
+            {
+                member.Id,
+                member.Email,
+                member.Role
+            },
+            cancellationToken);
 
         return true;
     }

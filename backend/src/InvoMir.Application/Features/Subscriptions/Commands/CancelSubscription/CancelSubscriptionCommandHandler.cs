@@ -1,3 +1,4 @@
+using InvoMir.Application.Features.Notifications;
 using InvoMir.Application.Features.Subscriptions.DTOs;
 
 namespace InvoMir.Application.Features.Subscriptions.Commands.CancelSubscription;
@@ -9,7 +10,8 @@ public sealed class CancelSubscriptionCommandHandler(
     IClientContext clientContext,
     IStripeService stripeService,
     IEmailService emailService,
-    IAuditService auditService)
+    IAuditService auditService,
+    INotificationService notificationService)
     : IRequestHandler<CancelSubscriptionCommand, SubscriptionCancellationDto>
 {
     public async Task<SubscriptionCancellationDto> Handle(
@@ -66,6 +68,24 @@ public sealed class CancelSubscriptionCommandHandler(
             ToAuditSnapshot(subscription),
             clientContext.IpAddress,
             clientContext.DeviceInfo,
+            cancellationToken);
+
+        await notificationService.CreateForUserAsync(
+            subscription.TenantId,
+            userId,
+            "Subscription cancellation scheduled",
+            $"Your {subscription.Plan} plan remains active until {subscription.CurrentPeriodEnd:yyyy-MM-dd}.",
+            NotificationConstants.Types.Subscription,
+            NotificationConstants.Priorities.High,
+            "/app/subscriptions",
+            new
+            {
+                subscription.Id,
+                subscription.Plan,
+                subscription.Status,
+                subscription.CurrentPeriodEnd,
+                subscription.CancelAtPeriodEnd
+            },
             cancellationToken);
 
         return new SubscriptionCancellationDto(

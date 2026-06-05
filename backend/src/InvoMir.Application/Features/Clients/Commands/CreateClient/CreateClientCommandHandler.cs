@@ -1,3 +1,5 @@
+using InvoMir.Application.Features.Notifications;
+
 namespace InvoMir.Application.Features.Clients.Commands.CreateClient;
 
 public sealed class CreateClientCommandHandler(
@@ -5,7 +7,8 @@ public sealed class CreateClientCommandHandler(
     ICurrentUserContext currentUserContext,
     ITenantContext tenantContext,
     IClientContext clientContext,
-    IAuditService auditService)
+    IAuditService auditService,
+    INotificationService notificationService)
     : IRequestHandler<CreateClientCommand, ClientDto>
 {
     private const int FreePlanClientLimit = 2;
@@ -55,6 +58,24 @@ public sealed class CreateClientCommandHandler(
             ipAddress: clientContext.IpAddress,
             userAgent: clientContext.DeviceInfo,
             cancellationToken: cancellationToken);
+
+        await NotificationEventPublisher.CreateForRolesAsync(
+            notificationService,
+            tenantContext.TenantId,
+            NotificationEventPublisher.WorkspaceOperatorRoles,
+            "Client created",
+            $"{client.Name} was added to the workspace.",
+            NotificationConstants.Types.Client,
+            NotificationConstants.Priorities.Low,
+            $"/app/clients/{client.Id}",
+            new
+            {
+                client.Id,
+                client.Name,
+                client.Email,
+                client.Company
+            },
+            cancellationToken);
 
         return ToDto(client);
     }

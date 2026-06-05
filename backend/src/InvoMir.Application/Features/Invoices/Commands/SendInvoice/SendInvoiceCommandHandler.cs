@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using InvoMir.Application.Features.Notifications;
 
 namespace InvoMir.Application.Features.Invoices.Commands.SendInvoice;
 
@@ -11,7 +12,8 @@ public sealed class SendInvoiceCommandHandler(
     IEmailService emailService,
     IInvoiceReminderJobService invoiceReminderJobService,
     IInvoiceLinkBuilder invoiceLinkBuilder,
-    IAuditService auditService)
+    IAuditService auditService,
+    INotificationService notificationService)
     : IRequestHandler<SendInvoiceCommand, InvoiceSendResultDto>
 {
     private const string DefaultBusinessName = "InvoMir";
@@ -60,6 +62,25 @@ public sealed class SendInvoiceCommandHandler(
             ToAuditSnapshot(invoice, scheduledReminders.Count),
             clientContext.IpAddress,
             clientContext.DeviceInfo,
+            cancellationToken);
+
+        await NotificationEventPublisher.CreateForRolesAsync(
+            notificationService,
+            invoice.TenantId,
+            NotificationEventPublisher.BillingOperatorRoles,
+            "Invoice sent",
+            $"{invoice.InvoiceNumber} was sent to {snapshot.Invoice.Client.Name}.",
+            NotificationConstants.Types.Invoice,
+            NotificationConstants.Priorities.Medium,
+            $"/app/invoices/{invoice.Id}",
+            new
+            {
+                invoice.Id,
+                invoice.InvoiceNumber,
+                invoice.Status,
+                invoice.SentAt,
+                ClientName = snapshot.Invoice.Client.Name
+            },
             cancellationToken);
 
         return new InvoiceSendResultDto(

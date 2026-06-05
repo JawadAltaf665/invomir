@@ -1,3 +1,4 @@
+using InvoMir.Application.Features.Notifications;
 using InvoMir.Application.Features.Team.DTOs;
 
 namespace InvoMir.Application.Features.Team.Commands.InviteTeamMember;
@@ -8,7 +9,8 @@ public sealed class InviteTeamMemberCommandHandler(
     ITenantContext tenantContext,
     IClientContext clientContext,
     IEmailService emailService,
-    IAuditService auditService)
+    IAuditService auditService,
+    INotificationService notificationService)
     : IRequestHandler<InviteTeamMemberCommand, TeamInvitationDto>
 {
     public async Task<TeamInvitationDto> Handle(
@@ -66,6 +68,24 @@ public sealed class InviteTeamMemberCommandHandler(
             invitation.Role,
             rawToken,
             invitation.ExpiresAt,
+            cancellationToken);
+
+        await notificationService.CreateForRoleAsync(
+            tenantContext.TenantId,
+            AuthConstants.Roles.Owner,
+            "Team invitation sent",
+            $"{invitation.Email} was invited as {invitation.Role}.",
+            NotificationConstants.Types.UserManagement,
+            NotificationConstants.Priorities.Medium,
+            "/app/team",
+            new
+            {
+                invitation.Id,
+                invitation.Email,
+                invitation.Role,
+                invitation.Status,
+                invitation.ExpiresAt
+            },
             cancellationToken);
 
         return TeamMappers.ToInvitationDto(invitation, $"{owner.FirstName} {owner.LastName}".Trim());
