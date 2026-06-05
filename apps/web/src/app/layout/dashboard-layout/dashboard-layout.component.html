@@ -245,14 +245,7 @@
             ></svg>
           </button>
 
-          <button
-            type="button"
-            class="grid size-9 place-items-center rounded-xl text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-900"
-            [attr.aria-label]="'layout.notifications' | translate"
-            [matTooltip]="'layout.notifications' | translate"
-          >
-            <svg lucideBell class="size-4" aria-hidden="true"></svg>
-          </button>
+          <app-notification-bell />
 
           <a
             routerLink="/app/settings"

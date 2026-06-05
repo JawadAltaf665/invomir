@@ -30,6 +30,9 @@ export const permissions = {
   auditLog: {
     view: 'audit_log.view'
   },
+  notification: {
+    view: 'notification.view'
+  },
   subscription: {
     view: 'subscription.view',
     manage: 'subscription.manage'
