@@ -122,3 +122,21 @@ body {
 .mat-mdc-progress-spinner {
   --mdc-circular-progress-active-indicator-color: currentColor;
 }
+
+html[dir='rtl'] .text-left {
+  text-align: right;
+}
+
+html[dir='rtl'] .text-right {
+  text-align: left;
+}
+
+html[dir='rtl'] .ml-auto {
+  margin-right: auto;
+  margin-left: 0;
+}
+
+html[dir='rtl'] .mr-auto {
+  margin-right: 0;
+  margin-left: auto;
+}
