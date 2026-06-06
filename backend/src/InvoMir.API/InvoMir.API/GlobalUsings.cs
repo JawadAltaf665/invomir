@@ -22,6 +22,7 @@ global using InvoMir.Application.Features.Clients.DTOs;
 global using InvoMir.Application.Features.Clients.Queries.GetClient;
 global using InvoMir.Application.Features.Clients.Queries.ListClients;
 global using InvoMir.Application.Features.Dashboard.DTOs;
+global using InvoMir.Application.Features.Dashboard.Queries.GetDashboardActionItems;
 global using InvoMir.Application.Features.Dashboard.Queries.GetDashboard;
 global using InvoMir.Application.Features.Invoices.Commands.CancelInvoice;
 global using InvoMir.Application.Features.Invoices.Commands.CreateInvoice;
