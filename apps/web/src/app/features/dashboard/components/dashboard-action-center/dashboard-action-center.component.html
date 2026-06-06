@@ -1,0 +1,43 @@
+@if (items().length > 0) {
+  <section class="space-y-3" aria-label="Workshop action center">
+    @for (item of items(); track item.id) {
+      <article [class]="itemClass(item.type)">
+        <div class="flex min-w-0 gap-4">
+          <div [class]="iconClass(item.type)">
+            @switch (item.type.toLowerCase()) {
+              @case ('critical') {
+                <svg lucideShieldAlert class="size-5" aria-hidden="true"></svg>
+              }
+              @case ('warning') {
+                <svg lucideAlertTriangle class="size-5" aria-hidden="true"></svg>
+              }
+              @case ('success') {
+                <svg lucideCheckCircle2 class="size-5" aria-hidden="true"></svg>
+              }
+              @default {
+                <svg lucideInfo class="size-5" aria-hidden="true"></svg>
+              }
+            }
+          </div>
+
+          <div class="min-w-0">
+            <h2 class="text-base font-semibold text-neutral-900">{{ item.title }}</h2>
+            <p class="mt-1 max-w-3xl text-sm text-neutral-600">{{ item.message }}</p>
+          </div>
+        </div>
+
+        @if (item.actionLabel && item.actionUrl) {
+          <button
+            mat-stroked-button
+            type="button"
+            class="shrink-0"
+            (click)="openAction(item)"
+          >
+            {{ item.actionLabel }}
+            <svg lucideArrowRight class="size-4" aria-hidden="true"></svg>
+          </button>
+        }
+      </article>
+    }
+  </section>
+}

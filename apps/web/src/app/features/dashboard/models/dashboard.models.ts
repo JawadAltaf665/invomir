@@ -8,6 +8,7 @@ export type DashboardInvoiceStatus =
   | string;
 
 export type DashboardTone = 'neutral' | 'primary' | 'success' | 'warning' | 'danger';
+export type DashboardActionItemType = 'info' | 'success' | 'warning' | 'critical' | string;
 
 export interface DashboardRevenueDto {
   thisMonth: number;
@@ -56,6 +57,21 @@ export interface DashboardDto {
   invoiceCounts: DashboardInvoiceCountsDto;
   recentInvoices: readonly DashboardRecentInvoiceDto[];
   topClients: readonly DashboardTopClientDto[];
+}
+
+export interface DashboardActionItemsDto {
+  items: readonly DashboardActionItemDto[];
+}
+
+export interface DashboardActionItemDto {
+  id: string;
+  type: DashboardActionItemType;
+  title: string;
+  message: string;
+  actionLabel: string | null;
+  actionUrl: string | null;
+  dismissible: boolean;
+  priority: number;
 }
 
 export interface DashboardStatCard {
