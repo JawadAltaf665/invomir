@@ -4,12 +4,14 @@ public static class NotificationEventPublisher
 {
     public static readonly string[] WorkspaceOperatorRoles =
     [
+        AuthConstants.Roles.SystemAdmin,
         AuthConstants.Roles.Owner,
         AuthConstants.Roles.Admin
     ];
 
     public static readonly string[] BillingOperatorRoles =
     [
+        AuthConstants.Roles.SystemAdmin,
         AuthConstants.Roles.Owner,
         AuthConstants.Roles.Admin,
         AuthConstants.Roles.Accountant

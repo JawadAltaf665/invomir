@@ -59,6 +59,10 @@ export class NotificationBellComponent implements OnInit, OnDestroy {
     }
   }
 
+  protected refreshLatest(): void {
+    this.store.loadLatest();
+  }
+
   protected markRead(event: MouseEvent, notificationId: string): void {
     event.stopPropagation();
     this.store.markRead(notificationId);

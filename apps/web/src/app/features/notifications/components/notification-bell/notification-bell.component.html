@@ -4,6 +4,7 @@
   [attr.aria-label]="'notifications.openDropdown' | translate"
   [matTooltip]="'layout.notifications' | translate"
   [matMenuTriggerFor]="notificationMenu"
+  (menuOpened)="refreshLatest()"
 >
   <svg lucideBell class="size-4" aria-hidden="true"></svg>
   @if (store.unreadCount() > 0) {
@@ -16,7 +17,7 @@
 </button>
 
 <mat-menu #notificationMenu="matMenu" xPosition="before" yPosition="below" class="notification-menu">
-  <div class="w-96 max-w-[calc(100vw-2rem)] overflow-hidden">
+  <div class="notification-menu-card overflow-hidden bg-white">
     <div class="flex items-start justify-between gap-4 border-b border-neutral-100 px-4 py-3">
       <div>
         <p class="text-sm font-semibold text-neutral-900">
@@ -68,8 +69,8 @@
         </div>
       </div>
     } @else {
-      <div class="max-h-96 overflow-y-auto py-1">
-        @for (notification of store.latestRows(); track notification.id) {
+      <div class="py-1">
+        @for (notification of store.latestRows().slice(0, 5); track notification.id) {
           <button
             type="button"
             class="flex w-full gap-3 px-4 py-3 text-left transition hover:bg-neutral-50"

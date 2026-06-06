@@ -12,7 +12,7 @@ import {
 import { NotificationApiService } from '../services/notification-api.service';
 import { toNotificationView } from '../utils/notification-formatters';
 
-const pollingIntervalMs = 45_000;
+const pollingIntervalMs = 15_000;
 
 const defaultFilters: NotificationListQuery = {
   type: 'all',
