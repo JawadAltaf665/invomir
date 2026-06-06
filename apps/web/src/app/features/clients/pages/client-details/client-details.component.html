@@ -8,9 +8,10 @@
         <svg lucideArrowLeft class="mr-2 size-4" aria-hidden="true"></svg
         >{{ 'clients.title' | translate }}</a
       >
+      <p class="mt-4 text-xs font-medium uppercase tracking-normal text-neutral-500">Clients</p>
 
       @if (client(); as client) {
-        <div class="mt-4 flex flex-wrap items-center gap-3">
+        <div class="mt-2 flex flex-wrap items-center gap-3">
           <h1 class="text-2xl font-semibold tracking-tight text-neutral-900">{{ client.name }}</h1>
           <span
             class="inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium"
@@ -24,10 +25,11 @@
           </span>
         </div>
         <p class="mt-2 break-words text-sm text-neutral-500 [overflow-wrap:anywhere]">
-          {{ client.email }}
+          {{ formatField(client.company) }} &middot; {{ invoicePageInfo().totalCount }}
+          {{ invoicePageInfo().totalCount === 1 ? 'invoice' : 'invoices' }}
         </p>
       } @else {
-        <h1 class="mt-4 text-2xl font-semibold tracking-tight text-neutral-900">
+        <h1 class="mt-2 text-2xl font-semibold tracking-tight text-neutral-900">
           {{ 'invoices.client' | translate }}
         </h1>
       }
