@@ -20,6 +20,7 @@ public sealed class StripeService(
         if (string.IsNullOrWhiteSpace(_settings.SecretKey))
             throw new BadRequestException("Stripe is not configured.");
 
+        var connectedAccountId = NormalizeConnectedAccountId(request.ConnectedStripeAccountId);
         var amountInMinorUnits = ConvertToMinorUnits(request.Amount);
         var successUrl = _settings.CheckoutSuccessUrl;
         var cancelUrl = _settings.CheckoutCancelUrl.Replace(
@@ -29,7 +30,8 @@ public sealed class StripeService(
 
         using var httpRequest = new HttpRequestMessage(HttpMethod.Post, CheckoutSessionsUrl)
         {
-            Content = new FormUrlEncodedContent(BuildCheckoutFields(request, amountInMinorUnits, successUrl, cancelUrl))
+            Content = new FormUrlEncodedContent(
+                BuildCheckoutFields(request, connectedAccountId, amountInMinorUnits, successUrl, cancelUrl))
         };
 
         httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _settings.SecretKey);
@@ -264,6 +266,7 @@ public sealed class StripeService(
 
     private static Dictionary<string, string> BuildCheckoutFields(
         StripeCheckoutSessionRequestDto request,
+        string connectedAccountId,
         long amountInMinorUnits,
         string successUrl,
         string cancelUrl)
@@ -279,8 +282,12 @@ public sealed class StripeService(
             ["payment_intent_data[metadata][invoice_id]"] = request.InvoiceId.ToString(),
             ["payment_intent_data[metadata][tenant_id]"] = request.TenantId.ToString(),
             ["payment_intent_data[metadata][payment_link_token]"] = request.PaymentLinkToken,
+            ["payment_intent_data[metadata][connected_account_id]"] = connectedAccountId,
+            ["payment_intent_data[transfer_data][destination]"] = connectedAccountId,
+            ["payment_intent_data[on_behalf_of]"] = connectedAccountId,
             ["metadata[invoice_id]"] = request.InvoiceId.ToString(),
             ["metadata[tenant_id]"] = request.TenantId.ToString(),
+            ["metadata[connected_account_id]"] = connectedAccountId,
             ["success_url"] = successUrl,
             ["cancel_url"] = cancelUrl
         };
@@ -341,6 +348,18 @@ public sealed class StripeService(
     private static long ConvertToMinorUnits(decimal amount)
     {
         return decimal.ToInt64(decimal.Round(amount * 100, 0, MidpointRounding.AwayFromZero));
+    }
+
+    private static string NormalizeConnectedAccountId(string connectedAccountId)
+    {
+        if (string.IsNullOrWhiteSpace(connectedAccountId))
+            throw new BadRequestException("Stripe Connect account is required for invoice checkout.");
+
+        var normalizedAccountId = connectedAccountId.Trim();
+        if (!normalizedAccountId.StartsWith("acct_", StringComparison.Ordinal))
+            throw new BadRequestException("Stripe Connect account is invalid.");
+
+        return normalizedAccountId;
     }
 
     private static long GetTimestamp(string signatureHeader)

@@ -6,4 +6,5 @@ public sealed record StripeCheckoutSessionRequestDto(
     string PaymentLinkToken,
     string InvoiceNumber,
     decimal Amount,
-    string Currency);
+    string Currency,
+    string ConnectedStripeAccountId);
