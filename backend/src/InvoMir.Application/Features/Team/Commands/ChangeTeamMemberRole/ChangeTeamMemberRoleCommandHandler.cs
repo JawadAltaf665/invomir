@@ -1,3 +1,4 @@
+using InvoMir.Application.Features.Notifications;
 using InvoMir.Application.Features.Team.DTOs;
 
 namespace InvoMir.Application.Features.Team.Commands.ChangeTeamMemberRole;
@@ -7,7 +8,8 @@ public sealed class ChangeTeamMemberRoleCommandHandler(
     ICurrentUserContext currentUserContext,
     ITenantContext tenantContext,
     IClientContext clientContext,
-    IAuditService auditService)
+    IAuditService auditService,
+    INotificationService notificationService)
     : IRequestHandler<ChangeTeamMemberRoleCommand, TeamMemberRoleUpdateDto>
 {
     public async Task<TeamMemberRoleUpdateDto> Handle(
@@ -57,6 +59,22 @@ public sealed class ChangeTeamMemberRoleCommandHandler(
             ToAuditSnapshot(member),
             clientContext.IpAddress,
             clientContext.DeviceInfo,
+            cancellationToken);
+
+        await notificationService.CreateForUserAsync(
+            tenantContext.TenantId,
+            member.Id,
+            "Role changed",
+            $"Your workspace role is now {member.Role}.",
+            NotificationConstants.Types.UserManagement,
+            NotificationConstants.Priorities.High,
+            "/app/team",
+            new
+            {
+                member.Id,
+                member.Email,
+                member.Role
+            },
             cancellationToken);
 
         return ToDto(member);

@@ -8,6 +8,7 @@ import { auditLogRoutes } from './features/audit-logs/audit-log.routes';
 import { clientRoutes } from './features/clients/client.routes';
 import { dashboardRoutes } from './features/dashboard/dashboard.routes';
 import { invoiceRoutes } from './features/invoices/invoice.routes';
+import { notificationRoutes } from './features/notifications/notification.routes';
 import { paymentRoutes } from './features/payments/payment.routes';
 import { reportRoutes } from './features/reports/report.routes';
 import { settingsRoutes } from './features/settings/settings.routes';
@@ -136,6 +137,14 @@ export const routes: Routes = [
           permissions: [permissions.report.view],
         },
         children: reportRoutes,
+      },
+      {
+        path: 'notifications',
+        canActivate: [permissionGuard],
+        data: {
+          permissions: [permissions.notification.view],
+        },
+        children: notificationRoutes,
       },
       {
         path: 'settings',

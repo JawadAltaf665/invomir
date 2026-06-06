@@ -1,3 +1,4 @@
+using InvoMir.Application.Features.Notifications;
 using InvoMir.Application.Features.Team.DTOs;
 
 namespace InvoMir.Application.Features.Team.Commands.AcceptTeamInvitation;
@@ -6,7 +7,8 @@ public sealed class AcceptTeamInvitationCommandHandler(
     IAppDbContext context,
     IPasswordHasher passwordHasher,
     IEmailService emailService,
-    IAuditService auditService)
+    IAuditService auditService,
+    INotificationService notificationService)
     : IRequestHandler<AcceptTeamInvitationCommand, TeamInvitationAcceptedDto>
 {
     public async Task<TeamInvitationAcceptedDto> Handle(
@@ -77,6 +79,40 @@ public sealed class AcceptTeamInvitationCommandHandler(
             cancellationToken: cancellationToken);
 
         await emailService.SendWelcomeAsync(member.Email, member.FirstName, cancellationToken);
+
+        await notificationService.CreateForUserAsync(
+            member.TenantId,
+            member.Id,
+            "Welcome to the workspace",
+            $"You joined {tenant.Name} as {member.Role}.",
+            NotificationConstants.Types.UserManagement,
+            NotificationConstants.Priorities.Medium,
+            "/app/dashboard",
+            new
+            {
+                member.Id,
+                member.Email,
+                member.Role,
+                TenantName = tenant.Name
+            },
+            cancellationToken);
+
+        await notificationService.CreateForRoleAsync(
+            invitation.TenantId,
+            AuthConstants.Roles.Owner,
+            "Invitation accepted",
+            $"{member.Email} joined the workspace.",
+            NotificationConstants.Types.UserManagement,
+            NotificationConstants.Priorities.Medium,
+            "/app/team",
+            new
+            {
+                member.Id,
+                member.Email,
+                member.Role,
+                InvitationId = invitation.Id
+            },
+            cancellationToken);
 
         return new TeamInvitationAcceptedDto(
             member.Id,

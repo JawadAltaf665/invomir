@@ -14,6 +14,7 @@ public sealed class DefaultRolePermissionProvider : IRolePermissionProvider
                 ..Permissions.Client.All,
                 ..Permissions.Payment.All,
                 ..Permissions.Report.All,
+                Permissions.Notification.View,
                 Permissions.Subscription.View,
                 Permissions.Team.Manage,
                 Permissions.Settings.Manage
@@ -31,6 +32,7 @@ public sealed class DefaultRolePermissionProvider : IRolePermissionProvider
                 Permissions.Payment.View,
                 Permissions.Payment.Manage,
                 ..Permissions.Report.All,
+                Permissions.Notification.View,
                 Permissions.Subscription.View
             ],
             [AuthConstants.Roles.Member] =
@@ -46,6 +48,7 @@ public sealed class DefaultRolePermissionProvider : IRolePermissionProvider
                 Permissions.Client.Update,
                 Permissions.Payment.View,
                 Permissions.Report.View,
+                Permissions.Notification.View,
                 Permissions.Subscription.View
             ],
             [AuthConstants.Roles.Viewer] =
@@ -55,6 +58,7 @@ public sealed class DefaultRolePermissionProvider : IRolePermissionProvider
                 Permissions.Client.View,
                 Permissions.Payment.View,
                 Permissions.Report.View,
+                Permissions.Notification.View,
                 Permissions.Subscription.View
             ]
         };

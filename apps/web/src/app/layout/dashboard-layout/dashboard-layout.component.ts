@@ -16,7 +16,6 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import {
-  LucideBell,
   LucideBadgeDollarSign,
   LucideChartNoAxesCombined,
   LucideChevronDown,
@@ -50,6 +49,7 @@ import { LanguagePreferenceService } from '../../core/i18n/language-preference.s
 import { TranslatePipe } from '../../core/i18n/translate.pipe';
 import { TranslationService } from '../../core/i18n/translation.service';
 import { SupportedLanguage } from '../../core/i18n/language.config';
+import { NotificationBellComponent } from '../../features/notifications/components/notification-bell/notification-bell.component';
 
 type SidebarIcon =
   | 'dashboard'
@@ -85,7 +85,6 @@ interface SidebarNavItem {
     RouterLinkActive,
     RouterOutlet,
     LucideBadgeDollarSign,
-    LucideBell,
     LucideChartNoAxesCombined,
     LucideChevronDown,
     LucideCreditCard,
@@ -101,6 +100,7 @@ interface SidebarNavItem {
     LucideSettings,
     LucideShieldCheck,
     LucideUsers,
+    NotificationBellComponent,
     TranslatePipe,
   ],
   templateUrl: './dashboard-layout.component.html',
