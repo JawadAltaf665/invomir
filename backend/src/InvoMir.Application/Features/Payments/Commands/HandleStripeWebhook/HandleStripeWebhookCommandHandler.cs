@@ -189,10 +189,10 @@ public sealed class HandleStripeWebhookCommandHandler(
             notificationService,
             invoice.TenantId,
             NotificationEventPublisher.BillingOperatorRoles,
-            "Payment failed",
-            $"{invoice.InvoiceNumber} card payment failed.",
+            "Payment Failed",
+            $"Client payment for Invoice {invoice.InvoiceNumber} failed.",
             NotificationConstants.Types.Payment,
-            NotificationConstants.Priorities.Critical,
+            NotificationConstants.Priorities.High,
             $"/app/invoices/{invoice.Id}",
             new
             {
