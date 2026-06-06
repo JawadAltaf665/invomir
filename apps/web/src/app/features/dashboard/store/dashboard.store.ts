@@ -6,6 +6,8 @@ import { TranslationService } from '../../../core/i18n/translation.service';
 import { ApiResponseError, extractApiErrors } from '../../../core/errors/api-response-error';
 import { ApiResponse } from '../../../core/models/api-response.model';
 import {
+  DashboardActionItemDto,
+  DashboardActionItemsDto,
   DashboardDto,
   DashboardInvoiceCountsDto,
   DashboardOverdueSummary,
@@ -26,15 +28,23 @@ export class DashboardStore {
   private readonly authSession = inject(AuthSessionService);
   private readonly translation = inject(TranslationService);
   private readonly dashboardSignal = signal<DashboardDto | null>(null);
+  private readonly actionItemsSignal = signal<readonly DashboardActionItemDto[]>([]);
   private readonly isLoadingSignal = signal(false);
+  private readonly isActionItemsLoadingSignal = signal(false);
   private readonly errorMessagesSignal = signal<readonly string[]>([]);
+  private readonly actionItemErrorMessagesSignal = signal<readonly string[]>([]);
   private readonly lastLoadedAtSignal = signal<Date | null>(null);
   private readonly cachedSessionKeySignal = signal<string | null>(null);
+  private readonly cachedActionItemsSessionKeySignal = signal<string | null>(null);
   private activeRequestSessionKey: string | null = null;
+  private activeActionItemsRequestSessionKey: string | null = null;
 
   readonly dashboard = this.dashboardSignal.asReadonly();
+  readonly actionItems = this.actionItemsSignal.asReadonly();
   readonly isLoading = this.isLoadingSignal.asReadonly();
+  readonly isActionItemsLoading = this.isActionItemsLoadingSignal.asReadonly();
   readonly errorMessages = this.errorMessagesSignal.asReadonly();
+  readonly actionItemErrorMessages = this.actionItemErrorMessagesSignal.asReadonly();
   readonly lastLoadedAt = this.lastLoadedAtSignal.asReadonly();
 
   readonly currency = computed(() => this.resolveCurrency(this.dashboard()));
@@ -293,6 +303,8 @@ export class DashboardStore {
       return;
     }
 
+    this.loadActionItems(force, sessionKey);
+
     if (this.dashboard() && !force) {
       return;
     }
@@ -338,11 +350,60 @@ export class DashboardStore {
 
   clear(): void {
     this.dashboardSignal.set(null);
+    this.actionItemsSignal.set([]);
     this.errorMessagesSignal.set([]);
+    this.actionItemErrorMessagesSignal.set([]);
     this.lastLoadedAtSignal.set(null);
     this.cachedSessionKeySignal.set(null);
+    this.cachedActionItemsSessionKeySignal.set(null);
     this.activeRequestSessionKey = null;
+    this.activeActionItemsRequestSessionKey = null;
     this.isLoadingSignal.set(false);
+    this.isActionItemsLoadingSignal.set(false);
+  }
+
+  private loadActionItems(force: boolean, sessionKey: string): void {
+    if (this.isActionItemsLoading() && this.activeActionItemsRequestSessionKey === sessionKey) {
+      return;
+    }
+
+    if (this.cachedActionItemsSessionKeySignal() === sessionKey && !force) {
+      return;
+    }
+
+    this.activeActionItemsRequestSessionKey = sessionKey;
+    this.isActionItemsLoadingSignal.set(true);
+    this.actionItemErrorMessagesSignal.set([]);
+
+    this.dashboardApi
+      .getActionItems()
+      .pipe(
+        map((response) => this.unwrap(response)),
+        finalize(() => {
+          if (this.activeActionItemsRequestSessionKey === sessionKey) {
+            this.activeActionItemsRequestSessionKey = null;
+            this.isActionItemsLoadingSignal.set(false);
+          }
+        }),
+      )
+      .subscribe({
+        next: (result: DashboardActionItemsDto) => {
+          if (this.currentSessionKey() !== sessionKey) {
+            return;
+          }
+
+          this.actionItemsSignal.set(result.items);
+          this.cachedActionItemsSessionKeySignal.set(sessionKey);
+        },
+        error: (error) => {
+          if (this.currentSessionKey() !== sessionKey) {
+            return;
+          }
+
+          this.actionItemsSignal.set([]);
+          this.actionItemErrorMessagesSignal.set(extractApiErrors(error));
+        },
+      });
   }
 
   private unwrap<T>(response: ApiResponse<T>): T {

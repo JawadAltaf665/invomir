@@ -1,13 +1,12 @@
 <section class="mx-auto max-w-7xl p-6 lg:p-8">
   <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
     <div>
-      <p class="text-xs font-medium uppercase tracking-normal text-neutral-500">
-        {{ 'dashboard.eyebrow' | translate }}
-      </p>
-      <h1 class="mt-2 text-2xl font-semibold tracking-tight text-neutral-900">
-        {{ 'dashboard.title' | translate }}
+      <span class="page-eyebrow text-xs font-medium uppercase tracking-normal text-neutral-500">
+        Overview
+      </span>
+      <h1 class="page-title mt-2 text-2xl font-semibold tracking-tight text-neutral-900">
+        {{ greeting() }}
       </h1>
-      <p class="mt-2 text-sm text-neutral-500">{{ greeting() }}</p>
     </div>
 
     <div class="flex flex-col items-start gap-2 sm:items-end">
@@ -44,6 +43,12 @@
           {{ 'common.retry' | translate }}
         </button>
       </div>
+    </div>
+  }
+
+  @if (dashboardStore.actionItems().length > 0) {
+    <div class="mt-6">
+      <app-dashboard-action-center [items]="dashboardStore.actionItems()" />
     </div>
   }
 

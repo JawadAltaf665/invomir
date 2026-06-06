@@ -7,6 +7,7 @@ import {
   computed,
   effect,
   inject,
+  signal,
 } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 
@@ -25,6 +26,38 @@ import { DashboardAccountSummary } from '../../models/dashboard.models';
 import { DashboardStore } from '../../store/dashboard.store';
 
 import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
+import { DashboardActionCenterComponent } from '../../components/dashboard-action-center/dashboard-action-center.component';
+
+type GreetingTimeSlot = 'morning' | 'afternoon' | 'evening' | 'night';
+
+const greetingMessages: Record<GreetingTimeSlot, readonly string[]> = {
+  morning: [
+    "Good morning, {name}. Let's make today count.",
+    'Good morning, {name}. Your finances are looking good.',
+    'Good morning, {name}. Ready to send some invoices?',
+    'Good morning, {name}. A fresh day, a fresh start.',
+  ],
+  afternoon: [
+    'Good afternoon, {name}. Keep the momentum going.',
+    'Good afternoon, {name}. How are the invoices looking?',
+    'Good afternoon, {name}. Halfway through the day.',
+    "Good afternoon, {name}. Don't forget to follow up on outstanding invoices.",
+  ],
+  evening: [
+    'Good evening, {name}. Wrapping up for the day?',
+    'Good evening, {name}. Great work today.',
+    'Good evening, {name}. Check your outstanding invoices before you go.',
+    'Good evening, {name}. Your dashboard is up to date.',
+  ],
+  night: [
+    'Good night, {name}. Working late?',
+    "Good night, {name}. Everything's under control.",
+    'Good night, {name}. Your invoices are being tracked.',
+    'Good night, {name}. Rest well — InvoMir has you covered.',
+  ],
+};
+
+const greetingMessageVariantCount = 4;
 
 @Component({
   selector: 'app-dashboard',
@@ -32,6 +65,7 @@ import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
   imports: [
     TranslatePipe,
     MatButtonModule,
+    DashboardActionCenterComponent,
     InvoiceAnalyticsComponent,
     MonthlyChartComponent,
     OverdueInvoicesComponent,
@@ -87,11 +121,14 @@ export class DashboardComponent implements OnInit {
 
   protected readonly skeletonCards = [1, 2, 3, 4] as const;
   protected readonly skeletonRows = [1, 2, 3, 4, 5] as const;
+  private readonly greetingVariantIndex = signal(0);
   protected readonly greeting = computed(() => {
-    const firstName = this.authSession.user()?.firstName;
-    return firstName
-      ? this.translation.translate('dashboard.greetingName', { name: firstName })
-      : this.translation.translate('dashboard.greeting');
+    const firstName = this.authSession.user()?.firstName?.trim() || 'there';
+    const slot = this.greetingTimeSlot();
+    const messages = greetingMessages[slot];
+    const message = messages[this.greetingVariantIndex()] ?? messages[0] ?? 'Good morning, {name}.';
+
+    return message.replace('{name}', firstName);
   });
   protected readonly lastUpdatedLabel = computed(() => {
     const lastLoadedAt = this.dashboardStore.lastLoadedAt();
@@ -164,6 +201,8 @@ export class DashboardComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    this.greetingVariantIndex.set(Math.floor(Math.random() * greetingMessageVariantCount));
+
     if (isPlatformBrowser(this.platformId)) {
       this.dashboardStore.load();
     }
@@ -214,5 +253,23 @@ export class DashboardComponent implements OnInit {
   private dashboardSessionKey(): string | null {
     const user = this.authSession.user();
     return user?.id && user.tenantId ? `${user.tenantId}:${user.id}` : null;
+  }
+
+  private greetingTimeSlot(): GreetingTimeSlot {
+    const hour = new Date().getHours();
+
+    if (hour >= 5 && hour <= 11) {
+      return 'morning';
+    }
+
+    if (hour >= 12 && hour <= 16) {
+      return 'afternoon';
+    }
+
+    if (hour >= 17 && hour <= 20) {
+      return 'evening';
+    }
+
+    return 'night';
   }
 }

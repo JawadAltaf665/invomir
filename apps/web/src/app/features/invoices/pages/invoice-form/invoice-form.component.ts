@@ -131,7 +131,7 @@ export class InvoiceFormComponent implements OnInit {
   protected readonly isEditMode = computed(() => !!this.editingInvoice());
   protected readonly title = computed(() =>
     this.isEditMode()
-      ? `${this.translation.translate('common.edit')} ${this.editingInvoice()?.invoiceNumber ?? this.translation.translate('invoices.invoice')}`
+      ? `Edit ${this.editingInvoice()?.invoiceNumber ?? this.translation.translate('invoices.invoice')}`
       : this.translation.translate('invoices.new'),
   );
   protected readonly invoiceNumberLabel = computed(
