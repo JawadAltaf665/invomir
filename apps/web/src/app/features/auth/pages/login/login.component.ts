@@ -11,12 +11,14 @@ import { finalize } from 'rxjs';
 import { AuthSessionService } from '../../../../core/auth/auth-session.service';
 import { extractApiErrors } from '../../../../core/errors/api-response-error';
 import { AuthFormShellComponent } from '../../components/auth-form-shell/auth-form-shell.component';
+import { GoogleAuthButtonComponent } from '../../components/google-auth-button/google-auth-button.component';
 
 @Component({
   selector: 'app-login',
   standalone: true,
   imports: [
     AuthFormShellComponent,
+    GoogleAuthButtonComponent,
     MatButtonModule,
     MatFormFieldModule,
     MatInputModule,
@@ -36,6 +38,7 @@ export class LoginComponent {
   private readonly router = inject(Router);
 
   protected readonly isSubmitting = signal(false);
+  protected readonly isGoogleSubmitting = signal(false);
   protected readonly errorMessages = signal<readonly string[]>([]);
   protected readonly isPasswordVisible = signal(false);
 
@@ -62,6 +65,29 @@ export class LoginComponent {
         next: () => void this.router.navigateByUrl(returnUrl),
         error: error => this.errorMessages.set(extractApiErrors(error))
       });
+  }
+
+  protected continueWithGoogle(idToken: string): void {
+    if (this.isSubmitting() || this.isGoogleSubmitting()) {
+      return;
+    }
+
+    this.errorMessages.set([]);
+    this.isGoogleSubmitting.set(true);
+
+    const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') ?? '/app/dashboard';
+
+    this.authSession
+      .googleLogin({ idToken })
+      .pipe(finalize(() => this.isGoogleSubmitting.set(false)))
+      .subscribe({
+        next: () => void this.router.navigateByUrl(returnUrl),
+        error: error => this.errorMessages.set(extractApiErrors(error))
+      });
+  }
+
+  protected handleGoogleFailure(message: string): void {
+    this.errorMessages.set([message]);
   }
 
   protected togglePasswordVisibility(): void {

@@ -9,6 +9,7 @@ import {
   AuthState,
   AuthTokenDto,
   ForgotPasswordRequest,
+  GoogleLoginRequest,
   LoginRequest,
   RegisterRequest,
   ResetPasswordRequest,
@@ -41,6 +42,13 @@ export class AuthSessionService {
 
   login(request: LoginRequest): Observable<AuthTokenDto> {
     return this.authApi.login(request).pipe(
+      map(response => this.unwrap(response)),
+      tap(token => this.acceptToken(token))
+    );
+  }
+
+  googleLogin(request: GoogleLoginRequest): Observable<AuthTokenDto> {
+    return this.authApi.googleLogin(request).pipe(
       map(response => this.unwrap(response)),
       tap(token => this.acceptToken(token))
     );
