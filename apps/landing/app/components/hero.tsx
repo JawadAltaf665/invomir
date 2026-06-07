@@ -69,7 +69,9 @@ export function Hero() {
           className="hero-social-proof"
           aria-label="4.9 out of 5 from more than 200 reviews. No credit card required."
         >
-          5-star rated. 4.9/5 from 200+ reviews. No credit card required.
+          5-star rated. 4.9/5 from 200+ reviews.{" "}
+          <a href={site.googleAuthUrl}>Continue with Google</a>.
+          No credit card required.
         </p>
 
         <div className="hero-screenshot" aria-label="InvoMir dashboard preview">
