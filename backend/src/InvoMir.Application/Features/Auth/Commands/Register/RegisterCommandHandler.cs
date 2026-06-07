@@ -1,5 +1,4 @@
-using System.Security.Cryptography;
-using System.Text.RegularExpressions;
+using InvoMir.Application.Features.Auth.Common;
 
 namespace InvoMir.Application.Features.Auth.Commands.Register;
 
@@ -26,7 +25,7 @@ public sealed partial class RegisterCommandHandler(
         if (emailExists)
             return ApiResponse<AuthTokenDto>.Fail("Email is already registered.");
 
-        var tenant = Tenant.Create(request.BusinessName, GenerateSlug(request.BusinessName));
+        var tenant = Tenant.Create(request.BusinessName, AuthAccountHelper.GenerateSlug(request.BusinessName));
         context.Tenants.Add(tenant);
 
         var passwordHash = passwordHasher.HashPassword(request.Password);
@@ -41,7 +40,7 @@ public sealed partial class RegisterCommandHandler(
 
         context.Users.Add(user);
 
-        var verificationTokenValue = GenerateVerificationToken();
+        var verificationTokenValue = AuthAccountHelper.GenerateVerificationToken();
         var verificationToken = EmailVerificationToken.Create(user.Id, verificationTokenValue);
         context.EmailVerificationTokens.Add(verificationToken);
 
@@ -94,31 +93,4 @@ public sealed partial class RegisterCommandHandler(
         return ApiResponse<AuthTokenDto>.Ok(tokenDto, "Account created successfully. Please verify your email.");
     }
 
-    private static string GenerateSlug(string businessName)
-    {
-        var slug = businessName.ToLowerInvariant().Trim()
-            .Replace(" ", "-", StringComparison.Ordinal)
-            .Replace("'", string.Empty, StringComparison.Ordinal)
-            .Replace(".", string.Empty, StringComparison.Ordinal);
-
-        slug = SlugUnsafeCharacters().Replace(slug, string.Empty).Trim('-');
-        if (string.IsNullOrWhiteSpace(slug))
-            slug = "tenant";
-
-        if (slug.Length > 93)
-            slug = slug[..93].Trim('-');
-
-        return $"{slug}-{Guid.NewGuid():N}"[..(slug.Length + 7)];
-    }
-
-    [GeneratedRegex("[^a-z0-9\\-]")]
-    private static partial Regex SlugUnsafeCharacters();
-
-    private static string GenerateVerificationToken()
-    {
-        return Convert.ToBase64String(RandomNumberGenerator.GetBytes(64))
-            .Replace("+", "-", StringComparison.Ordinal)
-            .Replace("/", "_", StringComparison.Ordinal)
-            .Replace("=", string.Empty, StringComparison.Ordinal);
-    }
 }
