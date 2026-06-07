@@ -32,6 +32,7 @@ public static class DependencyInjection
         services.AddScoped<IStripeService, StripeService>();
         services.AddScoped<IPdfService, DinkToPdfService>();
         services.AddScoped<IUserLogoStorageService, UserLogoStorageService>();
+        services.AddScoped<IUserProfilePictureStorageService, UserProfilePictureStorageService>();
         services.AddSingleton<ICurrencyConversionService, ExchangeRateCurrencyConversionService>();
 
         services.Configure<JwtSettings>(configuration.GetSection(JwtSettings.SectionName));

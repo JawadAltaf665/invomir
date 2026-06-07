@@ -21,31 +21,42 @@ export const settingsCurrencyOptions: readonly CurrencyOption[] = supportedCurre
 
 export const acceptedLogoTypes = ['image/png', 'image/jpeg', 'image/svg+xml'] as const;
 export const acceptedLogoExtensions = ['.png', '.jpg', '.jpeg', '.svg'] as const;
+export const acceptedProfilePictureTypes = ['image/png', 'image/jpeg', 'image/webp'] as const;
+export const acceptedProfilePictureExtensions = ['.png', '.jpg', '.jpeg', '.webp'] as const;
 export const maxLogoBytes = 2 * 1024 * 1024;
+export const maxProfilePictureBytes = 2 * 1024 * 1024;
 
 export function formatProfileName(firstName: string, lastName: string): string {
   const fullName = `${firstName} ${lastName}`.trim();
   return fullName.length > 0 ? fullName : 'Account user';
 }
 
-export function formatSettingsDate(value: string | null): string {
+export function formatSettingsDate(
+  value: string | null,
+  locale = 'en',
+  notSetLabel = 'Not set',
+): string {
   if (!value) {
-    return 'Not set';
+    return notSetLabel;
   }
 
-  return new Intl.DateTimeFormat('en-US', {
+  return new Intl.DateTimeFormat(locale, {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
   }).format(new Date(value));
 }
 
-export function formatSettingsDateTime(value: string | null): string {
+export function formatSettingsDateTime(
+  value: string | null,
+  locale = 'en',
+  notSetLabel = 'Not set',
+): string {
   if (!value) {
-    return 'Not set';
+    return notSetLabel;
   }
 
-  return new Intl.DateTimeFormat('en-US', {
+  return new Intl.DateTimeFormat(locale, {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
@@ -69,11 +80,25 @@ export function resolveLogoUrl(
   logoUrl: string | null,
   cacheKey?: string | number | null,
 ): string | null {
-  if (!logoUrl) {
+  return resolveAssetUrl(logoUrl, cacheKey);
+}
+
+export function resolveProfilePictureUrl(
+  profilePictureUrl: string | null,
+  cacheKey?: string | number | null,
+): string | null {
+  return resolveAssetUrl(profilePictureUrl, cacheKey);
+}
+
+export function resolveAssetUrl(
+  assetUrl: string | null,
+  cacheKey?: string | number | null,
+): string | null {
+  if (!assetUrl) {
     return null;
   }
 
-  const resolvedUrl = /^https?:\/\//i.test(logoUrl) ? logoUrl : apiUrl(logoUrl);
+  const resolvedUrl = /^https?:\/\//i.test(assetUrl) ? assetUrl : apiUrl(assetUrl);
 
   if (cacheKey === null || cacheKey === undefined || cacheKey === '') {
     return resolvedUrl;
@@ -89,5 +114,14 @@ export function isAcceptedLogoFile(file: File): boolean {
   return (
     acceptedLogoTypes.some((type) => type.toLowerCase() === file.type.toLowerCase()) &&
     acceptedLogoExtensions.some((allowedExtension) => allowedExtension === extension)
+  );
+}
+
+export function isAcceptedProfilePictureFile(file: File): boolean {
+  const extension = file.name.slice(file.name.lastIndexOf('.')).toLowerCase();
+
+  return (
+    acceptedProfilePictureTypes.some((type) => type.toLowerCase() === file.type.toLowerCase()) &&
+    acceptedProfilePictureExtensions.some((allowedExtension) => allowedExtension === extension)
   );
 }

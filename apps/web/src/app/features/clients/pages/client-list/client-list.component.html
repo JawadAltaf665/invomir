@@ -2,12 +2,12 @@
   <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
     <div>
       <p class="text-xs font-medium uppercase tracking-normal text-neutral-500">
-        Workspace clients
+        {{ 'clients.eyebrow' | translate }}
       </p>
-      <h1 class="mt-2 text-2xl font-semibold tracking-tight text-neutral-900">Clients</h1>
-      <p class="mt-2 text-sm text-neutral-500">
-        Manage billing contacts, invoice relationships, and client revenue history.
-      </p>
+      <h1 class="mt-2 text-2xl font-semibold tracking-tight text-neutral-900">
+        {{ 'clients.title' | translate }}
+      </h1>
+      <p class="mt-2 text-sm text-neutral-500">{{ 'clients.description' | translate }}</p>
     </div>
 
     <div class="flex flex-col gap-3 sm:flex-row">
@@ -17,14 +17,14 @@
         [disabled]="clientStore.isLoading()"
         (click)="refresh()"
       >
-        <svg lucideRefreshCcw class="size-4" aria-hidden="true"></svg>
-        Refresh
+        <svg lucideRefreshCcw class="size-4" aria-hidden="true"></svg
+        >{{ 'common.refresh' | translate }}
       </button>
 
       @if (canCreateClient()) {
         <button mat-flat-button color="primary" type="button" (click)="createClient()">
-          <svg lucideUserPlus class="size-4" aria-hidden="true"></svg>
-          New client
+          <svg lucideUserPlus class="size-4" aria-hidden="true"></svg
+          >{{ 'clients.new' | translate }}
         </button>
       }
     </div>
@@ -34,7 +34,7 @@
     <div class="mt-6 rounded-2xl border border-red-200 bg-red-50 p-5 shadow-sm">
       <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div>
-          <p class="text-sm font-medium text-red-800">Clients could not be loaded</p>
+          <p class="text-sm font-medium text-red-800">{{ 'clients.loadError' | translate }}</p>
           <div class="mt-2 space-y-1">
             @for (error of clientStore.errorMessages(); track error) {
               <p class="text-xs text-red-600">{{ error }}</p>
@@ -43,7 +43,7 @@
         </div>
 
         <button mat-button type="button" [disabled]="clientStore.isLoading()" (click)="refresh()">
-          Retry
+          {{ 'common.retry' | translate }}
         </button>
       </div>
     </div>
@@ -51,7 +51,7 @@
 
   @if (actionErrorMessages().length > 0) {
     <div class="mt-6 rounded-2xl border border-red-200 bg-red-50 p-5 shadow-sm">
-      <p class="text-sm font-medium text-red-800">Client action could not be completed</p>
+      <p class="text-sm font-medium text-red-800">{{ 'clients.actionError' | translate }}</p>
       <div class="mt-2 space-y-1">
         @for (error of actionErrorMessages(); track error) {
           <p class="text-xs text-red-600">{{ error }}</p>
@@ -76,6 +76,7 @@
       [totalPages]="clientStore.pageInfo().totalPages"
       [totalCount]="clientStore.pageInfo().totalCount"
       [canCreate]="canCreateClient()"
+      [canCreateInvoice]="canCreateInvoice()"
       [canUpdate]="canUpdateClient()"
       [canDelete]="canDeleteClient()"
       (pageRequested)="changePage($event)"

@@ -2,6 +2,7 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { finalize, map } from 'rxjs';
 
 import { ApiResponseError, extractApiErrors } from '../../../core/errors/api-response-error';
+import { TranslationService } from '../../../core/i18n/translation.service';
 import { ApiResponse } from '../../../core/models/api-response.model';
 import {
   ClientListFilters,
@@ -10,7 +11,7 @@ import {
   ClientPageResult,
 } from '../models/client.models';
 import { ClientApiService } from '../services/client-api.service';
-import { formatClientInvoiceCount, formatClientMetric } from '../utils/client-formatters';
+import { clientInitials, formatClientCurrency, formatClientDate } from '../utils/client-formatters';
 
 const defaultFilters: ClientListFilters = {
   q: null,
@@ -22,6 +23,7 @@ const defaultFilters: ClientListFilters = {
 @Injectable({ providedIn: 'root' })
 export class ClientListStore {
   private readonly clientApi = inject(ClientApiService);
+  private readonly translation = inject(TranslationService);
   private readonly resultSignal = signal<ClientPageResult | null>(null);
   private readonly filtersSignal = signal<ClientListFilters>(defaultFilters);
   private readonly isLoadingSignal = signal(false);
@@ -105,9 +107,41 @@ export class ClientListStore {
       id: client.id,
       name: client.name,
       email: client.email,
-      companyDisplay: client.company || 'Not set',
-      totalRevenueDisplay: formatClientMetric(client.totalRevenue),
-      invoiceCountDisplay: formatClientInvoiceCount(client.invoiceCount),
+      avatarInitials: clientInitials(client.name),
+      companyDisplay: client.company || this.translation.translate('common.notSet'),
+      totalRevenueDisplay: formatClientCurrency(
+        client.totalRevenue,
+        client.currency,
+        this.translation.language(),
+      ),
+      invoiceCountDisplay: this.translation.translate(
+        client.invoiceCount === 1 ? 'clients.invoiceCount' : 'clients.invoiceCountPlural',
+        {
+          count: new Intl.NumberFormat(this.translation.language()).format(client.invoiceCount),
+        },
+      ),
+      invoiceStatusSummaryDisplay: this.invoiceStatusSummary(client),
+      lastInvoiceDisplay: formatClientDate(
+        client.lastInvoiceAt,
+        this.translation.language(),
+        this.translation.translate('common.notSet'),
+      ),
     };
+  }
+
+  private invoiceStatusSummary(client: ClientListItemDto): string {
+    const statuses = [
+      ['draft', client.draftInvoiceCount],
+      ['sent', client.sentInvoiceCount],
+      ['viewed', client.viewedInvoiceCount],
+      ['paid', client.paidInvoiceCount],
+      ['overdue', client.overdueInvoiceCount],
+      ['cancelled', client.cancelledInvoiceCount],
+    ] as const;
+
+    return statuses
+      .filter(([, count]) => count > 0)
+      .map(([status, count]) => `${count} ${this.translation.translate(`invoiceStatus.${status}`)}`)
+      .join(', ');
   }
 }

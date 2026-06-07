@@ -8,6 +8,7 @@ import {
   ChangePasswordRequest,
   UpdateUserProfileRequest,
   UserLogoDto,
+  UserProfilePictureDto,
   UserProfileDto,
 } from '../models/settings.models';
 
@@ -37,5 +38,19 @@ export class SettingsApiService {
       observe: 'events',
       reportProgress: true,
     });
+  }
+
+  uploadProfilePicture(file: File): Observable<HttpEvent<ApiResponse<UserProfilePictureDto>>> {
+    const body = new FormData();
+    body.append('profilePicture', file);
+
+    return this.http.post<ApiResponse<UserProfilePictureDto>>(
+      apiUrl('/api/users/me/profile-picture'),
+      body,
+      {
+        observe: 'events',
+        reportProgress: true,
+      },
+    );
   }
 }

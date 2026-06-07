@@ -21,11 +21,27 @@ public sealed class InvoicesController(ISender mediator) : ControllerBase
         [FromQuery] Guid? clientId,
         [FromQuery] DateOnly? from,
         [FromQuery] DateOnly? to,
+        [FromQuery(Name = "q")] string? search,
+        [FromQuery] decimal? minAmount,
+        [FromQuery] decimal? maxAmount,
+        [FromQuery] string? sortBy,
+        [FromQuery] string? sortDirection,
         [FromQuery] int page,
         [FromQuery(Name = "limit")] int limit,
         CancellationToken cancellationToken)
     {
-        var query = new ListInvoicesQuery(status, clientId, from, to, page, limit);
+        var query = new ListInvoicesQuery(
+            status,
+            clientId,
+            from,
+            to,
+            search,
+            minAmount,
+            maxAmount,
+            sortBy,
+            sortDirection,
+            page,
+            limit);
         var result = await mediator.Send(query, cancellationToken);
         return Ok(ApiResponse<PagedResult<InvoiceListItemDto>>.Ok(result));
     }
@@ -47,9 +63,12 @@ public sealed class InvoicesController(ISender mediator) : ControllerBase
     [RequirePermission(Permissions.Invoice.View)]
     [ProducesResponseType(typeof(ApiResponse<InvoiceDetailDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> Get(Guid id, CancellationToken cancellationToken)
+    public async Task<IActionResult> Get(
+        Guid id,
+        [FromQuery] bool useWorkspaceCurrency,
+        CancellationToken cancellationToken)
     {
-        var result = await mediator.Send(new GetInvoiceQuery(id), cancellationToken);
+        var result = await mediator.Send(new GetInvoiceQuery(id, useWorkspaceCurrency), cancellationToken);
         return Ok(ApiResponse<InvoiceDetailDto>.Ok(result));
     }
 

@@ -1,9 +1,13 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { finalize, map } from 'rxjs';
 
+import { AuthSessionService } from '../../../core/auth/auth-session.service';
+import { TranslationService } from '../../../core/i18n/translation.service';
 import { ApiResponseError, extractApiErrors } from '../../../core/errors/api-response-error';
 import { ApiResponse } from '../../../core/models/api-response.model';
 import {
+  DashboardActionItemDto,
+  DashboardActionItemsDto,
   DashboardDto,
   DashboardInvoiceCountsDto,
   DashboardOverdueSummary,
@@ -21,14 +25,26 @@ import { DashboardApiService } from '../services/dashboard-api.service';
 @Injectable({ providedIn: 'root' })
 export class DashboardStore {
   private readonly dashboardApi = inject(DashboardApiService);
+  private readonly authSession = inject(AuthSessionService);
+  private readonly translation = inject(TranslationService);
   private readonly dashboardSignal = signal<DashboardDto | null>(null);
+  private readonly actionItemsSignal = signal<readonly DashboardActionItemDto[]>([]);
   private readonly isLoadingSignal = signal(false);
+  private readonly isActionItemsLoadingSignal = signal(false);
   private readonly errorMessagesSignal = signal<readonly string[]>([]);
+  private readonly actionItemErrorMessagesSignal = signal<readonly string[]>([]);
   private readonly lastLoadedAtSignal = signal<Date | null>(null);
+  private readonly cachedSessionKeySignal = signal<string | null>(null);
+  private readonly cachedActionItemsSessionKeySignal = signal<string | null>(null);
+  private activeRequestSessionKey: string | null = null;
+  private activeActionItemsRequestSessionKey: string | null = null;
 
   readonly dashboard = this.dashboardSignal.asReadonly();
+  readonly actionItems = this.actionItemsSignal.asReadonly();
   readonly isLoading = this.isLoadingSignal.asReadonly();
+  readonly isActionItemsLoading = this.isActionItemsLoadingSignal.asReadonly();
   readonly errorMessages = this.errorMessagesSignal.asReadonly();
+  readonly actionItemErrorMessages = this.actionItemErrorMessagesSignal.asReadonly();
   readonly lastLoadedAt = this.lastLoadedAtSignal.asReadonly();
 
   readonly currency = computed(() => this.resolveCurrency(this.dashboard()));
@@ -52,7 +68,7 @@ export class DashboardStore {
     return [
       {
         id: 'this-month-revenue',
-        label: 'This month',
+        label: this.translation.translate('dashboard.thisMonth'),
         value: this.formatCurrency(dashboard.revenue.thisMonth, currency),
         helper: this.formatRevenueChangeLabel(
           dashboard.revenue.thisMonth,
@@ -62,26 +78,28 @@ export class DashboardStore {
       },
       {
         id: 'outstanding',
-        label: 'Outstanding',
+        label: this.translation.translate('dashboard.outstanding'),
         value: this.formatCurrency(dashboard.outstanding, currency),
-        helper: `${openInvoiceCount} ${this.pluralize('open invoice', openInvoiceCount)}`,
+        helper: this.translation.translate('dashboard.openInvoices', { count: openInvoiceCount }),
         tone: dashboard.outstanding > 0 ? 'warning' : 'neutral',
       },
       {
         id: 'overdue',
-        label: 'Overdue',
+        label: this.translation.translate('dashboard.overdue'),
         value: this.formatCurrency(dashboard.overdue, currency),
         helper:
           dashboard.invoiceCounts.overdue > 0
-            ? `${dashboard.invoiceCounts.overdue} ${this.pluralize('invoice', dashboard.invoiceCounts.overdue)} need attention`
-            : 'No overdue invoices',
+            ? this.translation.translate('dashboard.invoicesNeedAttention', {
+                count: dashboard.invoiceCounts.overdue,
+              })
+            : this.translation.translate('dashboard.noOverdueInvoices'),
         tone: dashboard.overdue > 0 ? 'danger' : 'success',
       },
       {
         id: 'all-time-revenue',
-        label: 'All-time revenue',
+        label: this.translation.translate('dashboard.allTimeRevenue'),
         value: this.formatCurrency(dashboard.revenue.allTime, currency),
-        helper: `Revenue counts only paid invoices. ${counts.paid} ${this.pluralize('paid invoice', counts.paid)}`,
+        helper: this.translation.translate('dashboard.paidRevenueHelper', { count: counts.paid }),
         tone: 'success',
       },
     ];
@@ -97,12 +115,48 @@ export class DashboardStore {
     const total = this.sumInvoiceCounts(counts);
 
     return [
-      this.toStatusMetric('draft', 'Draft', counts.draft, total, 'neutral'),
-      this.toStatusMetric('sent', 'Sent', counts.sent, total, 'primary'),
-      this.toStatusMetric('viewed', 'Viewed', counts.viewed, total, 'primary'),
-      this.toStatusMetric('paid', 'Paid', counts.paid, total, 'success'),
-      this.toStatusMetric('overdue', 'Overdue', counts.overdue, total, 'danger'),
-      this.toStatusMetric('cancelled', 'Cancelled', counts.cancelled, total, 'neutral'),
+      this.toStatusMetric(
+        'draft',
+        this.translation.translate('invoiceStatus.draft'),
+        counts.draft,
+        total,
+        'neutral',
+      ),
+      this.toStatusMetric(
+        'sent',
+        this.translation.translate('invoiceStatus.sent'),
+        counts.sent,
+        total,
+        'primary',
+      ),
+      this.toStatusMetric(
+        'viewed',
+        this.translation.translate('invoiceStatus.viewed'),
+        counts.viewed,
+        total,
+        'primary',
+      ),
+      this.toStatusMetric(
+        'paid',
+        this.translation.translate('invoiceStatus.paid'),
+        counts.paid,
+        total,
+        'success',
+      ),
+      this.toStatusMetric(
+        'overdue',
+        this.translation.translate('invoiceStatus.overdue'),
+        counts.overdue,
+        total,
+        'danger',
+      ),
+      this.toStatusMetric(
+        'cancelled',
+        this.translation.translate('invoiceStatus.cancelled'),
+        counts.cancelled,
+        total,
+        'neutral',
+      ),
     ];
   });
 
@@ -130,7 +184,7 @@ export class DashboardStore {
     return [
       {
         id: 'last-month',
-        label: 'Last month',
+        label: this.translation.translate('dashboard.lastMonth'),
         value: dashboard.revenue.lastMonth,
         valueDisplay: this.formatCurrency(dashboard.revenue.lastMonth, currency),
         heightPercentage: this.toBarHeight(dashboard.revenue.lastMonth, maxRevenue),
@@ -138,7 +192,7 @@ export class DashboardStore {
       },
       {
         id: 'this-month',
-        label: 'This month',
+        label: this.translation.translate('dashboard.thisMonth'),
         value: dashboard.revenue.thisMonth,
         valueDisplay: this.formatCurrency(dashboard.revenue.thisMonth, currency),
         heightPercentage: this.toBarHeight(dashboard.revenue.thisMonth, maxRevenue),
@@ -183,8 +237,12 @@ export class DashboardStore {
         ),
         helper:
           client.revenue > 0
-            ? `${client.invoiceCount} ${this.pluralize('invoice', client.invoiceCount)} paid`
-            : `${client.invoiceCount} ${this.pluralize('invoice', client.invoiceCount)} booked, unpaid volume`,
+            ? this.translation.translate('dashboard.clientPaidInvoices', {
+                count: client.invoiceCount,
+              })
+            : this.translation.translate('dashboard.clientBookedInvoices', {
+                count: client.invoiceCount,
+              }),
         percentage:
           denominator > 0
             ? Math.min(100, Math.round((client.revenue / denominator) * 100))
@@ -230,14 +288,28 @@ export class DashboardStore {
   });
 
   load(force = false): void {
-    if (this.isLoading()) {
+    const sessionKey = this.currentSessionKey();
+
+    if (!sessionKey) {
+      this.clear();
       return;
     }
+
+    if (this.cachedSessionKeySignal() !== sessionKey) {
+      this.clear();
+    }
+
+    if (this.isLoading() && this.activeRequestSessionKey === sessionKey) {
+      return;
+    }
+
+    this.loadActionItems(force, sessionKey);
 
     if (this.dashboard() && !force) {
       return;
     }
 
+    this.activeRequestSessionKey = sessionKey;
     this.isLoadingSignal.set(true);
     this.errorMessagesSignal.set([]);
 
@@ -245,14 +317,28 @@ export class DashboardStore {
       .getDashboard()
       .pipe(
         map((response) => this.unwrap(response)),
-        finalize(() => this.isLoadingSignal.set(false)),
+        finalize(() => {
+          if (this.activeRequestSessionKey === sessionKey) {
+            this.activeRequestSessionKey = null;
+            this.isLoadingSignal.set(false);
+          }
+        }),
       )
       .subscribe({
         next: (dashboard) => {
+          if (this.currentSessionKey() !== sessionKey) {
+            return;
+          }
+
           this.dashboardSignal.set(dashboard);
+          this.cachedSessionKeySignal.set(sessionKey);
           this.lastLoadedAtSignal.set(new Date());
         },
         error: (error) => {
+          if (this.currentSessionKey() !== sessionKey) {
+            return;
+          }
+
           this.errorMessagesSignal.set(extractApiErrors(error));
         },
       });
@@ -262,6 +348,64 @@ export class DashboardStore {
     this.load(true);
   }
 
+  clear(): void {
+    this.dashboardSignal.set(null);
+    this.actionItemsSignal.set([]);
+    this.errorMessagesSignal.set([]);
+    this.actionItemErrorMessagesSignal.set([]);
+    this.lastLoadedAtSignal.set(null);
+    this.cachedSessionKeySignal.set(null);
+    this.cachedActionItemsSessionKeySignal.set(null);
+    this.activeRequestSessionKey = null;
+    this.activeActionItemsRequestSessionKey = null;
+    this.isLoadingSignal.set(false);
+    this.isActionItemsLoadingSignal.set(false);
+  }
+
+  private loadActionItems(force: boolean, sessionKey: string): void {
+    if (this.isActionItemsLoading() && this.activeActionItemsRequestSessionKey === sessionKey) {
+      return;
+    }
+
+    if (this.cachedActionItemsSessionKeySignal() === sessionKey && !force) {
+      return;
+    }
+
+    this.activeActionItemsRequestSessionKey = sessionKey;
+    this.isActionItemsLoadingSignal.set(true);
+    this.actionItemErrorMessagesSignal.set([]);
+
+    this.dashboardApi
+      .getActionItems()
+      .pipe(
+        map((response) => this.unwrap(response)),
+        finalize(() => {
+          if (this.activeActionItemsRequestSessionKey === sessionKey) {
+            this.activeActionItemsRequestSessionKey = null;
+            this.isActionItemsLoadingSignal.set(false);
+          }
+        }),
+      )
+      .subscribe({
+        next: (result: DashboardActionItemsDto) => {
+          if (this.currentSessionKey() !== sessionKey) {
+            return;
+          }
+
+          this.actionItemsSignal.set(result.items);
+          this.cachedActionItemsSessionKeySignal.set(sessionKey);
+        },
+        error: (error) => {
+          if (this.currentSessionKey() !== sessionKey) {
+            return;
+          }
+
+          this.actionItemsSignal.set([]);
+          this.actionItemErrorMessagesSignal.set(extractApiErrors(error));
+        },
+      });
+  }
+
   private unwrap<T>(response: ApiResponse<T>): T {
     if (!response.success || response.data === null) {
       const message = response.message ?? response.errors[0] ?? 'Dashboard request failed.';
@@ -269,6 +413,16 @@ export class DashboardStore {
     }
 
     return response.data;
+  }
+
+  private currentSessionKey(): string | null {
+    const user = this.authSession.user();
+
+    if (!user?.id || !user.tenantId) {
+      return null;
+    }
+
+    return `${user.tenantId}:${user.id}`;
   }
 
   private toStatusMetric(
@@ -297,7 +451,7 @@ export class DashboardStore {
       id: invoice.id,
       invoiceNumber: invoice.invoiceNumber,
       clientName: invoice.clientName,
-      statusLabel: this.toTitleCase(invoice.status),
+      statusLabel: this.translation.translate(`invoiceStatus.${invoice.status.toLowerCase()}`),
       statusTone: this.toStatusTone(invoice.status),
       totalDisplay: this.formatCurrency(invoice.total, workspaceCurrency),
       dueDateDisplay: this.formatDate(invoice.dueDate),
@@ -308,14 +462,20 @@ export class DashboardStore {
 
   private invoiceActivityLabel(invoice: DashboardRecentInvoiceDto): string {
     if (invoice.paidAt) {
-      return `Paid ${this.formatDate(invoice.paidAt)}`;
+      return this.translation.translate('dashboard.invoicePaid', {
+        date: this.formatDate(invoice.paidAt),
+      });
     }
 
     if (invoice.sentAt) {
-      return `Sent ${this.formatDate(invoice.sentAt)}`;
+      return this.translation.translate('dashboard.invoiceSent', {
+        date: this.formatDate(invoice.sentAt),
+      });
     }
 
-    return `Due ${this.formatDate(invoice.dueDate)}`;
+    return this.translation.translate('dashboard.invoiceDue', {
+      date: this.formatDate(invoice.dueDate),
+    });
   }
 
   private toStatusTone(status: string): DashboardTone {
@@ -364,13 +524,15 @@ export class DashboardStore {
 
   private formatCurrency(value: number, currency: string): string {
     try {
-      return new Intl.NumberFormat('en-US', {
+      return new Intl.NumberFormat(this.translation.language(), {
         style: 'currency',
         currency,
         maximumFractionDigits: Math.abs(value) >= 1000 ? 0 : 2,
       }).format(value);
     } catch {
-      return `${currency} ${new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 }).format(value)}`;
+      return `${currency} ${new Intl.NumberFormat(this.translation.language(), {
+        maximumFractionDigits: 2,
+      }).format(value)}`;
     }
   }
 
@@ -378,10 +540,10 @@ export class DashboardStore {
     const date = new Date(value.length === 10 ? `${value}T00:00:00` : value);
 
     if (Number.isNaN(date.getTime())) {
-      return 'Not set';
+      return this.translation.translate('common.notSet');
     }
 
-    return new Intl.DateTimeFormat('en-US', {
+    return new Intl.DateTimeFormat(this.translation.language(), {
       month: 'short',
       day: 'numeric',
       year: 'numeric',
@@ -390,16 +552,18 @@ export class DashboardStore {
 
   private formatRevenueChangeLabel(currentValue: number, previousValue: number): string {
     if (previousValue === 0 && currentValue === 0) {
-      return 'No revenue yet this month';
+      return this.translation.translate('dashboard.noRevenueThisMonth');
     }
 
     if (previousValue === 0) {
-      return 'New revenue compared with last month';
+      return this.translation.translate('dashboard.newRevenue');
     }
 
     const change = ((currentValue - previousValue) / previousValue) * 100;
     const prefix = change > 0 ? '+' : '';
-    return `${prefix}${change.toFixed(1)}% vs last month`;
+    return this.translation.translate('dashboard.vsLastMonth', {
+      change: `${prefix}${change.toFixed(1)}`,
+    });
   }
 
   private sumInvoiceCounts(counts: DashboardInvoiceCountsDto): number {
@@ -423,9 +587,5 @@ export class DashboardStore {
       .filter(Boolean)
       .map((part) => `${part.charAt(0).toUpperCase()}${part.slice(1).toLowerCase()}`)
       .join(' ');
-  }
-
-  private pluralize(label: string, count: number): string {
-    return count === 1 ? label : `${label}s`;
   }
 }

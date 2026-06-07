@@ -12,9 +12,7 @@ public sealed class RefreshTokenCommandHandler(
         RefreshTokenCommand request,
         CancellationToken cancellationToken)
     {
-        var rawToken = string.IsNullOrWhiteSpace(request.RefreshToken)
-            ? authCookieService.GetRefreshToken()
-            : request.RefreshToken.Trim();
+        var rawToken = authCookieService.GetRefreshToken();
 
         if (string.IsNullOrWhiteSpace(rawToken))
             return ApiResponse<AuthTokenDto>.Fail("No refresh token provided.");
@@ -71,7 +69,6 @@ public sealed class RefreshTokenCommandHandler(
 
         var tokenDto = new AuthTokenDto(
             newAccessToken.Token,
-            newRawRefreshToken,
             newAccessToken.ExpiresAt,
             user.Id,
             user.TenantId,

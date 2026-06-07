@@ -13,13 +13,60 @@
       <table class="w-full min-w-[820px] text-sm">
         <thead>
           <tr class="border-b border-neutral-200">
-            <th class="px-5 py-3 text-left font-medium text-neutral-600">Invoice</th>
-            <th class="px-5 py-3 text-left font-medium text-neutral-600">Client</th>
-            <th class="px-5 py-3 text-left font-medium text-neutral-600">Status</th>
-            <th class="px-5 py-3 text-left font-medium text-neutral-600">Due</th>
-            <th class="px-5 py-3 text-left font-medium text-neutral-600">Sent</th>
-            <th class="px-5 py-3 text-right font-medium text-neutral-600">Total</th>
-            <th class="px-5 py-3 text-right font-medium text-neutral-600">Actions</th>
+            <th class="px-5 py-3 text-left font-medium text-neutral-600">
+              {{ 'invoices.invoice' | translate }}
+            </th>
+            <th class="px-5 py-3 text-left font-medium text-neutral-600">
+              {{ 'invoices.client' | translate }}
+            </th>
+            <th class="px-5 py-3 text-left font-medium text-neutral-600">
+              {{ 'common.status' | translate }}
+            </th>
+            <th class="px-5 py-3 text-left font-medium text-neutral-600">
+              <button
+                type="button"
+                class="inline-flex items-center gap-1.5 rounded-lg text-sm font-medium transition hover:text-neutral-900"
+                (click)="requestSort('due')"
+              >
+                {{ 'invoices.due' | translate }}
+                @if (sortBy() === 'due' && sortDirection() === 'asc') {
+                  <svg lucideChevronUp class="size-4" aria-hidden="true"></svg>
+                } @else {
+                  <svg lucideChevronDown class="size-4" aria-hidden="true"></svg>
+                }
+              </button>
+            </th>
+            <th class="px-5 py-3 text-left font-medium text-neutral-600">
+              <button
+                type="button"
+                class="inline-flex items-center gap-1.5 rounded-lg text-sm font-medium transition hover:text-neutral-900"
+                (click)="requestSort('sent')"
+              >
+                {{ 'invoices.sent' | translate }}
+                @if (sortBy() === 'sent' && sortDirection() === 'asc') {
+                  <svg lucideChevronUp class="size-4" aria-hidden="true"></svg>
+                } @else {
+                  <svg lucideChevronDown class="size-4" aria-hidden="true"></svg>
+                }
+              </button>
+            </th>
+            <th class="px-5 py-3 text-right font-medium text-neutral-600">
+              <button
+                type="button"
+                class="ml-auto inline-flex items-center gap-1.5 rounded-lg text-sm font-medium transition hover:text-neutral-900"
+                (click)="requestSort('total')"
+              >
+                {{ 'common.total' | translate }}
+                @if (sortBy() === 'total' && sortDirection() === 'asc') {
+                  <svg lucideChevronUp class="size-4" aria-hidden="true"></svg>
+                } @else {
+                  <svg lucideChevronDown class="size-4" aria-hidden="true"></svg>
+                }
+              </button>
+            </th>
+            <th class="px-5 py-3 text-right font-medium text-neutral-600">
+              {{ 'common.actions' | translate }}
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -38,29 +85,95 @@
                 <app-invoice-status-badge [status]="invoice.status" />
               </td>
               <td class="px-5 py-4 text-neutral-600">{{ invoice.dueDateDisplay }}</td>
-              <td class="px-5 py-4 text-neutral-600">{{ invoice.sentAtDisplay }}</td>
-              <td class="px-5 py-4 text-right font-semibold text-neutral-900">
-                {{ invoice.totalDisplay }}
+              <td class="px-5 py-4 text-neutral-600" [matTooltip]="invoice.sentAtFullDisplay">
+                {{ invoice.sentAtDisplay }}
+              </td>
+              <td class="px-5 py-4 text-right">
+                <p class="font-semibold text-neutral-900">{{ invoice.totalDisplay }}</p>
               </td>
               <td class="px-5 py-4">
                 <div class="flex justify-end gap-2">
-                  <a
-                    mat-icon-button
-                    [routerLink]="['/app/invoices', invoice.id]"
-                    aria-label="View invoice"
+                  <button
+                    mat-stroked-button
+                    type="button"
+                    class="min-w-0"
+                    [disabled]="isActionRunning()"
+                    [matMenuTriggerFor]="invoiceActionsMenu"
                   >
-                    <svg lucideEye class="size-4" aria-hidden="true"></svg>
-                  </a>
-                  @if (invoice.status === 'draft') {
-                    <a
-                      *appHasPermission="permissions.invoice.update"
-                      mat-icon-button
-                      [routerLink]="['/app/invoices', invoice.id, 'edit']"
-                      aria-label="Edit invoice"
-                    >
-                      <svg lucideEdit3 class="size-4" aria-hidden="true"></svg>
+                    {{ 'common.actions' | translate
+                    }}<svg lucideChevronDown class="size-4" aria-hidden="true"></svg>
+                  </button>
+
+                  <mat-menu #invoiceActionsMenu="matMenu" xPosition="before" yPosition="below">
+                    <a mat-menu-item [routerLink]="['/app/invoices', invoice.id]">
+                      <svg lucideEye class="size-4" aria-hidden="true"></svg>
+                      <span>{{ 'invoices.view' | translate }}</span>
                     </a>
-                  }
+                    @if (invoice.status === 'draft') {
+                      <a
+                        *appHasPermission="permissions.invoice.update"
+                        mat-menu-item
+                        [routerLink]="['/app/invoices', invoice.id, 'edit']"
+                      >
+                        <svg lucideEdit3 class="size-4" aria-hidden="true"></svg>
+                        <span>{{ 'invoices.edit' | translate }}</span>
+                      </a>
+                    }
+                    @if (canSend(invoice)) {
+                      <button
+                        *appHasPermission="permissions.invoice.send"
+                        mat-menu-item
+                        type="button"
+                        (click)="requestAction({ action: 'send', invoice })"
+                      >
+                        <svg lucideSend class="size-4" aria-hidden="true"></svg>
+                        <span>{{ 'invoices.send' | translate }}</span>
+                      </button>
+                    }
+                    @if (canResend(invoice)) {
+                      <button
+                        *appHasPermission="permissions.invoice.send"
+                        mat-menu-item
+                        type="button"
+                        (click)="requestAction({ action: 'resend', invoice })"
+                      >
+                        <svg lucideSend class="size-4" aria-hidden="true"></svg>
+                        <span>{{ 'invoices.resend' | translate }}</span>
+                      </button>
+                    }
+                    @if (canMarkPaid(invoice)) {
+                      <button
+                        *appHasPermission="permissions.invoice.markPaid"
+                        mat-menu-item
+                        type="button"
+                        (click)="requestAction({ action: 'markPaid', invoice })"
+                      >
+                        <svg lucideBanknote class="size-4" aria-hidden="true"></svg>
+                        <span>{{ 'invoices.markPaid' | translate }}</span>
+                      </button>
+                    }
+                    <button
+                      *appHasPermission="permissions.invoice.view"
+                      mat-menu-item
+                      type="button"
+                      (click)="requestAction({ action: 'downloadPdf', invoice })"
+                    >
+                      <svg lucideDownload class="size-4" aria-hidden="true"></svg>
+                      <span>{{ 'invoices.downloadPdf' | translate }}</span>
+                    </button>
+                    @if (canCancel(invoice)) {
+                      <mat-divider />
+                      <button
+                        *appHasPermission="permissions.invoice.cancel"
+                        mat-menu-item
+                        type="button"
+                        (click)="requestAction({ action: 'cancel', invoice })"
+                      >
+                        <svg lucideBan class="size-4" aria-hidden="true"></svg>
+                        <span>{{ 'invoices.cancelAction' | translate }}</span>
+                      </button>
+                    }
+                  </mat-menu>
                 </div>
               </td>
             </tr>
@@ -70,7 +183,7 @@
     </div>
 
     <app-pagination
-      itemLabel="invoices"
+      [itemLabel]="'invoices.title' | translate"
       [page]="currentPage()"
       [pageSize]="pageSize()"
       [totalCount]="totalCount()"
@@ -84,11 +197,25 @@
       <div class="grid size-12 place-items-center rounded-2xl bg-primary/10 text-primary">
         <svg lucideFilePlus2 class="size-5" aria-hidden="true"></svg>
       </div>
-      <h3 class="mt-5 text-base font-semibold text-neutral-900">No invoices yet</h3>
-      <p class="mt-2 max-w-sm text-sm text-neutral-500">
-        Create your first invoice to start tracking receivables.
-      </p>
-      @if (canCreate()) {
+      @if (hasActiveFilters()) {
+        <h3 class="mt-5 text-base font-semibold text-neutral-900">
+          {{ 'invoices.noMatches' | translate }}
+        </h3>
+        <p class="mt-2 max-w-sm text-sm text-neutral-500">
+          {{ 'invoices.noMatchesDescription' | translate }}
+        </p>
+        <button mat-stroked-button type="button" class="mt-6" (click)="resetRequested.emit()">
+          {{ 'common.resetFilters' | translate }}
+        </button>
+      } @else {
+        <h3 class="mt-5 text-base font-semibold text-neutral-900">
+          {{ 'invoices.noInvoices' | translate }}
+        </h3>
+        <p class="mt-2 max-w-sm text-sm text-neutral-500">
+          {{ 'invoices.createFirst' | translate }}
+        </p>
+      }
+      @if (canCreate() && !hasActiveFilters()) {
         <button
           mat-flat-button
           color="primary"
@@ -96,7 +223,7 @@
           class="mt-6"
           (click)="createRequested.emit()"
         >
-          Create invoice
+          {{ 'invoices.createAction' | translate }}
         </button>
       }
     </div>

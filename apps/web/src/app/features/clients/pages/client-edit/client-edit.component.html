@@ -1,24 +1,31 @@
 <section class="mx-auto max-w-7xl p-6 lg:p-8">
-  <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-    <div>
-      <a
-        routerLink="/app/clients"
-        class="inline-flex items-center text-sm font-medium text-neutral-500 transition hover:text-neutral-900"
-      >
-        <svg lucideArrowLeft class="mr-2 size-4" aria-hidden="true"></svg>
-        Clients
-      </a>
-      <p class="mt-4 text-xs font-medium uppercase tracking-normal text-neutral-500">
-        Client editor
-      </p>
-      <h1 class="mt-2 text-2xl font-semibold tracking-tight text-neutral-900">
+  <header class="flex items-center gap-3">
+    <a
+      routerLink="/app/clients"
+      [attr.aria-label]="'clients.back' | translate"
+      title="Back to clients"
+      class="inline-flex size-9 shrink-0 items-center justify-center rounded-lg border border-neutral-200 bg-white text-neutral-500 transition hover:border-neutral-300 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+    >
+      <svg lucideArrowLeft class="size-4" aria-hidden="true"></svg>
+    </a>
+
+    <div class="min-w-0">
+      <p class="text-xs font-medium uppercase tracking-normal text-neutral-500">Clients</p>
+      <h1 class="truncate text-2xl font-semibold tracking-tight text-neutral-900">
         Edit {{ client()?.name ?? 'client' }}
       </h1>
-      <p class="mt-2 text-sm text-neutral-500">
-        Update billing details used by invoices and client records.
-      </p>
+      <nav
+        [attr.aria-label]="'clients.breadcrumb' | translate"
+        class="mt-1 flex min-w-0 items-center gap-1 text-xs text-neutral-500"
+      >
+        <a routerLink="/app/clients" class="transition hover:text-neutral-900">{{
+          'clients.title' | translate
+        }}</a>
+        <span aria-hidden="true">/</span>
+        <span class="truncate">Edit {{ client()?.name ?? 'client' }}</span>
+      </nav>
     </div>
-  </div>
+  </header>
 
   <app-client-form
     mode="edit"

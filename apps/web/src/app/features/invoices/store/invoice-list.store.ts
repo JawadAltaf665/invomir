@@ -2,6 +2,7 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { finalize, map } from 'rxjs';
 
 import { ApiResponseError, extractApiErrors } from '../../../core/errors/api-response-error';
+import { TranslationService } from '../../../core/i18n/translation.service';
 import { ApiResponse, PagedResult } from '../../../core/models/api-response.model';
 import {
   InvoiceClientListItemDto,
@@ -15,7 +16,6 @@ import {
   formatInvoiceDate,
   formatInvoiceDateTime,
   invoiceStatusClass,
-  invoiceStatusLabel,
 } from '../utils/invoice-formatters';
 import { InvoiceApiService } from '../services/invoice-api.service';
 
@@ -24,6 +24,10 @@ const defaultFilters: InvoiceListFilters = {
   clientId: null,
   from: null,
   to: null,
+  minAmount: null,
+  maxAmount: null,
+  sortBy: 'created',
+  sortDirection: 'desc',
   page: 1,
   limit: 20,
   searchTerm: '',
@@ -32,6 +36,7 @@ const defaultFilters: InvoiceListFilters = {
 @Injectable({ providedIn: 'root' })
 export class InvoiceListStore {
   private readonly invoiceApi = inject(InvoiceApiService);
+  private readonly translation = inject(TranslationService);
   private readonly resultSignal = signal<InvoicePageResult | null>(null);
   private readonly filtersSignal = signal<InvoiceListFilters>(defaultFilters);
   private readonly clientsSignal = signal<readonly InvoiceClientListItemDto[]>([]);
@@ -66,18 +71,20 @@ export class InvoiceListStore {
       return [];
     }
 
-    const searchTerm = this.filters().searchTerm.trim().toLowerCase();
-    const rows = result.items.map((invoice) => this.toRow(invoice));
+    return result.items.map((invoice) => this.toRow(invoice));
+  });
 
-    if (!searchTerm) {
-      return rows;
-    }
+  readonly hasActiveFilters = computed(() => {
+    const filters = this.filters();
 
-    return rows.filter((invoice) =>
-      [invoice.invoiceNumber, invoice.clientName, invoice.statusLabel]
-        .join(' ')
-        .toLowerCase()
-        .includes(searchTerm),
+    return Boolean(
+      filters.status ||
+      filters.clientId ||
+      filters.from ||
+      filters.to ||
+      filters.searchTerm.trim() ||
+      filters.minAmount !== null ||
+      filters.maxAmount !== null,
     );
   });
 
@@ -123,12 +130,20 @@ export class InvoiceListStore {
       });
   }
 
-  setSearchTerm(searchTerm: string): void {
-    this.filtersSignal.update((filters) => ({ ...filters, searchTerm }));
+  toggleSort(sortBy: InvoiceListFilters['sortBy']): void {
+    const filters = this.filters();
+    const nextDirection =
+      filters.sortBy === sortBy && filters.sortDirection === 'asc' ? 'desc' : 'asc';
+
+    this.loadInvoices({
+      page: 1,
+      sortBy,
+      sortDirection: filters.sortBy === sortBy ? nextDirection : 'asc',
+    });
   }
 
   resetFilters(): void {
-    this.loadInvoices(defaultFilters);
+    this.loadInvoices({ ...defaultFilters, limit: this.filters().limit });
   }
 
   private normalizeFilters(filters: InvoiceListFilters): InvoiceListFilters {
@@ -138,6 +153,10 @@ export class InvoiceListStore {
       clientId: filters.clientId || null,
       from: filters.from || null,
       to: filters.to || null,
+      minAmount: this.normalizeAmount(filters.minAmount),
+      maxAmount: this.normalizeAmount(filters.maxAmount),
+      sortBy: filters.sortBy || 'created',
+      sortDirection: filters.sortDirection || 'desc',
       page: Math.max(1, filters.page || 1),
       limit: Math.min(100, Math.max(1, filters.limit || 20)),
       searchTerm: filters.searchTerm ?? '',
@@ -159,11 +178,37 @@ export class InvoiceListStore {
       invoiceNumber: invoice.invoiceNumber,
       clientName: invoice.clientName,
       status: invoice.status,
-      statusLabel: invoiceStatusLabel(invoice.status),
+      statusLabel: this.translation.translate(`invoiceStatus.${invoice.status}`),
       statusClass: invoiceStatusClass(invoice.status),
-      totalDisplay: formatInvoiceCurrency(invoice.total, invoice.currency),
-      dueDateDisplay: formatInvoiceDate(invoice.dueDate),
-      sentAtDisplay: formatInvoiceDateTime(invoice.sentAt),
+      totalDisplay: formatInvoiceCurrency(
+        invoice.total,
+        invoice.currency,
+        this.translation.language(),
+      ),
+      dueDateDisplay: formatInvoiceDate(
+        invoice.dueDate,
+        this.translation.language(),
+        this.translation.translate('common.notSet'),
+      ),
+      sentAtDisplay: formatInvoiceDate(
+        invoice.sentAt,
+        this.translation.language(),
+        this.translation.translate('common.notSet'),
+      ),
+      sentAtFullDisplay: formatInvoiceDateTime(
+        invoice.sentAt,
+        this.translation.language(),
+        this.translation.translate('common.notSet'),
+      ),
     };
+  }
+
+  private normalizeAmount(value: number | string | null | undefined): number | null {
+    if (value === null || value === undefined || value === '') {
+      return null;
+    }
+
+    const parsed = Number(value);
+    return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
   }
 }

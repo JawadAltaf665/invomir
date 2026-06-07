@@ -261,7 +261,36 @@ public static class RateLimitingConfiguration
 
     private static string GetIpAddress(HttpContext context)
     {
-        return context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        return FirstHeaderValue(context.Request, "CF-Connecting-IP") ??
+            FirstHeaderValue(context.Request, "X-Forwarded-For") ??
+            FirstForwardedAddress(context.Request) ??
+            FirstHeaderValue(context.Request, "X-Real-IP") ??
+            context.Connection.RemoteIpAddress?.ToString() ??
+            "unknown";
+    }
+
+    private static string? FirstHeaderValue(HttpRequest request, string headerName)
+    {
+        var value = request.Headers[headerName].ToString();
+        if (string.IsNullOrWhiteSpace(value))
+            return null;
+
+        return value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .FirstOrDefault();
+    }
+
+    private static string? FirstForwardedAddress(HttpRequest request)
+    {
+        var forwarded = FirstHeaderValue(request, "Forwarded");
+        if (string.IsNullOrWhiteSpace(forwarded))
+            return null;
+
+        const string key = "for=";
+        var forPart = forwarded
+            .Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .FirstOrDefault(part => part.StartsWith(key, StringComparison.OrdinalIgnoreCase));
+
+        return forPart?[key.Length..].Trim('"', '[', ']');
     }
 
     private static string GetForgotPasswordEmail(HttpContext context)

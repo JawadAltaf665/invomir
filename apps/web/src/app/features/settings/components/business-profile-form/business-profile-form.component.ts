@@ -17,6 +17,8 @@ type BusinessProfileFormGroup = FormGroup<{
   taxPercent: FormControl<number>;
 }>;
 
+import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
+
 @Component({
   selector: 'app-business-profile-form',
   standalone: true,
@@ -24,6 +26,7 @@ type BusinessProfileFormGroup = FormGroup<{
     class: 'block h-full',
   },
   imports: [
+    TranslatePipe,
     ReactiveFormsModule,
     MatButtonModule,
     MatFormFieldModule,

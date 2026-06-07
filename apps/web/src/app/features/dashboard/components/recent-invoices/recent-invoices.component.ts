@@ -8,12 +8,15 @@ interface DashboardRecentInvoiceView extends DashboardRecentInvoiceItem {
   dueDateClass: string;
 }
 
+import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
+
 @Component({
   selector: 'app-recent-invoices',
   standalone: true,
   host: {
     class: 'block h-full',
   },
+  imports: [TranslatePipe],
   templateUrl: './recent-invoices.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

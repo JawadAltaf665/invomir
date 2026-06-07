@@ -1,3 +1,4 @@
+using InvoMir.Application.Features.Notifications;
 using InvoMir.Application.Features.Subscriptions;
 using InvoMir.Application.Features.Team;
 
@@ -8,7 +9,8 @@ public sealed class HandleStripeWebhookCommandHandler(
     IAppDbContext context,
     IInvoiceReminderJobService invoiceReminderJobService,
     IEmailService emailService,
-    IAuditService auditService)
+    IAuditService auditService,
+    INotificationService notificationService)
     : IRequestHandler<HandleStripeWebhookCommand>
 {
     private const string PaymentIntentSucceeded = "payment_intent.succeeded";
@@ -118,6 +120,26 @@ public sealed class HandleStripeWebhookCommandHandler(
             oldValues,
             ToAuditSnapshot(invoice, payment, cancelledReminderJobCount),
             cancellationToken: cancellationToken);
+
+        await NotificationEventPublisher.CreateForRolesAsync(
+            notificationService,
+            invoice.TenantId,
+            NotificationEventPublisher.BillingOperatorRoles,
+            "Payment received",
+            $"{invoice.InvoiceNumber} was paid online.",
+            NotificationConstants.Types.Payment,
+            NotificationConstants.Priorities.High,
+            $"/app/invoices/{invoice.Id}",
+            new
+            {
+                invoice.Id,
+                invoice.InvoiceNumber,
+                PaymentId = payment.Id,
+                payment.Amount,
+                payment.Currency,
+                payment.StripePaymentIntentId
+            },
+            cancellationToken);
     }
 
     private async Task HandlePaymentFailedAsync(
@@ -162,6 +184,26 @@ public sealed class HandleStripeWebhookCommandHandler(
         payment.SetTenant(invoice.TenantId);
         context.Payments.Add(payment);
         await context.SaveChangesAsync(cancellationToken);
+
+        await NotificationEventPublisher.CreateForRolesAsync(
+            notificationService,
+            invoice.TenantId,
+            NotificationEventPublisher.BillingOperatorRoles,
+            "Payment Failed",
+            $"Client payment for Invoice {invoice.InvoiceNumber} failed.",
+            NotificationConstants.Types.Payment,
+            NotificationConstants.Priorities.High,
+            $"/app/invoices/{invoice.Id}",
+            new
+            {
+                invoice.Id,
+                invoice.InvoiceNumber,
+                PaymentId = payment.Id,
+                payment.Amount,
+                payment.Currency,
+                payment.FailureReason
+            },
+            cancellationToken);
     }
 
     private async Task HandleSubscriptionCheckoutCompletedAsync(
@@ -228,6 +270,24 @@ public sealed class HandleStripeWebhookCommandHandler(
             oldValues: null,
             newValues: ToAuditSnapshot(subscription),
             cancellationToken: cancellationToken);
+
+        await notificationService.CreateForUserAsync(
+            tenantId.Value,
+            userId.Value,
+            "Subscription activated",
+            $"Your {subscription.Plan} plan is active.",
+            NotificationConstants.Types.Subscription,
+            NotificationConstants.Priorities.High,
+            "/app/subscriptions",
+            new
+            {
+                subscription.Id,
+                subscription.Plan,
+                subscription.Status,
+                subscription.Interval,
+                subscription.CurrentPeriodEnd
+            },
+            cancellationToken);
     }
 
     private async Task HandleSubscriptionSyncedAsync(
@@ -351,6 +411,23 @@ public sealed class HandleStripeWebhookCommandHandler(
             oldValues,
             ToAuditSnapshot(subscription),
             cancellationToken: cancellationToken);
+
+        await notificationService.CreateForUserAsync(
+            subscription.TenantId,
+            subscription.UserId,
+            "Subscription payment failed",
+            "Your subscription payment failed and the workspace was moved to the free plan.",
+            NotificationConstants.Types.Subscription,
+            NotificationConstants.Priorities.Critical,
+            "/app/subscriptions",
+            new
+            {
+                subscription.Id,
+                subscription.Plan,
+                subscription.Status,
+                subscription.StripeSubscriptionId
+            },
+            cancellationToken);
     }
 
     private async Task<ReceiptSnapshot> GetReceiptSnapshotAsync(

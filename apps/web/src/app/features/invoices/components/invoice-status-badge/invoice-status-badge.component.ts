@@ -1,7 +1,8 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 
 import { InvoiceStatus } from '../../models/invoice.models';
-import { invoiceStatusClass, invoiceStatusLabel } from '../../utils/invoice-formatters';
+import { invoiceStatusClass } from '../../utils/invoice-formatters';
+import { TranslationService } from '../../../../core/i18n/translation.service';
 
 @Component({
   selector: 'app-invoice-status-badge',
@@ -11,7 +12,10 @@ import { invoiceStatusClass, invoiceStatusLabel } from '../../utils/invoice-form
 })
 export class InvoiceStatusBadgeComponent {
   readonly status = input.required<InvoiceStatus>();
+  private readonly translation = inject(TranslationService);
 
-  protected readonly label = computed(() => invoiceStatusLabel(this.status()));
+  protected readonly label = computed(() =>
+    this.translation.translate(`invoiceStatus.${this.status()}`),
+  );
   protected readonly badgeClass = computed(() => invoiceStatusClass(this.status()));
 }

@@ -88,6 +88,16 @@ public static class Permissions
         ];
     }
 
+    public static class Notification
+    {
+        public const string View = "notification.view";
+
+        public static readonly string[] All =
+        [
+            View
+        ];
+    }
+
     public static class Subscription
     {
         public const string View = "subscription.view";
@@ -150,7 +160,7 @@ public static class Permissions
         ..Client.All,
         ..Payment.All,
         ..Report.All,
-        ..AuditLog.All,
+        ..Notification.All,
         ..Subscription.All,
         ..Team.All,
         ..Settings.All
@@ -159,6 +169,7 @@ public static class Permissions
     public static readonly string[] All =
     [
         ..OrganizationScoped,
+        ..AuditLog.All,
         ..System.All
     ];
 

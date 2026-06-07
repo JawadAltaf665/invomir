@@ -1,24 +1,26 @@
 <nav
   class="flex flex-col gap-4 border-t border-neutral-200 px-5 py-4 lg:flex-row lg:items-center lg:justify-between"
-  aria-label="Pagination"
+  [attr.aria-label]="'pagination.label' | translate"
 >
   <div class="min-w-0">
     <p class="text-sm text-neutral-600">
-      Showing
+      {{ 'pagination.showing' | translate }}
       <span class="font-medium text-neutral-900">{{ startItem() }}</span>
-      to
+      {{ 'pagination.to' | translate }}
       <span class="font-medium text-neutral-900">{{ endItem() }}</span>
-      of
+      {{ 'pagination.of' | translate }}
       <span class="font-medium text-neutral-900">{{ totalCount() }}</span>
       {{ itemLabel() }}
     </p>
-    <p class="mt-1 text-xs text-neutral-500">Page {{ currentPage() }} of {{ safeTotalPages() }}</p>
+    <p class="mt-1 text-xs text-neutral-500">
+      {{ 'pagination.page' | translate: { page: currentPage(), totalPages: safeTotalPages() } }}
+    </p>
   </div>
 
   <div class="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center lg:justify-end">
     <div class="w-full sm:w-32">
       <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-full">
-        <mat-label>Rows</mat-label>
+        <mat-label>{{ 'pagination.rows' | translate }}</mat-label>
         <mat-select
           [value]="safePageSize()"
           [disabled]="isLoading()"
@@ -40,7 +42,7 @@
           (click)="goToPreviousPage()"
         >
           <svg lucideChevronLeft class="size-4" aria-hidden="true"></svg>
-          Previous
+          {{ 'common.previous' | translate }}
         </button>
 
         <div class="flex items-center gap-2">
@@ -53,7 +55,7 @@
                 [class]="pageButtonClass(item)"
                 [disabled]="isLoading()"
                 [attr.aria-current]="item === currentPage() ? 'page' : null"
-                [attr.aria-label]="'Go to page ' + item"
+                [attr.aria-label]="'pagination.goToPage' | translate: { page: item }"
                 (click)="goToPage(item)"
               >
                 {{ item }}
@@ -68,7 +70,7 @@
           [disabled]="isLoading() || currentPage() >= safeTotalPages()"
           (click)="goToNextPage()"
         >
-          Next
+          {{ 'common.next' | translate }}
           <svg lucideChevronRight class="size-4" aria-hidden="true"></svg>
         </button>
       </div>

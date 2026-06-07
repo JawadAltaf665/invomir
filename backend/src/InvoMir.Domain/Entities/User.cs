@@ -11,7 +11,9 @@ public sealed class User : TenantEntity
     public string Role { get; private set; } = AuthConstants.Roles.Owner;
     public string Plan { get; private set; } = AuthConstants.Plans.Free;
     public string? LogoUrl { get; private set; }
+    public string? ProfilePictureUrl { get; private set; }
     public string Currency { get; private set; } = "USD";
+    public string PreferredLanguage { get; private set; } = LanguageConstants.Default;
     public decimal TaxPercent { get; private set; }
     public string? StripeAccountId { get; private set; }
     public bool IsActive { get; private set; } = true;
@@ -157,6 +159,22 @@ public sealed class User : TenantEntity
             throw new ArgumentException("Logo URL is required.", nameof(logoUrl));
 
         LogoUrl = logoUrl.Trim();
+    }
+
+    public void UpdatePreferredLanguage(string language)
+    {
+        if (!LanguageConstants.TryNormalize(language, out var normalizedLanguage))
+            throw new ArgumentException("Language is not supported.", nameof(language));
+
+        PreferredLanguage = normalizedLanguage;
+    }
+
+    public void UpdateProfilePictureUrl(string profilePictureUrl)
+    {
+        if (string.IsNullOrWhiteSpace(profilePictureUrl))
+            throw new ArgumentException("Profile picture URL is required.", nameof(profilePictureUrl));
+
+        ProfilePictureUrl = profilePictureUrl.Trim();
     }
 
     public void UpdateStripeAccountId(string stripeAccountId)

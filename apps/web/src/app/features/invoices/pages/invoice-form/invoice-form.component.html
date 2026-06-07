@@ -1,24 +1,33 @@
 <section class="mx-auto max-w-7xl p-6 lg:p-8">
-  <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-    <div>
-      <a
-        routerLink="/app/invoices"
-        class="inline-flex items-center text-sm font-medium text-neutral-500 transition hover:text-neutral-900"
+  <header class="flex items-center gap-3">
+    <a
+      routerLink="/app/invoices"
+      [attr.aria-label]="'invoices.back' | translate"
+      title="Back to invoices"
+      class="inline-flex size-9 shrink-0 items-center justify-center rounded-lg border border-neutral-200 bg-white text-neutral-500 transition hover:border-neutral-300 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+    >
+      <svg lucideArrowLeft class="size-4" aria-hidden="true"></svg>
+    </a>
+
+    <div class="min-w-0">
+      <p class="text-xs font-medium uppercase tracking-normal text-neutral-500">Invoices</p>
+      <h1 class="truncate text-2xl font-semibold tracking-tight text-neutral-900">{{ title() }}</h1>
+      <nav
+        [attr.aria-label]="'invoices.breadcrumb' | translate"
+        class="mt-1 flex min-w-0 items-center gap-1 text-xs text-neutral-500"
       >
-        <svg lucideArrowLeft class="mr-2 size-4" aria-hidden="true"></svg>
-        Invoices
-      </a>
-      <p class="mt-4 text-xs font-medium uppercase tracking-normal text-neutral-500">
-        Invoice editor
-      </p>
-      <h1 class="mt-2 text-2xl font-semibold tracking-tight text-neutral-900">{{ title() }}</h1>
-      <p class="mt-2 text-sm text-neutral-500">Drafts can be edited until they are sent.</p>
+        <a routerLink="/app/invoices" class="transition hover:text-neutral-900">{{
+          'invoices.title' | translate
+        }}</a>
+        <span aria-hidden="true">/</span>
+        <span class="truncate">{{ title() }}</span>
+      </nav>
     </div>
-  </div>
+  </header>
 
   @if (errorMessages().length > 0) {
     <div class="mt-6 rounded-2xl border border-red-200 bg-red-50 p-5 shadow-sm">
-      <p class="text-sm font-medium text-red-800">Invoice could not be saved</p>
+      <p class="text-sm font-medium text-red-800">{{ 'invoices.saveError' | translate }}</p>
       <div class="mt-2 space-y-1">
         @for (error of errorMessages(); track error) {
           <p class="text-xs text-red-600">{{ error }}</p>
@@ -50,11 +59,32 @@
     >
       <div class="space-y-6 xl:col-span-2">
         <article class="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
-          <h2 class="text-lg font-semibold text-neutral-900">Invoice details</h2>
+          <h2 class="text-lg font-semibold text-neutral-900">
+            {{ 'invoices.details' | translate }}
+          </h2>
+
+          <div class="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div class="rounded-2xl bg-neutral-50 p-4">
+              <p class="text-xs font-medium uppercase tracking-normal text-neutral-500">
+                {{ 'invoices.invoiceNumber' | translate }}
+              </p>
+              <p class="mt-1 text-sm font-semibold text-neutral-900">{{ invoiceNumberLabel() }}</p>
+            </div>
+
+            <div class="rounded-2xl bg-neutral-50 p-4">
+              <p class="text-xs font-medium uppercase tracking-normal text-neutral-500">
+                {{ 'invoices.issueDate' | translate }}
+              </p>
+              <p class="mt-1 text-sm font-semibold text-neutral-900">{{ issueDateLabel() }}</p>
+              @if (!isEditMode()) {
+                <p class="mt-1 text-xs text-neutral-500">{{ 'invoices.setOnSave' | translate }}</p>
+              }
+            </div>
+          </div>
 
           <div class="mt-6 grid grid-cols-1 gap-5 md:grid-cols-2">
             <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Client</mat-label>
+              <mat-label>{{ 'invoices.client' | translate }}</mat-label>
               <mat-select formControlName="clientId">
                 @for (client of clientOptions(); track client.id) {
                   <mat-option [value]="client.id">
@@ -62,41 +92,56 @@
                   </mat-option>
                 }
               </mat-select>
-              <mat-hint>Select the billing client for this invoice.</mat-hint>
               @if (form.controls.clientId.hasError('required')) {
-                <mat-error>Client is required.</mat-error>
+                <mat-error>{{ 'invoices.clientRequired' | translate }}</mat-error>
               }
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Due date</mat-label>
-              <input matInput type="date" formControlName="dueDate" />
-              <mat-hint>Use a fixed date or choose payment terms.</mat-hint>
+              <mat-label>{{ 'invoices.dueDate' | translate }}</mat-label>
+              <input
+                matInput
+                [matDatepicker]="dueDatePicker"
+                formControlName="dueDate"
+                placeholder="dd/mm/yyyy"
+              />
+              <mat-datepicker-toggle
+                matIconSuffix
+                [for]="dueDatePicker"
+                [disabled]="isDueDateAutoCalculated() || form.disabled"
+              />
+              <mat-datepicker #dueDatePicker />
+              <mat-hint>{{ dueDateHint() }}</mat-hint>
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Payment terms</mat-label>
+              <mat-label>
+                <span class="inline-flex items-center gap-1"
+                  >{{ 'invoices.paymentTerms' | translate
+                  }}<svg
+                    lucideCircleHelp
+                    class="size-3 text-neutral-400"
+                    [matTooltip]="'invoices.paymentTermsHelp' | translate"
+                    [attr.aria-label]="'invoices.paymentTermsHelp' | translate"
+                  ></svg>
+                </span>
+              </mat-label>
               <mat-select formControlName="paymentTerms">
-                <mat-option value="">Use due date</mat-option>
-                @for (term of paymentTermOptions; track term.value) {
+                <mat-option value="">{{ 'invoices.useDueDate' | translate }}</mat-option>
+                @for (term of paymentTermOptions(); track term.value) {
                   <mat-option [value]="term.value">{{ term.label }}</mat-option>
                 }
               </mat-select>
-              <mat-hint>Used when due date is empty.</mat-hint>
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Currency</mat-label>
-              <mat-select formControlName="currency">
-                @for (currency of currencyOptions; track currency) {
-                  <mat-option [value]="currency">{{ currency }}</mat-option>
-                }
-              </mat-select>
-              <mat-hint>Dashboard reports convert to {{ workspaceCurrency() }}.</mat-hint>
+              <mat-label>{{ 'invoices.currency' | translate }}</mat-label>
+              <input matInput formControlName="currency" readonly />
+              <mat-hint>{{ 'invoices.currencyLocked' | translate }}</mat-hint>
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Tax percent</mat-label>
+              <mat-label>{{ 'invoices.taxPercent' | translate }}</mat-label>
               <input
                 matInput
                 type="number"
@@ -105,48 +150,53 @@
                 step="0.01"
                 formControlName="taxPercent"
               />
-              <mat-hint>Server accepts 0 to 100.</mat-hint>
               @if (
                 form.controls.taxPercent.hasError('min') || form.controls.taxPercent.hasError('max')
               ) {
-                <mat-error>Tax percent must be between 0 and 100.</mat-error>
+                <mat-error>{{ 'invoices.taxRangeError' | translate }}</mat-error>
               }
             </mat-form-field>
 
             <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
               <mat-form-field appearance="outline" class="w-full">
-                <mat-label>Discount type</mat-label>
-                <mat-select formControlName="discountType">
-                  @for (type of discountTypeOptions; track type.value) {
-                    <mat-option [value]="type.value">{{ type.label }}</mat-option>
-                  }
-                </mat-select>
-              </mat-form-field>
-
-              <mat-form-field appearance="outline" class="w-full">
-                <mat-label>Discount</mat-label>
+                <mat-label>{{ 'invoices.discount' | translate }}</mat-label>
                 <input matInput type="number" min="0" step="0.01" formControlName="discountValue" />
                 @if (form.controls.discountValue.hasError('min')) {
-                  <mat-error>Discount cannot be negative.</mat-error>
+                  <mat-error>{{ 'invoices.discountNegative' | translate }}</mat-error>
                 } @else if (form.hasError('discountPercentExceeded')) {
-                  <mat-error>Percent discount cannot exceed 100.</mat-error>
+                  <mat-error>{{ 'invoices.discountPercentError' | translate }}</mat-error>
                 }
               </mat-form-field>
+
+              @if (hasDiscountValue()) {
+                <mat-form-field appearance="outline" class="w-full">
+                  <mat-label>{{ 'invoices.discountType' | translate }}</mat-label>
+                  <mat-select formControlName="discountType">
+                    @for (type of discountTypeOptions(); track type.value) {
+                      <mat-option [value]="type.value">{{ type.label }}</mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+              }
             </div>
           </div>
 
-          @if (form.hasError('dueDateOrPaymentTerms') && (form.touched || form.dirty)) {
+          @if (showDueDateOrPaymentTermsError()) {
             <p class="mt-3 text-xs font-medium text-red-600">
-              Due date or payment terms are required.
+              {{ 'invoices.dueDateOrTermsRequired' | translate }}
             </p>
           }
 
           <mat-form-field appearance="outline" class="mt-5 w-full">
-            <mat-label>Notes</mat-label>
-            <textarea matInput rows="4" formControlName="notes"></textarea>
-            <mat-hint>Optional customer-facing notes.</mat-hint>
+            <mat-label>{{ 'invoices.notes' | translate }}</mat-label>
+            <textarea
+              matInput
+              rows="3"
+              formControlName="notes"
+              [placeholder]="'invoices.notesPlaceholder' | translate"
+            ></textarea>
             @if (form.controls.notes.hasError('maxlength')) {
-              <mat-error>Notes cannot exceed 1000 characters.</mat-error>
+              <mat-error>{{ 'invoices.notesLength' | translate }}</mat-error>
             }
           </mat-form-field>
         </article>
@@ -154,8 +204,12 @@
         <article class="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
           <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
             <div>
-              <h2 class="text-lg font-semibold text-neutral-900">Line items</h2>
-              <p class="mt-1 text-sm text-neutral-500">Add up to 100 invoice rows.</p>
+              <h2 class="text-lg font-semibold text-neutral-900">
+                {{ 'invoices.lineItems' | translate }}
+              </h2>
+              <p class="mt-1 text-sm text-neutral-500">
+                {{ 'invoices.lineItemsLimit' | translate }}
+              </p>
             </div>
             <button
               mat-stroked-button
@@ -163,8 +217,8 @@
               [disabled]="items.length >= 100 || form.disabled"
               (click)="addItem()"
             >
-              <svg lucidePlus class="size-4" aria-hidden="true"></svg>
-              Add item
+              <svg lucidePlus class="size-4" aria-hidden="true"></svg
+              >{{ 'invoices.addItem' | translate }}
             </button>
           </div>
 
@@ -175,29 +229,33 @@
                 [formGroupName]="index"
               >
                 <mat-form-field appearance="outline" class="lg:col-span-4">
-                  <mat-label>Description</mat-label>
-                  <input matInput formControlName="description" maxlength="200" />
-                  <mat-hint>Product, service, or fee.</mat-hint>
+                  <mat-label>{{ 'invoices.descriptionField' | translate }}</mat-label>
+                  <input
+                    matInput
+                    formControlName="description"
+                    maxlength="200"
+                    [placeholder]="'invoices.descriptionPlaceholder' | translate"
+                  />
                   @if (hasItemError(index, 'description', 'required')) {
-                    <mat-error>Description is required.</mat-error>
+                    <mat-error>{{ 'invoices.descriptionRequired' | translate }}</mat-error>
                   } @else if (hasItemError(index, 'description', 'maxlength')) {
-                    <mat-error>Description cannot exceed 200 characters.</mat-error>
+                    <mat-error>{{ 'invoices.descriptionLength' | translate }}</mat-error>
                   }
                 </mat-form-field>
 
                 <mat-form-field appearance="outline" class="lg:col-span-2">
-                  <mat-label>Quantity</mat-label>
+                  <mat-label>{{ 'invoices.quantity' | translate }}</mat-label>
                   <input matInput type="number" min="0.01" step="0.01" formControlName="quantity" />
                   @if (hasItemError(index, 'quantity', 'min')) {
-                    <mat-error>Quantity must be greater than zero.</mat-error>
+                    <mat-error>{{ 'invoices.quantityError' | translate }}</mat-error>
                   }
                 </mat-form-field>
 
                 <mat-form-field appearance="outline" class="lg:col-span-2">
-                  <mat-label>Unit price</mat-label>
+                  <mat-label>{{ 'invoices.unitPrice' | translate }}</mat-label>
                   <input matInput type="number" min="0" step="0.01" formControlName="unitPrice" />
                   @if (hasItemError(index, 'unitPrice', 'min')) {
-                    <mat-error>Unit price cannot be negative.</mat-error>
+                    <mat-error>{{ 'invoices.unitPriceError' | translate }}</mat-error>
                   }
                 </mat-form-field>
 
@@ -206,7 +264,7 @@
                 >
                   <div class="min-w-0">
                     <p class="text-xs font-medium uppercase tracking-normal text-neutral-500">
-                      Amount
+                      {{ 'invoices.amount' | translate }}
                     </p>
                     <p
                       class="mt-1 max-w-full break-words text-sm font-semibold leading-snug text-neutral-900 [overflow-wrap:anywhere]"
@@ -223,7 +281,7 @@
                     mat-icon-button
                     type="button"
                     [disabled]="items.length === 1 || form.disabled"
-                    aria-label="Remove line item"
+                    [attr.aria-label]="'invoices.removeItem' | translate"
                     (click)="removeItem(index)"
                   >
                     <svg lucideTrash2 class="size-4" aria-hidden="true"></svg>
@@ -239,9 +297,9 @@
         <app-invoice-totals-summary [currency]="currentCurrency()" [totals]="draftTotals()" />
 
         <article class="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
-          <h2 class="text-lg font-semibold text-neutral-900">Save</h2>
+          <h2 class="text-lg font-semibold text-neutral-900">{{ 'common.save' | translate }}</h2>
           <p class="mt-2 text-sm text-neutral-500">
-            The backend recalculates totals before storing the invoice.
+            {{ 'invoices.totalsCheckedBeforeSave' | translate }}
           </p>
           <div class="mt-5 grid grid-cols-1 gap-3">
             <button
@@ -254,10 +312,10 @@
                 <mat-spinner diameter="18" />
               } @else {
                 <svg lucideSave class="size-4" aria-hidden="true"></svg>
-                Save invoice
+                {{ 'invoices.saveAsDraft' | translate }}
               }
             </button>
-            <a mat-stroked-button routerLink="/app/invoices">Cancel</a>
+            <a mat-stroked-button routerLink="/app/invoices">{{ 'common.cancel' | translate }}</a>
           </div>
         </article>
       </aside>

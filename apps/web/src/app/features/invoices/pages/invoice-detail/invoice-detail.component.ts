@@ -5,8 +5,10 @@ import {
   OnInit,
   PLATFORM_ID,
   computed,
+  effect,
   inject,
   signal,
+  untracked,
 } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDividerModule } from '@angular/material/divider';
@@ -31,7 +33,9 @@ import { Observable, finalize, map } from 'rxjs';
 import { AuthSessionService } from '../../../../core/auth/auth-session.service';
 import { ApiResponseError, extractApiErrors } from '../../../../core/errors/api-response-error';
 import { ApiResponse } from '../../../../core/models/api-response.model';
+import { TranslationService } from '../../../../core/i18n/translation.service';
 import { permissions } from '../../../../core/permissions/permissions';
+import { WorkspaceCurrencyRefreshService } from '../../../../core/services/workspace-currency-refresh.service';
 import { InvoiceStatusBadgeComponent } from '../../components/invoice-status-badge/invoice-status-badge.component';
 import { InvoiceTotalsSummaryComponent } from '../../components/invoice-totals-summary/invoice-totals-summary.component';
 import { InvoiceDetailDto } from '../../models/invoice.models';
@@ -42,10 +46,13 @@ import {
   formatInvoiceDateTime,
 } from '../../utils/invoice-formatters';
 
+import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
+
 @Component({
   selector: 'app-invoice-detail',
   standalone: true,
   imports: [
+    TranslatePipe,
     MatButtonModule,
     MatDividerModule,
     MatMenuModule,
@@ -74,6 +81,8 @@ export class InvoiceDetailComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly platformId = inject(PLATFORM_ID);
+  private readonly workspaceCurrencyRefresh = inject(WorkspaceCurrencyRefreshService);
+  private readonly translation = inject(TranslationService);
 
   protected readonly invoice = signal<InvoiceDetailDto | null>(null);
   protected readonly isLoading = signal(false);
@@ -151,6 +160,22 @@ export class InvoiceDetailComponent implements OnInit {
   protected readonly hasMoreActions = computed(
     () => this.hasNonDestructiveActions() || this.canDelete(),
   );
+  private observedCurrencyRefreshVersion = this.workspaceCurrencyRefresh.version();
+  private readonly refreshOnWorkspaceCurrencyChange = effect(() => {
+    const version = this.workspaceCurrencyRefresh.version();
+
+    if (version === this.observedCurrencyRefreshVersion) {
+      return;
+    }
+
+    this.observedCurrencyRefreshVersion = version;
+
+    if (isPlatformBrowser(this.platformId)) {
+      untracked(() =>
+        this.loadInvoice(this.invoice()?.id ?? this.route.snapshot.paramMap.get('id')),
+      );
+    }
+  });
 
   ngOnInit(): void {
     if (!isPlatformBrowser(this.platformId)) {
@@ -193,7 +218,11 @@ export class InvoiceDetailComponent implements OnInit {
       return;
     }
 
-    const confirmed = window.confirm(`Mark ${invoice.invoiceNumber} as paid?`);
+    const confirmed = window.confirm(
+      this.translation.translate('invoices.confirmMarkPaid', {
+        invoiceNumber: invoice.invoiceNumber,
+      }),
+    );
     if (!confirmed) {
       return;
     }
@@ -210,7 +239,11 @@ export class InvoiceDetailComponent implements OnInit {
       return;
     }
 
-    const confirmed = window.confirm(`Cancel ${invoice.invoiceNumber}?`);
+    const confirmed = window.confirm(
+      this.translation.translate('invoices.confirmCancel', {
+        invoiceNumber: invoice.invoiceNumber,
+      }),
+    );
     if (!confirmed) {
       return;
     }
@@ -239,7 +272,11 @@ export class InvoiceDetailComponent implements OnInit {
       return;
     }
 
-    const confirmed = window.confirm(`Delete or cancel ${invoice.invoiceNumber}?`);
+    const confirmed = window.confirm(
+      this.translation.translate('invoices.confirmDelete', {
+        invoiceNumber: invoice.invoiceNumber,
+      }),
+    );
     if (!confirmed) {
       return;
     }
@@ -270,15 +307,23 @@ export class InvoiceDetailComponent implements OnInit {
   }
 
   protected formatCurrency(value: number, currency: string): string {
-    return formatInvoiceCurrency(value, currency);
+    return formatInvoiceCurrency(value, currency, this.translation.language());
   }
 
   protected formatDate(value: string | null | undefined): string {
-    return formatInvoiceDate(value);
+    return formatInvoiceDate(
+      value,
+      this.translation.language(),
+      this.translation.translate('common.notSet'),
+    );
   }
 
   protected formatDateTime(value: string | null | undefined): string {
-    return formatInvoiceDateTime(value);
+    return formatInvoiceDateTime(
+      value,
+      this.translation.language(),
+      this.translation.translate('common.notSet'),
+    );
   }
 
   protected hasPermission(permission: string): boolean {
@@ -294,7 +339,7 @@ export class InvoiceDetailComponent implements OnInit {
     this.errorMessages.set([]);
 
     this.invoiceApi
-      .getInvoice(invoiceId)
+      .getInvoice(invoiceId, { useWorkspaceCurrency: true })
       .pipe(
         map((response) => this.unwrap(response, 'Invoice request failed.')),
         finalize(() => this.isLoading.set(false)),

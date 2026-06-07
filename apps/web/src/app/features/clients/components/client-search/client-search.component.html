@@ -5,19 +5,18 @@
 >
   <div class="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
     <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-full">
-      <mat-label>Search clients</mat-label>
+      <mat-label>{{ 'clients.search' | translate }}</mat-label>
       <input matInput formControlName="searchTerm" autocomplete="off" />
-      <mat-hint>Name or email</mat-hint>
+      <mat-hint>{{ 'clients.searchHint' | translate }}</mat-hint>
     </mat-form-field>
 
     <div class="flex flex-col gap-3 sm:flex-row lg:pt-0">
       <button mat-stroked-button type="button" [disabled]="isLoading()" (click)="resetFilters()">
-        <svg lucideRotateCcw class="size-4" aria-hidden="true"></svg>
-        Reset
+        <svg lucideRotateCcw class="size-4" aria-hidden="true"></svg
+        >{{ 'common.reset' | translate }}
       </button>
       <button mat-flat-button color="primary" type="submit" [disabled]="isLoading()">
-        <svg lucideSearch class="size-4" aria-hidden="true"></svg>
-        Search
+        <svg lucideSearch class="size-4" aria-hidden="true"></svg>{{ 'common.search' | translate }}
       </button>
     </div>
   </div>

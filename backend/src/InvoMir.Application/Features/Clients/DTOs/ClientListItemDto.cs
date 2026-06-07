@@ -6,4 +6,12 @@ public sealed record ClientListItemDto(
     string Email,
     string? Company,
     decimal TotalRevenue,
-    int InvoiceCount);
+    string Currency,
+    int InvoiceCount,
+    int DraftInvoiceCount,
+    int SentInvoiceCount,
+    int ViewedInvoiceCount,
+    int PaidInvoiceCount,
+    int OverdueInvoiceCount,
+    int CancelledInvoiceCount,
+    DateTime? LastInvoiceAt);

@@ -7,6 +7,7 @@ public sealed class GetPaymentPageQueryHandler(
 {
     private const string PaidMessage = "This invoice has already been paid.";
     private const string CancelledMessage = "This invoice is no longer payable.";
+    private const string StripeConnectRequiredMessage = "Card payments are not available because this workspace has not connected Stripe.";
 
     public async Task<PaymentPageDto> Handle(
         GetPaymentPageQuery request,
@@ -30,7 +31,15 @@ public sealed class GetPaymentPageQueryHandler(
                 invoice.Total,
                 invoice.Currency,
                 invoice.Client.Name,
-                invoice.UserId))
+                invoice.UserId,
+                context.Tenants
+                    .IgnoreQueryFilters()
+                    .Where(tenant =>
+                        tenant.Id == invoice.TenantId &&
+                        tenant.IsActive &&
+                        !tenant.IsDeleted)
+                    .Select(tenant => tenant.StripeAccountId)
+                    .FirstOrDefault()))
             .FirstOrDefaultAsync(cancellationToken);
 
         if (snapshot is null)
@@ -53,6 +62,9 @@ public sealed class GetPaymentPageQueryHandler(
         if (snapshot.Status == InvoiceConstants.Statuses.Cancelled)
             return new PaymentPageDto(pageInvoice, null, CancelledMessage);
 
+        if (string.IsNullOrWhiteSpace(snapshot.ConnectedStripeAccountId))
+            return new PaymentPageDto(pageInvoice, null, StripeConnectRequiredMessage);
+
         var checkoutSession = await stripeService.CreateCheckoutSessionAsync(
             new StripeCheckoutSessionRequestDto(
                 snapshot.InvoiceId,
@@ -60,7 +72,8 @@ public sealed class GetPaymentPageQueryHandler(
                 snapshot.PaymentLinkToken,
                 snapshot.InvoiceNumber,
                 snapshot.Total,
-                snapshot.Currency),
+                snapshot.Currency,
+                snapshot.ConnectedStripeAccountId),
             cancellationToken);
 
         return new PaymentPageDto(pageInvoice, checkoutSession.Url, null);
@@ -100,5 +113,6 @@ public sealed class GetPaymentPageQueryHandler(
         decimal Total,
         string Currency,
         string ClientName,
-        Guid UserId);
+        Guid UserId,
+        string? ConnectedStripeAccountId);
 }

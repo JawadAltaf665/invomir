@@ -1,3 +1,5 @@
+using InvoMir.Application.Features.Notifications;
+
 namespace InvoMir.Application.Features.Clients.Commands.UpdateClient;
 
 public sealed class UpdateClientCommandHandler(
@@ -5,7 +7,8 @@ public sealed class UpdateClientCommandHandler(
     ICurrentUserContext currentUserContext,
     ITenantContext tenantContext,
     IClientContext clientContext,
-    IAuditService auditService)
+    IAuditService auditService,
+    INotificationService notificationService)
     : IRequestHandler<UpdateClientCommand, ClientDto>
 {
     public async Task<ClientDto> Handle(
@@ -43,6 +46,24 @@ public sealed class UpdateClientCommandHandler(
             ToAuditSnapshot(client),
             clientContext.IpAddress,
             clientContext.DeviceInfo,
+            cancellationToken);
+
+        await NotificationEventPublisher.CreateForRolesAsync(
+            notificationService,
+            tenantContext.TenantId,
+            NotificationEventPublisher.WorkspaceOperatorRoles,
+            "Client updated",
+            $"{client.Name} profile was updated.",
+            NotificationConstants.Types.Client,
+            NotificationConstants.Priorities.Low,
+            $"/app/clients/{client.Id}",
+            new
+            {
+                client.Id,
+                client.Name,
+                client.Email,
+                client.Company
+            },
             cancellationToken);
 
         return ToDto(client);

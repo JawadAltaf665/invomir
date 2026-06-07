@@ -42,6 +42,10 @@ export interface InvoiceListItemDto {
   status: InvoiceStatus;
   total: number;
   currency: string;
+  originalTotal: number;
+  originalCurrency: string;
+  exchangeRate: number;
+  ratesUpdatedAt: string | null;
   dueDate: string;
   sentAt: string | null;
 }
@@ -112,7 +116,6 @@ export interface InvoiceSaveRequest {
   taxPercent?: number | null;
   discount?: InvoiceDiscountDto | null;
   notes?: string | null;
-  currency?: string | null;
   items: readonly InvoiceItemInputDto[];
 }
 
@@ -121,6 +124,11 @@ export interface InvoiceListQuery {
   clientId?: string | null;
   from?: string | null;
   to?: string | null;
+  searchTerm?: string | null;
+  minAmount?: number | null;
+  maxAmount?: number | null;
+  sortBy?: InvoiceListSortBy | null;
+  sortDirection?: InvoiceListSortDirection | null;
   page: number;
   limit: number;
 }
@@ -189,6 +197,10 @@ export interface InvoiceClientListItemDto {
 
 export interface InvoiceListFilters extends InvoiceListQuery {
   searchTerm: string;
+  minAmount: number | null;
+  maxAmount: number | null;
+  sortBy: InvoiceListSortBy;
+  sortDirection: InvoiceListSortDirection;
 }
 
 export interface InvoiceListItemView {
@@ -201,6 +213,24 @@ export interface InvoiceListItemView {
   totalDisplay: string;
   dueDateDisplay: string;
   sentAtDisplay: string;
+  sentAtFullDisplay: string;
 }
 
 export type InvoicePageResult = PagedResult<InvoiceListItemDto>;
+
+export type InvoiceListSortBy =
+  | 'created'
+  | 'invoice'
+  | 'client'
+  | 'status'
+  | 'due'
+  | 'sent'
+  | 'total';
+export type InvoiceListSortDirection = 'asc' | 'desc';
+
+export type InvoiceTableAction = 'send' | 'resend' | 'markPaid' | 'downloadPdf' | 'cancel';
+
+export interface InvoiceTableActionEvent {
+  action: InvoiceTableAction;
+  invoice: InvoiceListItemView;
+}

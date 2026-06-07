@@ -1,4 +1,5 @@
 import { SupportedCurrency } from '../../../core/auth/auth.models';
+import { SupportedLanguage } from '../../../core/i18n/language.config';
 
 export interface UserProfileDto {
   id: string;
@@ -7,7 +8,9 @@ export interface UserProfileDto {
   lastName: string;
   businessName: string;
   logoUrl: string | null;
+  profilePictureUrl: string | null;
   currency: SupportedCurrency | string;
+  preferredLanguage: SupportedLanguage | string;
   taxPercent: number;
   plan: string;
   role: string;
@@ -20,6 +23,10 @@ export interface UserProfileDto {
 
 export interface UserLogoDto {
   logoUrl: string;
+}
+
+export interface UserProfilePictureDto {
+  profilePictureUrl: string;
 }
 
 export interface UpdateUserProfileRequest {

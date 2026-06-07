@@ -5,8 +5,10 @@ import {
   OnInit,
   PLATFORM_ID,
   computed,
+  effect,
   inject,
   signal,
+  untracked,
 } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { Router } from '@angular/router';
@@ -15,17 +17,22 @@ import { finalize } from 'rxjs';
 
 import { AuthSessionService } from '../../../../core/auth/auth-session.service';
 import { extractApiErrors } from '../../../../core/errors/api-response-error';
+import { TranslationService } from '../../../../core/i18n/translation.service';
 import { permissions } from '../../../../core/permissions/permissions';
+import { WorkspaceCurrencyRefreshService } from '../../../../core/services/workspace-currency-refresh.service';
 import { ClientSearchComponent } from '../../components/client-search/client-search.component';
 import { ClientTableComponent } from '../../components/client-table/client-table.component';
 import { ClientListFilters, ClientListItemView } from '../../models/client.models';
 import { ClientApiService } from '../../services/client-api.service';
 import { ClientListStore } from '../../store/client-list.store';
 
+import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
+
 @Component({
   selector: 'app-client-list',
   standalone: true,
   imports: [
+    TranslatePipe,
     MatButtonModule,
     ClientSearchComponent,
     ClientTableComponent,
@@ -41,12 +48,31 @@ export class ClientListComponent implements OnInit {
   private readonly clientApi = inject(ClientApiService);
   private readonly platformId = inject(PLATFORM_ID);
   private readonly router = inject(Router);
+  private readonly workspaceCurrencyRefresh = inject(WorkspaceCurrencyRefreshService);
+  private readonly translation = inject(TranslationService);
 
   protected readonly isDeleting = signal(false);
   protected readonly actionErrorMessages = signal<readonly string[]>([]);
+  private observedCurrencyRefreshVersion = this.workspaceCurrencyRefresh.version();
+  private readonly refreshOnWorkspaceCurrencyChange = effect(() => {
+    const version = this.workspaceCurrencyRefresh.version();
+
+    if (version === this.observedCurrencyRefreshVersion) {
+      return;
+    }
+
+    this.observedCurrencyRefreshVersion = version;
+
+    if (isPlatformBrowser(this.platformId)) {
+      untracked(() => this.clientStore.loadClients({ page: this.clientStore.filters().page }));
+    }
+  });
 
   protected readonly canCreateClient = computed(() =>
     this.authSession.hasPermission(permissions.client.create),
+  );
+  protected readonly canCreateInvoice = computed(() =>
+    this.authSession.hasPermission(permissions.invoice.create),
   );
   protected readonly canUpdateClient = computed(() =>
     this.authSession.hasPermission(permissions.client.update),
@@ -92,7 +118,9 @@ export class ClientListComponent implements OnInit {
       return;
     }
 
-    const confirmed = window.confirm(`Delete ${client.name}?`);
+    const confirmed = window.confirm(
+      this.translation.translate('clients.confirmDelete', { name: client.name }),
+    );
 
     if (!confirmed) {
       return;

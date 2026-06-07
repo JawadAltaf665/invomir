@@ -1,4 +1,6 @@
 using InvoMir.Application.Common.Behaviours;
+using InvoMir.Application.Features.Dashboard.ActionItems;
+using InvoMir.Application.Features.Notifications;
 using InvoMir.Application.Security;
 
 namespace InvoMir.Application;
@@ -14,6 +16,8 @@ public static class DependencyInjection
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehaviour<,>));
         services.AddSingleton<IRolePermissionProvider, DefaultRolePermissionProvider>();
         services.AddSingleton<IPermissionChecker, ClaimsPermissionChecker>();
+        services.AddScoped<IDashboardActionItemProvider, PaymentAccountRequiredDashboardActionItemProvider>();
+        services.AddScoped<INotificationService, NotificationService>();
 
         return services;
     }

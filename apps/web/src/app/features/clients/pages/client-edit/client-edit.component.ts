@@ -17,10 +17,12 @@ import { ClientFormComponent } from '../../components/client-form/client-form.co
 import { ClientDetailDto, ClientDto, ClientSaveRequest } from '../../models/client.models';
 import { ClientApiService } from '../../services/client-api.service';
 
+import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
+
 @Component({
   selector: 'app-client-edit',
   standalone: true,
-  imports: [RouterLink, ClientFormComponent, LucideArrowLeft],
+  imports: [TranslatePipe, RouterLink, ClientFormComponent, LucideArrowLeft],
   templateUrl: './client-edit.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

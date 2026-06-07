@@ -5,39 +5,51 @@ import {
   OnInit,
   PLATFORM_ID,
   computed,
+  effect,
   inject,
   signal,
+  untracked,
 } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { LucideArrowLeft, LucideEdit3, LucideRefreshCcw, LucideTrash2 } from '@lucide/angular';
+import {
+  LucideArrowLeft,
+  LucideEdit3,
+  LucideFilePlus2,
+  LucideRefreshCcw,
+  LucideTrash2,
+} from '@lucide/angular';
 import { finalize, map } from 'rxjs';
 
 import { AuthSessionService } from '../../../../core/auth/auth-session.service';
 import { ApiResponseError, extractApiErrors } from '../../../../core/errors/api-response-error';
 import { ApiResponse } from '../../../../core/models/api-response.model';
+import { TranslationService } from '../../../../core/i18n/translation.service';
 import { permissions } from '../../../../core/permissions/permissions';
+import { WorkspaceCurrencyRefreshService } from '../../../../core/services/workspace-currency-refresh.service';
 import { ClientInvoiceHistoryComponent } from '../../components/client-invoice-history/client-invoice-history.component';
 import { ClientDetailDto, ClientInvoiceSummaryDto } from '../../models/client.models';
 import { ClientApiService } from '../../services/client-api.service';
 import {
   clientInvoiceStatusClass,
-  clientInvoiceStatusLabel,
   formatClientCurrency,
   formatClientDate,
-  formatClientMetric,
 } from '../../utils/client-formatters';
+
+import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
 
 @Component({
   selector: 'app-client-details',
   standalone: true,
   imports: [
+    TranslatePipe,
     NgClass,
     MatButtonModule,
     RouterLink,
     ClientInvoiceHistoryComponent,
     LucideArrowLeft,
     LucideEdit3,
+    LucideFilePlus2,
     LucideRefreshCcw,
     LucideTrash2,
   ],
@@ -50,6 +62,8 @@ export class ClientDetailsComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly platformId = inject(PLATFORM_ID);
+  private readonly workspaceCurrencyRefresh = inject(WorkspaceCurrencyRefreshService);
+  private readonly translation = inject(TranslationService);
 
   protected readonly client = signal<ClientDetailDto | null>(null);
   protected readonly isLoading = signal(false);
@@ -57,9 +71,32 @@ export class ClientDetailsComponent implements OnInit {
   protected readonly errorMessages = signal<readonly string[]>([]);
   protected readonly invoicePage = signal(1);
   protected readonly invoicePageSize = signal(20);
+  private observedCurrencyRefreshVersion = this.workspaceCurrencyRefresh.version();
+  private readonly refreshOnWorkspaceCurrencyChange = effect(() => {
+    const version = this.workspaceCurrencyRefresh.version();
+
+    if (version === this.observedCurrencyRefreshVersion) {
+      return;
+    }
+
+    this.observedCurrencyRefreshVersion = version;
+
+    if (isPlatformBrowser(this.platformId)) {
+      untracked(() =>
+        this.loadClient(
+          this.client()?.id ?? this.route.snapshot.paramMap.get('id') ?? undefined,
+          this.invoicePage(),
+          this.invoicePageSize(),
+        ),
+      );
+    }
+  });
 
   protected readonly canUpdateClient = computed(() =>
     this.authSession.hasPermission(permissions.client.update),
+  );
+  protected readonly canCreateInvoice = computed(() =>
+    this.authSession.hasPermission(permissions.invoice.create),
   );
   protected readonly canDeleteClient = computed(() =>
     this.authSession.hasPermission(permissions.client.delete),
@@ -116,7 +153,9 @@ export class ClientDetailsComponent implements OnInit {
       return;
     }
 
-    const confirmed = window.confirm(`Delete ${client.name}?`);
+    const confirmed = window.confirm(
+      this.translation.translate('clients.confirmDelete', { name: client.name }),
+    );
 
     if (!confirmed) {
       return;
@@ -134,16 +173,18 @@ export class ClientDetailsComponent implements OnInit {
       });
   }
 
-  protected formatMetric(value: number): string {
-    return formatClientMetric(value);
+  protected formatMetric(value: number, currency: string): string {
+    return formatClientCurrency(value, currency, this.translation.language());
   }
 
   protected formatField(value: string | null | undefined): string {
-    return value?.trim() || 'Not set';
+    return value?.trim() || this.translation.translate('common.notSet');
   }
 
   protected clientStatusLabel(client: ClientDetailDto): string {
-    return client.isActive ? 'Active' : 'Inactive';
+    return client.isActive
+      ? this.translation.translate('common.active')
+      : this.translation.translate('common.inactive');
   }
 
   private loadClient(
@@ -175,10 +216,18 @@ export class ClientDetailsComponent implements OnInit {
       id: invoice.id,
       invoiceNumber: invoice.invoiceNumber,
       status: invoice.status,
-      statusLabel: clientInvoiceStatusLabel(invoice.status),
+      statusLabel: this.translation.translate(`invoiceStatus.${invoice.status.toLowerCase()}`),
       statusClass: clientInvoiceStatusClass(invoice.status),
-      totalDisplay: formatClientCurrency(invoice.total, invoice.currency),
-      dueDateDisplay: formatClientDate(invoice.dueDate),
+      totalDisplay: formatClientCurrency(
+        invoice.total,
+        invoice.currency,
+        this.translation.language(),
+      ),
+      dueDateDisplay: formatClientDate(
+        invoice.dueDate,
+        this.translation.language(),
+        this.translation.translate('common.notSet'),
+      ),
     };
   }
 

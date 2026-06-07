@@ -1,3 +1,5 @@
+using InvoMir.Application.Features.Notifications;
+
 namespace InvoMir.Application.Features.Invoices.Commands.CancelInvoice;
 
 public sealed class CancelInvoiceCommandHandler(
@@ -6,7 +8,8 @@ public sealed class CancelInvoiceCommandHandler(
     ITenantContext tenantContext,
     IClientContext clientContext,
     IInvoiceReminderJobService invoiceReminderJobService,
-    IAuditService auditService)
+    IAuditService auditService,
+    INotificationService notificationService)
     : IRequestHandler<CancelInvoiceCommand, InvoiceCancellationDto>
 {
     public async Task<InvoiceCancellationDto> Handle(
@@ -41,6 +44,24 @@ public sealed class CancelInvoiceCommandHandler(
             ToAuditSnapshot(invoice, cancelledReminderJobCount),
             clientContext.IpAddress,
             clientContext.DeviceInfo,
+            cancellationToken);
+
+        await NotificationEventPublisher.CreateForRolesAsync(
+            notificationService,
+            invoice.TenantId,
+            NotificationEventPublisher.BillingOperatorRoles,
+            "Invoice cancelled",
+            $"{invoice.InvoiceNumber} was cancelled.",
+            NotificationConstants.Types.Invoice,
+            NotificationConstants.Priorities.Medium,
+            $"/app/invoices/{invoice.Id}",
+            new
+            {
+                invoice.Id,
+                invoice.InvoiceNumber,
+                invoice.Status,
+                invoice.CancelledAt
+            },
             cancellationToken);
 
         return new InvoiceCancellationDto(invoice.Id, invoice.Status, invoice.CancelledAt);

@@ -6,6 +6,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { Router } from '@angular/router';
+import { LucideEye, LucideEyeOff } from '@lucide/angular';
 import { finalize } from 'rxjs';
 
 import { AuthSessionService } from '../../../../core/auth/auth-session.service';
@@ -23,7 +24,9 @@ import { AuthFormShellComponent } from '../../components/auth-form-shell/auth-fo
     MatInputModule,
     MatProgressSpinnerModule,
     MatSelectModule,
-    ReactiveFormsModule
+    ReactiveFormsModule,
+    LucideEye,
+    LucideEyeOff
   ],
   templateUrl: './register.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -36,6 +39,8 @@ export class RegisterComponent {
   protected readonly currencies = supportedCurrencies;
   protected readonly isSubmitting = signal(false);
   protected readonly errorMessages = signal<readonly string[]>([]);
+  protected readonly isPasswordVisible = signal(false);
+  protected readonly isConfirmPasswordVisible = signal(false);
 
   protected readonly form = this.fb.nonNullable.group({
     businessName: ['', [Validators.required, Validators.maxLength(200)]],
@@ -82,5 +87,13 @@ export class RegisterComponent {
         next: () => void this.router.navigate(['/app/dashboard']),
         error: error => this.errorMessages.set(extractApiErrors(error))
       });
+  }
+
+  protected togglePasswordVisibility(): void {
+    this.isPasswordVisible.update(isVisible => !isVisible);
+  }
+
+  protected toggleConfirmPasswordVisibility(): void {
+    this.isConfirmPasswordVisible.update(isVisible => !isVisible);
   }
 }

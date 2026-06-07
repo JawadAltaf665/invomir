@@ -1,4 +1,5 @@
 using InvoMir.Application.Features.Invoices;
+using InvoMir.Application.Features.Notifications;
 
 namespace InvoMir.Application.Features.Invoices.Commands.CreateInvoice;
 
@@ -8,6 +9,7 @@ public sealed class CreateInvoiceCommandHandler(
     ITenantContext tenantContext,
     IClientContext clientContext,
     IAuditService auditService,
+    INotificationService notificationService,
     IInvoiceNumberService invoiceNumberService)
     : IRequestHandler<CreateInvoiceCommand, InvoiceDetailDto>
 {
@@ -48,7 +50,7 @@ public sealed class CreateInvoiceCommandHandler(
         if (dueDate < issueDate)
             throw new BadRequestException("Due date must be on or after issue date.");
 
-        var currency = NormalizeInvoiceCurrency(request.Currency, userSettings.Currency);
+        var currency = NormalizeWorkspaceCurrency(userSettings.Currency);
         var taxPercent = request.TaxPercent ?? userSettings.TaxPercent;
         var totals = InvoiceDraftCalculator.CalculateTotals(request.Items, taxPercent, request.Discount);
         var invoiceNumber = await invoiceNumberService.GenerateNextAsync(tenantContext.TenantId, cancellationToken);
@@ -84,6 +86,25 @@ public sealed class CreateInvoiceCommandHandler(
             ipAddress: clientContext.IpAddress,
             userAgent: clientContext.DeviceInfo,
             cancellationToken: cancellationToken);
+
+        await NotificationEventPublisher.CreateForRolesAsync(
+            notificationService,
+            tenantContext.TenantId,
+            NotificationEventPublisher.BillingOperatorRoles,
+            "Invoice created",
+            $"{invoice.InvoiceNumber} was saved as draft.",
+            NotificationConstants.Types.Invoice,
+            NotificationConstants.Priorities.Low,
+            $"/app/invoices/{invoice.Id}",
+            new
+            {
+                invoice.Id,
+                invoice.InvoiceNumber,
+                invoice.Status,
+                invoice.Total,
+                invoice.Currency
+            },
+            cancellationToken);
 
         return ToDto(invoice, client, items);
     }
@@ -153,12 +174,8 @@ public sealed class CreateInvoiceCommandHandler(
         };
     }
 
-    private static string NormalizeInvoiceCurrency(string? requestedCurrency, string defaultCurrency)
+    private static string NormalizeWorkspaceCurrency(string currency)
     {
-        var currency = string.IsNullOrWhiteSpace(requestedCurrency)
-            ? defaultCurrency
-            : requestedCurrency;
-
         return currency.ToUpperInvariant().Trim();
     }
 

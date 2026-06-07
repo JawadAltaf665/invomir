@@ -6,10 +6,13 @@ import { PaginationComponent } from '../../../../shared/components/pagination/pa
 import { PaymentListItemView } from '../../models/payment.models';
 import { PaymentStatusBadgeComponent } from '../payment-status-badge/payment-status-badge.component';
 
+import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
+
 @Component({
   selector: 'app-payment-table',
   standalone: true,
   imports: [
+    TranslatePipe,
     RouterLink,
     PaginationComponent,
     PaymentStatusBadgeComponent,

@@ -16,4 +16,13 @@ public sealed class DashboardController(ISender mediator) : ControllerBase
         var result = await mediator.Send(new GetDashboardQuery(), cancellationToken);
         return Ok(ApiResponse<DashboardDto>.Ok(result));
     }
+
+    [HttpGet("action-items")]
+    [RequirePermission(Permissions.Dashboard.View)]
+    [ProducesResponseType(typeof(ApiResponse<DashboardActionItemsDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetActionItems(CancellationToken cancellationToken)
+    {
+        var result = await mediator.Send(new GetDashboardActionItemsQuery(), cancellationToken);
+        return Ok(ApiResponse<DashboardActionItemsDto>.Ok(result));
+    }
 }

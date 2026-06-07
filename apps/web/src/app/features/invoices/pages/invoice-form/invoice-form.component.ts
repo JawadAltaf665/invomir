@@ -2,12 +2,16 @@ import { isPlatformBrowser } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   OnInit,
   PLATFORM_ID,
   computed,
+  effect,
   inject,
   signal,
+  untracked,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   AbstractControl,
   FormArray,
@@ -19,18 +23,27 @@ import {
   Validators,
 } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
+import { MAT_DATE_LOCALE, provideNativeDateAdapter } from '@angular/material/core';
+import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { LucideArrowLeft, LucidePlus, LucideSave, LucideTrash2 } from '@lucide/angular';
-import { finalize, map } from 'rxjs';
+import {
+  LucideArrowLeft,
+  LucideCircleHelp,
+  LucidePlus,
+  LucideSave,
+  LucideTrash2,
+} from '@lucide/angular';
+import { distinctUntilChanged, finalize, map } from 'rxjs';
 
 import { ApiResponseError, extractApiErrors } from '../../../../core/errors/api-response-error';
-import { supportedCurrencies } from '../../../../core/auth/auth.models';
 import { ApiResponse, PagedResult } from '../../../../core/models/api-response.model';
 import { CurrentUserApiService } from '../../../../core/services/current-user-api.service';
+import { WorkspaceCurrencyRefreshService } from '../../../../core/services/workspace-currency-refresh.service';
 import {
   InvoiceClientListItemDto,
   InvoiceDetailDto,
@@ -45,9 +58,8 @@ import {
 import { InvoiceApiService } from '../../services/invoice-api.service';
 import {
   calculateInvoiceDraftTotals,
-  discountTypeLabel,
+  formatInvoiceDate,
   formatInvoiceCurrency,
-  paymentTermsLabel,
 } from '../../utils/invoice-formatters';
 import { InvoiceTotalsSummaryComponent } from '../../components/invoice-totals-summary/invoice-totals-summary.component';
 
@@ -59,7 +71,7 @@ type InvoiceItemFormGroup = FormGroup<{
 
 type InvoiceFormGroup = FormGroup<{
   clientId: FormControl<string>;
-  dueDate: FormControl<string>;
+  dueDate: FormControl<Date | null>;
   paymentTerms: FormControl<string>;
   currency: FormControl<string>;
   taxPercent: FormControl<number>;
@@ -69,24 +81,32 @@ type InvoiceFormGroup = FormGroup<{
   items: FormArray<InvoiceItemFormGroup>;
 }>;
 
+import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
+import { TranslationService } from '../../../../core/i18n/translation.service';
+
 @Component({
   selector: 'app-invoice-form',
   standalone: true,
   imports: [
+    TranslatePipe,
     ReactiveFormsModule,
     MatButtonModule,
+    MatDatepickerModule,
     MatFormFieldModule,
     MatInputModule,
     MatProgressSpinnerModule,
     MatSelectModule,
+    MatTooltipModule,
     RouterLink,
     InvoiceTotalsSummaryComponent,
     LucideArrowLeft,
+    LucideCircleHelp,
     LucidePlus,
     LucideSave,
     LucideTrash2,
   ],
   templateUrl: './invoice-form.component.html',
+  providers: [provideNativeDateAdapter(), { provide: MAT_DATE_LOCALE, useValue: 'en-GB' }],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class InvoiceFormComponent implements OnInit {
@@ -95,33 +115,54 @@ export class InvoiceFormComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly platformId = inject(PLATFORM_ID);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly workspaceCurrencyRefresh = inject(WorkspaceCurrencyRefreshService);
+  private readonly translation = inject(TranslationService);
 
   protected readonly isLoading = signal(false);
   protected readonly isSubmitting = signal(false);
+  protected readonly hasSubmitted = signal(false);
   protected readonly errorMessages = signal<readonly string[]>([]);
   protected readonly clientOptions = signal<readonly InvoiceClientListItemDto[]>([]);
   protected readonly editingInvoice = signal<InvoiceDetailDto | null>(null);
-  protected readonly workspaceCurrency = signal('USD');
-  protected readonly currencyOptions = supportedCurrencies;
+  private readonly invoiceCurrency = signal('USD');
+  private observedCurrencyRefreshVersion = this.workspaceCurrencyRefresh.version();
 
   protected readonly isEditMode = computed(() => !!this.editingInvoice());
   protected readonly title = computed(() =>
-    this.isEditMode() ? `Edit ${this.editingInvoice()?.invoiceNumber ?? 'invoice'}` : 'New invoice',
+    this.isEditMode()
+      ? `Edit ${this.editingInvoice()?.invoiceNumber ?? this.translation.translate('invoices.invoice')}`
+      : this.translation.translate('invoices.new'),
+  );
+  protected readonly invoiceNumberLabel = computed(
+    () =>
+      this.editingInvoice()?.invoiceNumber ?? this.translation.translate('invoices.assignedOnSave'),
+  );
+  protected readonly issueDateLabel = computed(() =>
+    formatInvoiceDate(
+      this.editingInvoice()?.issueDate ?? this.toFilterDate(this.issueDate()),
+      this.translation.language(),
+      this.translation.translate('common.notSet'),
+    ),
   );
 
-  protected readonly paymentTermOptions = invoicePaymentTerms.map((terms) => ({
-    value: terms,
-    label: paymentTermsLabel(terms),
-  }));
-  protected readonly discountTypeOptions = invoiceDiscountTypes.map((type) => ({
-    value: type,
-    label: discountTypeLabel(type),
-  }));
+  protected readonly paymentTermOptions = computed(() =>
+    invoicePaymentTerms.map((terms) => ({
+      value: terms,
+      label: this.translation.translate(`paymentTerms.${terms}`),
+    })),
+  );
+  protected readonly discountTypeOptions = computed(() =>
+    invoiceDiscountTypes.map((type) => ({
+      value: type,
+      label: this.translation.translate(`discountTypes.${type}`),
+    })),
+  );
 
   protected readonly form: InvoiceFormGroup = new FormGroup(
     {
       clientId: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-      dueDate: new FormControl('', { nonNullable: true }),
+      dueDate: new FormControl<Date | null>(null),
       paymentTerms: new FormControl('', { nonNullable: true }),
       currency: new FormControl('USD', {
         nonNullable: true,
@@ -140,6 +181,25 @@ export class InvoiceFormComponent implements OnInit {
       validators: [dueDateOrPaymentTermsValidator(), discountValueValidator()],
     },
   );
+  private readonly refreshOnWorkspaceCurrencyChange = effect(() => {
+    const version = this.workspaceCurrencyRefresh.version();
+
+    if (version === this.observedCurrencyRefreshVersion) {
+      return;
+    }
+
+    this.observedCurrencyRefreshVersion = version;
+
+    if (isPlatformBrowser(this.platformId) && !this.isEditMode()) {
+      untracked(() => this.loadWorkspaceDefaults(false));
+    }
+  });
+
+  constructor() {
+    this.form.controls.paymentTerms.valueChanges
+      .pipe(distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
+      .subscribe((paymentTerms) => this.applyPaymentTermsToDueDate(paymentTerms));
+  }
 
   protected get items(): FormArray<InvoiceItemFormGroup> {
     return this.form.controls.items;
@@ -177,6 +237,8 @@ export class InvoiceFormComponent implements OnInit {
   }
 
   protected submit(): void {
+    this.hasSubmitted.set(true);
+
     if (this.form.invalid || this.isSubmitting()) {
       this.form.markAllAsTouched();
       return;
@@ -216,11 +278,36 @@ export class InvoiceFormComponent implements OnInit {
   }
 
   protected currentCurrency(): string {
-    return this.form.controls.currency.value || 'USD';
+    return this.invoiceCurrency();
   }
 
   protected formatCurrency(value: number): string {
-    return formatInvoiceCurrency(value, this.currentCurrency());
+    return formatInvoiceCurrency(value, this.currentCurrency(), this.translation.language());
+  }
+
+  protected isDueDateAutoCalculated(): boolean {
+    return Boolean(this.form.controls.paymentTerms.value);
+  }
+
+  protected dueDateHint(): string {
+    return this.isDueDateAutoCalculated()
+      ? this.translation.translate('invoices.dueDateCalculated')
+      : this.translation.translate('invoices.dueDateHint');
+  }
+
+  protected hasDiscountValue(): boolean {
+    const value = Number(this.form.controls.discountValue.value);
+    return Number.isFinite(value) && value > 0;
+  }
+
+  protected showDueDateOrPaymentTermsError(): boolean {
+    const dueDate = this.form.controls.dueDate;
+    const paymentTerms = this.form.controls.paymentTerms;
+
+    return (
+      this.form.hasError('dueDateOrPaymentTerms') &&
+      (this.hasSubmitted() || dueDate.touched || paymentTerms.touched)
+    );
   }
 
   protected hasItemError(
@@ -237,9 +324,28 @@ export class InvoiceFormComponent implements OnInit {
       .listClients()
       .pipe(map((response) => this.unwrapPaged(response, 'Clients could not be loaded.')))
       .subscribe({
-        next: (result) => this.clientOptions.set(result.items),
+        next: (result) => {
+          this.clientOptions.set(result.items);
+          this.applyClientFromQuery();
+        },
         error: (error) => this.errorMessages.set(extractApiErrors(error)),
       });
+  }
+
+  private applyClientFromQuery(): void {
+    if (this.isEditMode() || this.form.controls.clientId.value) {
+      return;
+    }
+
+    const clientId = this.route.snapshot.queryParamMap.get('clientId');
+
+    if (!clientId) {
+      return;
+    }
+
+    if (this.clientOptions().some((client) => client.id === clientId)) {
+      this.form.controls.clientId.setValue(clientId);
+    }
   }
 
   private loadWorkspaceDefaults(isEditingInvoice: boolean): void {
@@ -249,10 +355,9 @@ export class InvoiceFormComponent implements OnInit {
       .subscribe({
         next: (profile) => {
           const currency = profile.currency.toUpperCase();
-          this.workspaceCurrency.set(currency);
 
           if (!isEditingInvoice) {
-            this.form.controls.currency.setValue(currency, { emitEvent: false });
+            this.setInvoiceCurrency(currency);
             this.form.controls.taxPercent.setValue(profile.taxPercent, { emitEvent: false });
           }
         },
@@ -302,14 +407,14 @@ export class InvoiceFormComponent implements OnInit {
 
     this.form.patchValue({
       clientId: invoice.client.id,
-      dueDate: invoice.dueDate,
+      dueDate: this.toDate(invoice.dueDate),
       paymentTerms: '',
-      currency: invoice.currency,
       taxPercent: invoice.taxPercent,
       discountType: 'fixed',
       discountValue: invoice.discountAmount,
       notes: invoice.notes ?? '',
     });
+    this.setInvoiceCurrency(invoice.currency);
 
     if (invoice.status !== 'draft') {
       this.form.disable({ emitEvent: false });
@@ -335,6 +440,12 @@ export class InvoiceFormComponent implements OnInit {
     ]);
   }
 
+  private setInvoiceCurrency(currency: string): void {
+    const normalizedCurrency = currency?.trim().toUpperCase() || 'USD';
+    this.invoiceCurrency.set(normalizedCurrency);
+    this.form.controls.currency.setValue(normalizedCurrency, { emitEvent: false });
+  }
+
   private createItemGroup(item: Partial<InvoiceItemInputDto> = {}): InvoiceItemFormGroup {
     return new FormGroup({
       description: new FormControl(item.description ?? '', {
@@ -354,17 +465,15 @@ export class InvoiceFormComponent implements OnInit {
 
   private toSaveRequest(): InvoiceSaveRequest {
     const value = this.form.getRawValue();
+    const paymentTerms = (value.paymentTerms || null) as InvoicePaymentTerms | null;
 
     return {
       clientId: value.clientId,
-      dueDate: value.dueDate || null,
-      paymentTerms: value.dueDate
-        ? null
-        : ((value.paymentTerms || null) as InvoicePaymentTerms | null),
+      dueDate: paymentTerms ? null : this.toFilterDate(value.dueDate),
+      paymentTerms,
       taxPercent: value.taxPercent,
       discount: this.discountPayload(),
       notes: value.notes.trim() || null,
-      currency: value.currency.toUpperCase(),
       items: value.items.map((item) => ({
         description: item.description.trim(),
         quantity: Number(item.quantity),
@@ -392,6 +501,65 @@ export class InvoiceFormComponent implements OnInit {
     return Number.isFinite(value) && value >= 0 && value <= 100 ? value : 0;
   }
 
+  private applyPaymentTermsToDueDate(paymentTerms: string): void {
+    const dueDateControl = this.form.controls.dueDate;
+
+    if (!paymentTerms) {
+      dueDateControl.enable({ emitEvent: false });
+      dueDateControl.setValue(null, { emitEvent: false });
+      return;
+    }
+
+    dueDateControl.setValue(this.resolvePaymentTermsDueDate(paymentTerms), { emitEvent: false });
+    dueDateControl.disable({ emitEvent: false });
+  }
+
+  private resolvePaymentTermsDueDate(paymentTerms: string): Date {
+    const issueDate = this.issueDate();
+    const dueDate = new Date(issueDate);
+    const daysByTerms: Record<InvoicePaymentTerms, number> = {
+      due_on_receipt: 0,
+      net_7: 7,
+      net_14: 14,
+      net_30: 30,
+    };
+    const offsetDays = daysByTerms[paymentTerms as InvoicePaymentTerms] ?? 0;
+
+    dueDate.setDate(dueDate.getDate() + offsetDays);
+    return dueDate;
+  }
+
+  private issueDate(): Date {
+    const invoiceIssueDate = this.editingInvoice()?.issueDate;
+
+    if (invoiceIssueDate) {
+      return this.toDate(invoiceIssueDate) ?? new Date();
+    }
+
+    return new Date();
+  }
+
+  private toDate(value: string | null | undefined): Date | null {
+    if (!value) {
+      return null;
+    }
+
+    const date = new Date(`${value}T00:00:00`);
+    return Number.isNaN(date.getTime()) ? null : date;
+  }
+
+  private toFilterDate(value: Date | null): string | null {
+    if (!value || Number.isNaN(value.getTime())) {
+      return null;
+    }
+
+    const year = value.getFullYear();
+    const month = `${value.getMonth() + 1}`.padStart(2, '0');
+    const day = `${value.getDate()}`.padStart(2, '0');
+
+    return `${year}-${month}-${day}`;
+  }
+
   private unwrap<T>(response: ApiResponse<T>, fallbackMessage: string): T {
     if (!response.success || response.data === null) {
       const message = response.message ?? response.errors[0] ?? fallbackMessage;
@@ -415,7 +583,7 @@ export class InvoiceFormComponent implements OnInit {
 
 function dueDateOrPaymentTermsValidator(): ValidatorFn {
   return (control: AbstractControl): ValidationErrors | null => {
-    const dueDate = control.get('dueDate')?.value as string | null;
+    const dueDate = control.get('dueDate')?.value as Date | null;
     const paymentTerms = control.get('paymentTerms')?.value as string | null;
 
     return dueDate || paymentTerms ? null : { dueDateOrPaymentTerms: true };

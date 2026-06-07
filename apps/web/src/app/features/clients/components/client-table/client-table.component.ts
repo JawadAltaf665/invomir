@@ -8,12 +8,15 @@ import {
   LucideChevronUp,
   LucideEdit3,
   LucideEye,
+  LucideFilePlus2,
   LucideTrash2,
   LucideUserPlus,
 } from '@lucide/angular';
 
 import { PaginationComponent } from '../../../../shared/components/pagination/pagination.component';
 import { ClientListItemView } from '../../models/client.models';
+
+import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
 
 @Component({
   selector: 'app-client-table',
@@ -22,6 +25,7 @@ import { ClientListItemView } from '../../models/client.models';
     class: 'block',
   },
   imports: [
+    TranslatePipe,
     MatButtonModule,
     MatDividerModule,
     MatMenuModule,
@@ -31,6 +35,7 @@ import { ClientListItemView } from '../../models/client.models';
     LucideChevronUp,
     LucideEdit3,
     LucideEye,
+    LucideFilePlus2,
     LucideTrash2,
     LucideUserPlus,
   ],
@@ -45,6 +50,7 @@ export class ClientTableComponent {
   readonly totalPages = input(0);
   readonly totalCount = input(0);
   readonly canCreate = input(false);
+  readonly canCreateInvoice = input(false);
   readonly canUpdate = input(false);
   readonly canDelete = input(false);
 

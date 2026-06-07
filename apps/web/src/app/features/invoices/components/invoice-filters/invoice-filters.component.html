@@ -4,16 +4,16 @@
   (ngSubmit)="applyFilters()"
 >
   <div class="grid grid-cols-1 gap-4 lg:grid-cols-12">
-    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="lg:col-span-3">
-      <mat-label>Search current page</mat-label>
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="lg:col-span-4">
+      <mat-label>{{ 'invoices.search' | translate }}</mat-label>
       <input matInput type="search" formControlName="searchTerm" autocomplete="off" />
     </mat-form-field>
 
     <mat-form-field appearance="outline" subscriptSizing="dynamic" class="lg:col-span-2">
-      <mat-label>Status</mat-label>
+      <mat-label>{{ 'common.status' | translate }}</mat-label>
       <mat-select formControlName="status">
-        <mat-option value="">All statuses</mat-option>
-        @for (status of statusOptions; track status.value) {
+        <mat-option value="">{{ 'invoices.allStatuses' | translate }}</mat-option>
+        @for (status of statusOptions(); track status.value) {
           <mat-option [value]="status.value">{{ status.label }}</mat-option>
         }
       </mat-select>
@@ -21,9 +21,9 @@
 
     @if (isClientFilterAvailable()) {
       <mat-form-field appearance="outline" subscriptSizing="dynamic" class="lg:col-span-3">
-        <mat-label>Client</mat-label>
+        <mat-label>{{ 'invoices.client' | translate }}</mat-label>
         <mat-select formControlName="clientId">
-          <mat-option value="">All clients</mat-option>
+          <mat-option value="">{{ 'invoices.allClients' | translate }}</mat-option>
           @for (client of clients(); track client.id) {
             <mat-option [value]="client.id">
               {{ client.name }} &middot; {{ client.email }}
@@ -34,24 +34,66 @@
     }
 
     <mat-form-field appearance="outline" subscriptSizing="dynamic" class="lg:col-span-2">
-      <mat-label>Issue from</mat-label>
-      <input matInput type="date" formControlName="from" />
+      <mat-label>{{ 'invoices.issueFrom' | translate }}</mat-label>
+      <input
+        matInput
+        [matDatepicker]="issueFromPicker"
+        formControlName="from"
+        placeholder="dd/mm/yyyy"
+      />
+      <mat-datepicker-toggle matIconSuffix [for]="issueFromPicker" />
+      <mat-datepicker #issueFromPicker />
     </mat-form-field>
 
     <mat-form-field appearance="outline" subscriptSizing="dynamic" class="lg:col-span-2">
-      <mat-label>Issue to</mat-label>
-      <input matInput type="date" formControlName="to" />
+      <mat-label>{{ 'invoices.issueTo' | translate }}</mat-label>
+      <input
+        matInput
+        [matDatepicker]="issueToPicker"
+        formControlName="to"
+        placeholder="dd/mm/yyyy"
+      />
+      <mat-datepicker-toggle matIconSuffix [for]="issueToPicker" />
+      <mat-datepicker #issueToPicker />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="lg:col-span-2">
+      <mat-label>{{ 'invoices.minAmount' | translate }}</mat-label>
+      <input matInput type="number" min="0" step="0.01" formControlName="minAmount" />
+      @if (form.controls.minAmount.hasError('min')) {
+        <mat-error>{{ 'invoices.minAmountError' | translate }}</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="lg:col-span-2">
+      <mat-label>{{ 'invoices.maxAmount' | translate }}</mat-label>
+      <input matInput type="number" min="0" step="0.01" formControlName="maxAmount" />
+      @if (form.controls.maxAmount.hasError('min')) {
+        <mat-error>{{ 'invoices.maxAmountError' | translate }}</mat-error>
+      }
     </mat-form-field>
   </div>
 
+  @if (form.hasError('dateRange') && (form.controls.from.touched || form.controls.to.touched)) {
+    <p class="mt-3 text-xs font-medium text-red-600">{{ 'invoices.dateRangeError' | translate }}</p>
+  }
+
+  @if (
+    form.hasError('amountRange') &&
+    (form.controls.minAmount.touched || form.controls.maxAmount.touched)
+  ) {
+    <p class="mt-3 text-xs font-medium text-red-600">
+      {{ 'invoices.amountRangeError' | translate }}
+    </p>
+  }
+
   <div class="mt-4 flex flex-col gap-3 sm:flex-row sm:justify-end">
     <button mat-button type="button" [disabled]="isLoading()" (click)="resetFilters()">
-      <svg lucideRotateCcw class="size-4" aria-hidden="true"></svg>
-      Reset
+      <svg lucideRotateCcw class="size-4" aria-hidden="true"></svg>{{ 'common.reset' | translate }}
     </button>
     <button mat-flat-button color="primary" type="submit" [disabled]="isLoading()">
-      <svg lucideSearch class="size-4" aria-hidden="true"></svg>
-      Apply filters
+      <svg lucideSearch class="size-4" aria-hidden="true"></svg
+      >{{ 'common.applyFilters' | translate }}
     </button>
   </div>
 </form>

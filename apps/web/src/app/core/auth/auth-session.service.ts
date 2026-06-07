@@ -60,9 +60,7 @@ export class AuthSessionService {
 
     this.stateSignal.update(state => ({ ...state, status: 'refreshing' }));
 
-    const refreshToken = this.tokenStorage.getRefreshToken();
-
-    this.refreshInFlight$ = this.authApi.refresh(refreshToken ? { refreshToken } : {}).pipe(
+    this.refreshInFlight$ = this.authApi.refresh().pipe(
       map(response => this.unwrap(response)),
       tap(token => this.acceptToken(token)),
       catchError(error => {
@@ -79,9 +77,7 @@ export class AuthSessionService {
   }
 
   logout(allDevices = false): Observable<void> {
-    const refreshToken = this.tokenStorage.getRefreshToken();
-
-    return this.authApi.logout({ refreshToken: refreshToken ?? undefined, allDevices }).pipe(
+    return this.authApi.logout({ allDevices }).pipe(
       map(response => this.unwrap(response)),
       map(() => undefined),
       catchError(error => {

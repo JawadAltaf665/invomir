@@ -7,12 +7,15 @@ interface DashboardStatusMetricView extends DashboardStatusMetric {
   badgeClass: string;
 }
 
+import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
+
 @Component({
   selector: 'app-invoice-analytics',
   standalone: true,
   host: {
     class: 'block h-full',
   },
+  imports: [TranslatePipe],
   templateUrl: './invoice-analytics.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

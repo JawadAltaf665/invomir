@@ -1,7 +1,11 @@
 <article class="rounded-2xl border border-neutral-200 bg-white shadow-sm">
   <div class="border-b border-neutral-200 p-5">
-    <h2 class="text-lg font-semibold text-neutral-900">Invoice history</h2>
-    <p class="mt-1 text-sm text-neutral-500">Invoices attached to this client profile.</p>
+    <h2 class="text-lg font-semibold text-neutral-900">
+      {{ 'clients.invoiceHistory' | translate }}
+    </h2>
+    <p class="mt-1 text-sm text-neutral-500">
+      {{ 'clients.invoiceHistoryDescription' | translate }}
+    </p>
   </div>
 
   @if (rows().length > 0) {
@@ -15,10 +19,18 @@
         </colgroup>
         <thead>
           <tr class="border-b border-neutral-200">
-            <th class="px-5 py-3 text-left font-medium text-neutral-600">Invoice</th>
-            <th class="px-5 py-3 text-left font-medium text-neutral-600">Status</th>
-            <th class="px-5 py-3 text-left font-medium text-neutral-600">Due</th>
-            <th class="px-5 py-3 text-right font-medium text-neutral-600">Total</th>
+            <th class="px-5 py-3 text-left font-medium text-neutral-600">
+              {{ 'invoices.invoice' | translate }}
+            </th>
+            <th class="px-5 py-3 text-left font-medium text-neutral-600">
+              {{ 'common.status' | translate }}
+            </th>
+            <th class="px-5 py-3 text-left font-medium text-neutral-600">
+              {{ 'invoices.due' | translate }}
+            </th>
+            <th class="px-5 py-3 text-right font-medium text-neutral-600">
+              {{ 'common.total' | translate }}
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -53,7 +65,7 @@
     </div>
 
     <app-pagination
-      itemLabel="client invoices"
+      [itemLabel]="'clients.invoiceHistory' | translate"
       [page]="currentPage()"
       [pageSize]="pageSize()"
       [totalCount]="totalCount()"
@@ -67,9 +79,11 @@
       <div class="grid size-12 place-items-center rounded-2xl bg-neutral-100 text-neutral-500">
         <svg lucideFileText class="size-5" aria-hidden="true"></svg>
       </div>
-      <h3 class="mt-5 text-base font-semibold text-neutral-900">No invoices yet</h3>
+      <h3 class="mt-5 text-base font-semibold text-neutral-900">
+        {{ 'invoices.noInvoices' | translate }}
+      </h3>
       <p class="mt-2 max-w-sm text-sm text-neutral-500">
-        Invoice activity will appear here after this client is used on an invoice.
+        {{ 'clients.noInvoiceActivity' | translate }}
       </p>
     </div>
   }
