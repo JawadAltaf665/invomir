@@ -4,7 +4,8 @@ namespace InvoMir.Application.Features.Subscriptions.Queries.GetCurrentSubscript
 
 public sealed class GetCurrentSubscriptionQueryHandler(
     IAppDbContext context,
-    ICurrentUserContext currentUserContext)
+    ICurrentUserContext currentUserContext,
+    ICurrencyConversionService currencyConversionService)
     : IRequestHandler<GetCurrentSubscriptionQuery, CurrentSubscriptionDto>
 {
     public async Task<CurrentSubscriptionDto> Handle(
@@ -24,6 +25,7 @@ public sealed class GetCurrentSubscriptionQueryHandler(
                 (user, tenant) => new SubscriptionProfileSnapshot(
                     user.Id,
                     tenant.Id,
+                    user.Currency,
                     user.Plan,
                     user.TrialEndsAt ?? tenant.TrialEndsAt,
                     user.TrialEndsAt != null ? user.CreationTime : tenant.CreationTime,
@@ -57,14 +59,20 @@ public sealed class GetCurrentSubscriptionQueryHandler(
             .Where(invoice => invoice.IssueDate >= monthStart && invoice.IssueDate < nextMonthStart)
             .CountAsync(cancellationToken);
 
-        return BuildDto(profile, subscription, clientCount, invoiceCount);
+        return await BuildDtoAsync(
+            profile,
+            subscription,
+            clientCount,
+            invoiceCount,
+            cancellationToken);
     }
 
-    private static CurrentSubscriptionDto BuildDto(
+    private async Task<CurrentSubscriptionDto> BuildDtoAsync(
         SubscriptionProfileSnapshot profile,
         SubscriptionSnapshot? subscription,
         int clientCount,
-        int invoiceCount)
+        int invoiceCount,
+        CancellationToken cancellationToken)
     {
         var now = DateTime.UtcNow;
         var activeTrial = profile.TrialEndsAt is not null && profile.TrialEndsAt > now;
@@ -73,13 +81,15 @@ public sealed class GetCurrentSubscriptionQueryHandler(
         var status = subscription?.Status ??
             (activeTrial ? SubscriptionConstants.Statuses.Trialing : SubscriptionConstants.Statuses.Active);
         var plan = SubscriptionPlanCatalog.GetPlan(planName);
+        var workspaceCurrency = NormalizeCurrency(profile.Currency);
+        var convertedPrices = await ConvertPricesAsync(plan, workspaceCurrency, cancellationToken);
 
         return new CurrentSubscriptionDto(
             plan.Plan,
             status,
-            plan.PricePerMonth,
-            plan.PricePerYear,
-            subscription?.Currency ?? plan.Currency,
+            convertedPrices.PricePerMonth,
+            convertedPrices.PricePerYear,
+            workspaceCurrency,
             subscription?.CurrentPeriodStart,
             subscription?.CurrentPeriodEnd,
             activeTrial ? profile.TrialStartedAt : null,
@@ -99,6 +109,24 @@ public sealed class GetCurrentSubscriptionQueryHandler(
                 plan.Features.TeamSeats));
     }
 
+    private async Task<ConvertedPlanPrices> ConvertPricesAsync(
+        SubscriptionPlanDefinition plan,
+        string workspaceCurrency,
+        CancellationToken cancellationToken)
+    {
+        var conversions = await currencyConversionService.ConvertAsync(
+            [
+                new CurrencyAmount(plan.PricePerMonth, plan.Currency),
+                new CurrencyAmount(plan.PricePerYear, plan.Currency)
+            ],
+            workspaceCurrency,
+            cancellationToken);
+
+        return new ConvertedPlanPrices(
+            conversions[0].ConvertedAmount,
+            conversions[1].ConvertedAmount);
+    }
+
     private static int? CalculateTrialDaysRemaining(DateTime? trialEndsAt, DateTime now)
     {
         if (trialEndsAt is null || trialEndsAt <= now)
@@ -107,9 +135,17 @@ public sealed class GetCurrentSubscriptionQueryHandler(
         return Math.Max(1, (int)Math.Ceiling((trialEndsAt.Value - now).TotalDays));
     }
 
+    private static string NormalizeCurrency(string currency)
+    {
+        return string.IsNullOrWhiteSpace(currency)
+            ? "USD"
+            : currency.Trim().ToUpperInvariant();
+    }
+
     private sealed record SubscriptionProfileSnapshot(
         Guid UserId,
         Guid TenantId,
+        string Currency,
         string Plan,
         DateTime? TrialEndsAt,
         DateTime TrialStartedAt,
@@ -126,4 +162,8 @@ public sealed class GetCurrentSubscriptionQueryHandler(
         DateTime CurrentPeriodEnd,
         bool CancelAtPeriodEnd,
         DateTime? CancelledAt);
+
+    private sealed record ConvertedPlanPrices(
+        decimal PricePerMonth,
+        decimal PricePerYear);
 }
