@@ -150,3 +150,8 @@ vite.config.ts.timestamp-*
 .vs/
 *.user
 *.suo
+
+# .NET secrets - never push to GitHub
+backend/src/InvoMir.API/InvoMir.API/appsettings.json
+backend/src/InvoMir.API/InvoMir.API/appsettings.Development.json
+backend/src/InvoMir.API/InvoMir.API/appsettings.Production.json
