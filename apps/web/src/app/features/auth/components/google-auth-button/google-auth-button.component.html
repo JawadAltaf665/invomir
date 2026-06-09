@@ -1,0 +1,12 @@
+<div class="space-y-2">
+  <div
+    #buttonHost
+    class="min-h-10 w-full overflow-hidden rounded-xl"
+    [class.pointer-events-none]="disabled()"
+    [class.opacity-60]="disabled()"
+  ></div>
+
+  @if (localError()) {
+    <p class="text-center text-xs font-medium text-red-700">{{ localError() }}</p>
+  }
+</div>

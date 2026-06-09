@@ -8,6 +8,7 @@ import { TokenStorageService } from '../auth/token-storage.service';
 
 const publicAuthEndpoints = [
   '/api/auth/login',
+  '/api/auth/google',
   '/api/auth/register',
   '/api/auth/refresh',
   '/api/auth/forgot-password',

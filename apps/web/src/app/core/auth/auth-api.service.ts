@@ -7,6 +7,7 @@ import { ApiResponse } from '../models/api-response.model';
 import {
   AuthTokenDto,
   ForgotPasswordRequest,
+  GoogleLoginRequest,
   LoginRequest,
   LogoutRequest,
   RegisterRequest,
@@ -20,6 +21,12 @@ export class AuthApiService {
 
   login(request: LoginRequest): Observable<ApiResponse<AuthTokenDto>> {
     return this.http.post<ApiResponse<AuthTokenDto>>(apiUrl('/api/auth/login'), request, {
+      withCredentials: true
+    });
+  }
+
+  googleLogin(request: GoogleLoginRequest): Observable<ApiResponse<AuthTokenDto>> {
+    return this.http.post<ApiResponse<AuthTokenDto>>(apiUrl('/api/auth/google'), request, {
       withCredentials: true
     });
   }

@@ -5,6 +5,7 @@ import {
   OnInit,
   PLATFORM_ID,
   computed,
+  effect,
   inject,
   signal,
 } from '@angular/core';
@@ -14,6 +15,7 @@ import { LucideRefreshCcw } from '@lucide/angular';
 
 import { AuthSessionService } from '../../../../core/auth/auth-session.service';
 import { permissions } from '../../../../core/permissions/permissions';
+import { WorkspaceCurrencyRefreshService } from '../../../../core/services/workspace-currency-refresh.service';
 import { BillingActionsCardComponent } from '../../components/billing-actions-card/billing-actions-card.component';
 import { CurrentPlanCardComponent } from '../../components/current-plan-card/current-plan-card.component';
 import { PlanCardComponent } from '../../components/plan-card/plan-card.component';
@@ -42,6 +44,21 @@ export class SubscriptionPageComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly platformId = inject(PLATFORM_ID);
   private readonly document = inject(DOCUMENT);
+  private readonly workspaceCurrencyRefresh = inject(WorkspaceCurrencyRefreshService);
+  private observedCurrencyRefreshVersion = this.workspaceCurrencyRefresh.version();
+  private readonly refreshOnWorkspaceCurrencyChange = effect(() => {
+    const version = this.workspaceCurrencyRefresh.version();
+
+    if (version === this.observedCurrencyRefreshVersion) {
+      return;
+    }
+
+    this.observedCurrencyRefreshVersion = version;
+
+    if (isPlatformBrowser(this.platformId)) {
+      this.subscriptionStore.loadBilling();
+    }
+  });
 
   protected readonly activeCheckoutPlan = signal<string | null>(null);
   protected readonly checkoutReturnMessage = signal('');

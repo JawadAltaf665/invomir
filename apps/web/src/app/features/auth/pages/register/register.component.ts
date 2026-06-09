@@ -13,12 +13,14 @@ import { AuthSessionService } from '../../../../core/auth/auth-session.service';
 import { SupportedCurrency, supportedCurrencies } from '../../../../core/auth/auth.models';
 import { extractApiErrors } from '../../../../core/errors/api-response-error';
 import { AuthFormShellComponent } from '../../components/auth-form-shell/auth-form-shell.component';
+import { GoogleAuthButtonComponent } from '../../components/google-auth-button/google-auth-button.component';
 
 @Component({
   selector: 'app-register',
   standalone: true,
   imports: [
     AuthFormShellComponent,
+    GoogleAuthButtonComponent,
     MatButtonModule,
     MatFormFieldModule,
     MatInputModule,
@@ -38,6 +40,7 @@ export class RegisterComponent {
 
   protected readonly currencies = supportedCurrencies;
   protected readonly isSubmitting = signal(false);
+  protected readonly isGoogleSubmitting = signal(false);
   protected readonly errorMessages = signal<readonly string[]>([]);
   protected readonly isPasswordVisible = signal(false);
   protected readonly isConfirmPasswordVisible = signal(false);
@@ -87,6 +90,27 @@ export class RegisterComponent {
         next: () => void this.router.navigate(['/app/dashboard']),
         error: error => this.errorMessages.set(extractApiErrors(error))
       });
+  }
+
+  protected continueWithGoogle(idToken: string): void {
+    if (this.isSubmitting() || this.isGoogleSubmitting()) {
+      return;
+    }
+
+    this.errorMessages.set([]);
+    this.isGoogleSubmitting.set(true);
+
+    this.authSession
+      .googleLogin({ idToken })
+      .pipe(finalize(() => this.isGoogleSubmitting.set(false)))
+      .subscribe({
+        next: () => void this.router.navigate(['/app/dashboard']),
+        error: error => this.errorMessages.set(extractApiErrors(error))
+      });
+  }
+
+  protected handleGoogleFailure(message: string): void {
+    this.errorMessages.set([message]);
   }
 
   protected togglePasswordVisibility(): void {

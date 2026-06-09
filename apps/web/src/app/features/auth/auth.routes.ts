@@ -26,6 +26,13 @@ export const authRoutes: Routes = [
         loadComponent: () => import('./pages/register/register.component').then(component => component.RegisterComponent)
       },
       {
+        path: 'google',
+        canActivate: [guestGuard],
+        title: 'Continue with Google | InvoMir',
+        loadComponent: () =>
+          import('./pages/google-auth/google-auth.component').then(component => component.GoogleAuthComponent)
+      },
+      {
         path: 'forgot-password',
         canActivate: [guestGuard],
         title: 'Reset password | InvoMir',

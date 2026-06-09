@@ -4,6 +4,7 @@ export const site = {
   appUrl: "https://invomir.com",
   registerUrl: "https://invomir.com/auth/register",
   loginUrl: "https://invomir.com/auth/login",
+  googleAuthUrl: "https://invomir.com/auth/google",
   dashboardUrl: "https://invomir.com/app/dashboard",
   supportEmail: "hello@invomir.com",
   privacyEmail: "privacy@invomir.com",

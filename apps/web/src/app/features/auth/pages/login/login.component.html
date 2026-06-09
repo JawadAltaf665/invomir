@@ -5,7 +5,22 @@
   footerLinkText="Create an account"
   footerLink="/auth/register"
 >
-  <form class="space-y-5" [formGroup]="form" (ngSubmit)="submit()">
+  <div class="space-y-5">
+    <app-google-auth-button
+      [disabled]="isSubmitting() || isGoogleSubmitting()"
+      text="signin_with"
+      (credential)="continueWithGoogle($event)"
+      (failed)="handleGoogleFailure($event)"
+    />
+
+    <div class="flex items-center gap-3">
+      <span class="h-px flex-1 bg-neutral-200"></span>
+      <span class="text-xs font-medium text-neutral-500">or sign in with email</span>
+      <span class="h-px flex-1 bg-neutral-200"></span>
+    </div>
+  </div>
+
+  <form class="mt-5 space-y-5" [formGroup]="form" (ngSubmit)="submit()">
     @if (errorMessages().length > 0) {
       <div class="rounded-2xl border border-red-200 bg-red-50 p-4">
         @for (error of errorMessages(); track error) {
