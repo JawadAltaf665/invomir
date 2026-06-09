@@ -155,3 +155,8 @@ vite.config.ts.timestamp-*
 backend/src/InvoMir.API/InvoMir.API/appsettings.json
 backend/src/InvoMir.API/InvoMir.API/appsettings.Development.json
 backend/src/InvoMir.API/InvoMir.API/appsettings.Production.json
+
+# .NET runtime generated files
+backend/src/InvoMir.API/InvoMir.API/App_Data/
+backend/src/InvoMir.API/InvoMir.API/wwwroot/profile-pictures/
+backend/src/InvoMir.API/InvoMir.API/wwwroot/invoices/
