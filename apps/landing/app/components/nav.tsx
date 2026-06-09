@@ -126,6 +126,9 @@ export function Nav() {
               <a href={site.loginUrl} className="btn btn-ghost btn-sm">
                 Log in
               </a>
+              <a href={site.googleAuthUrl} className="btn btn-secondary btn-sm">
+                Continue with Google
+              </a>
               <a href={site.registerUrl} className="btn btn-primary btn-sm">
                 Start free trial
               </a>
@@ -160,6 +163,9 @@ export function Nav() {
         <div className="mobile-menu-cta">
           <a href={site.loginUrl} className="btn btn-secondary">
             Log in
+          </a>
+          <a href={site.googleAuthUrl} className="btn btn-secondary">
+            Continue with Google
           </a>
           <a href={site.registerUrl} className="btn btn-primary">
             Start free trial

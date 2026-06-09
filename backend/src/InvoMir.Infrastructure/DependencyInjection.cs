@@ -33,11 +33,17 @@ public static class DependencyInjection
         services.AddScoped<IPdfService, DinkToPdfService>();
         services.AddScoped<IUserLogoStorageService, UserLogoStorageService>();
         services.AddScoped<IUserProfilePictureStorageService, UserProfilePictureStorageService>();
+        services.AddHttpClient<IGoogleAuthService, GoogleAuthService>((provider, client) =>
+        {
+            var settings = provider.GetRequiredService<IOptions<GoogleAuthSettings>>().Value;
+            client.Timeout = TimeSpan.FromSeconds(Math.Max(settings.RequestTimeoutSeconds, 1));
+        });
         services.AddSingleton<ICurrencyConversionService, ExchangeRateCurrencyConversionService>();
 
         services.Configure<JwtSettings>(configuration.GetSection(JwtSettings.SectionName));
         services.Configure<SendGridSettings>(configuration.GetSection(SendGridSettings.SectionName));
         services.Configure<StripeSettings>(configuration.GetSection(StripeSettings.SectionName));
+        services.Configure<GoogleAuthSettings>(configuration.GetSection(GoogleAuthSettings.SectionName));
         services.Configure<CurrencyExchangeSettings>(configuration.GetSection(CurrencyExchangeSettings.SectionName));
         services.AddInvoMirRateLimiting();
 

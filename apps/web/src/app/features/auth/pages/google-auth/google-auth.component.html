@@ -1,0 +1,31 @@
+<app-auth-form-shell
+  title="Continue with Google"
+  subtitle="Use your Google account to access or create your InvoMir workspace."
+  footerLabel="Prefer email?"
+  footerLinkText="Sign in with password"
+  footerLink="/auth/login"
+>
+  <div class="space-y-5">
+    @if (errorMessages().length > 0) {
+      <div class="rounded-2xl border border-red-200 bg-red-50 p-4">
+        @for (error of errorMessages(); track error) {
+          <p class="text-sm font-medium text-red-800">{{ error }}</p>
+        }
+      </div>
+    }
+
+    <app-google-auth-button
+      [disabled]="isSubmitting()"
+      text="continue_with"
+      (credential)="continueWithGoogle($event)"
+      (failed)="handleGoogleFailure($event)"
+    />
+
+    @if (isSubmitting()) {
+      <div class="flex items-center justify-center gap-2 text-sm font-medium text-neutral-500">
+        <mat-spinner diameter="18" />
+        Signing you in...
+      </div>
+    }
+  </div>
+</app-auth-form-shell>

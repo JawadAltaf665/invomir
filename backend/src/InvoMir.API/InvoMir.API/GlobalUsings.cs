@@ -1,5 +1,6 @@
 global using InvoMir.API.Authorization;
 global using InvoMir.Application.Features.Auth.Commands.ForgotPassword;
+global using InvoMir.Application.Features.Auth.Commands.GoogleLogin;
 global using InvoMir.Application.Features.Auth.Commands.Login;
 global using InvoMir.Application.Features.Auth.Commands.Logout;
 global using InvoMir.Application.Features.Auth.Commands.Refresh;

@@ -6,6 +6,7 @@ global using System.Security.Cryptography;
 global using System.Security.Claims;
 global using System.Text;
 global using System.Text.Json;
+global using InvoMir.Application.Features.Auth.DTOs;
 global using InvoMir.Application.Features.Invoices.DTOs;
 global using InvoMir.Application.Features.Payments.DTOs;
 global using InvoMir.Application.Interfaces;

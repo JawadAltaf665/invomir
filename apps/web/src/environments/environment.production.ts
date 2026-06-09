@@ -1,4 +1,5 @@
 export const environment = {
   production: true,
-  apiBaseUrl: 'https://api.invomir.com'
+  apiBaseUrl: 'https://api.invomir.com',
+  googleClientId: ''
 } as const;

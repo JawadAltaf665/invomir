@@ -573,6 +573,16 @@ input {
   font-size: var(--text-sm);
 }
 
+.hero-social-proof a {
+  color: var(--color-primary);
+  font-weight: var(--weight-semibold);
+  text-decoration: none;
+}
+
+.hero-social-proof a:hover {
+  color: var(--color-primary-dark);
+}
+
 .hero-screenshot {
   position: relative;
   width: min(100%, 1160px);
