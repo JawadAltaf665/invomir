@@ -145,6 +145,7 @@ vite.config.ts.timestamp-*
 # .NET build output
 **/bin/
 **/obj/
+.tmp-build/
 
 # Visual Studio workspace files
 .vs/
