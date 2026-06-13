@@ -46,6 +46,7 @@ public static class DependencyInjection
         services.Configure<GoogleAuthSettings>(configuration.GetSection(GoogleAuthSettings.SectionName));
         services.Configure<CurrencyExchangeSettings>(configuration.GetSection(CurrencyExchangeSettings.SectionName));
         services.AddInvoMirRateLimiting();
+        services.AddInvoMirBackgroundJobs(configuration);
 
         return services;
     }
