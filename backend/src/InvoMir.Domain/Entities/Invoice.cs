@@ -194,6 +194,14 @@ public sealed class Invoice : TenantEntity
         PaidAt = paidAtUtc;
     }
 
+    public void MarkOverdue()
+    {
+        if (Status is not (InvoiceConstants.Statuses.Sent or InvoiceConstants.Statuses.Viewed))
+            return;
+
+        Status = InvoiceConstants.Statuses.Overdue;
+    }
+
     public void RecordStripePaymentIntent(string stripePaymentIntentId)
     {
         if (string.IsNullOrWhiteSpace(stripePaymentIntentId))

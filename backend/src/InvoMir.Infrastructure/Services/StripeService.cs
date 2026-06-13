@@ -108,6 +108,42 @@ public sealed class StripeService(
             !string.IsNullOrWhiteSpace(ResolveSubscriptionPriceId(plan, interval));
     }
 
+    public bool IsSubscriptionStatusSyncConfigured()
+    {
+        return !string.IsNullOrWhiteSpace(_settings.SecretKey);
+    }
+
+    public async Task<StripeSubscriptionEventDto?> GetSubscriptionAsync(
+        string stripeSubscriptionId,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(_settings.SecretKey))
+            throw new BadRequestException("Stripe is not configured.");
+
+        if (string.IsNullOrWhiteSpace(stripeSubscriptionId))
+            throw new BadRequestException("Stripe subscription id is required.");
+
+        var subscriptionUrl = $"{SubscriptionsUrl}/{Uri.EscapeDataString(stripeSubscriptionId.Trim())}";
+        using var httpRequest = new HttpRequestMessage(HttpMethod.Get, subscriptionUrl);
+        httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _settings.SecretKey);
+
+        using var response = await HttpClient.SendAsync(httpRequest, cancellationToken);
+        var body = await response.Content.ReadAsStringAsync(cancellationToken);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            logger.LogWarning(
+                "Stripe subscription retrieval failed with status {StatusCode}: {ResponseBody}",
+                response.StatusCode,
+                body);
+
+            throw new BadRequestException("Unable to retrieve Stripe subscription.");
+        }
+
+        using var document = JsonDocument.Parse(body);
+        return TryReadSubscriptionObject(document.RootElement);
+    }
+
     public async Task<StripeSubscriptionCancellationDto> CancelSubscriptionAtPeriodEndAsync(
         string stripeSubscriptionId,
         CancellationToken cancellationToken)
@@ -482,6 +518,11 @@ public sealed class StripeService(
     private static StripeSubscriptionEventDto? TryReadCustomerSubscription(JsonElement root)
     {
         var subscription = root.GetProperty("data").GetProperty("object");
+        return TryReadSubscriptionObject(subscription);
+    }
+
+    private static StripeSubscriptionEventDto? TryReadSubscriptionObject(JsonElement subscription)
+    {
         var subscriptionId = TryReadString(subscription, "id");
 
         if (string.IsNullOrWhiteSpace(subscriptionId))

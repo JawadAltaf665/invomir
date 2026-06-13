@@ -1,6 +1,6 @@
 namespace InvoMir.Application.Features.Team;
 
-internal static class TeamInvitationLifecycle
+public static class TeamInvitationLifecycle
 {
     public static async Task<int> CancelPendingInvitationsForPlanAsync(
         IAppDbContext context,
