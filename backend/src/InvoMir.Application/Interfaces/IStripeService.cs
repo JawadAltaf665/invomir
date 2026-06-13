@@ -16,6 +16,12 @@ public interface IStripeService
         string stripeSubscriptionId,
         CancellationToken cancellationToken);
 
+    bool IsSubscriptionStatusSyncConfigured();
+
+    Task<StripeSubscriptionEventDto?> GetSubscriptionAsync(
+        string stripeSubscriptionId,
+        CancellationToken cancellationToken);
+
     StripeConnectUrlDto CreateConnectOAuthUrl(StripeConnectOAuthRequestDto request);
 
     Task<StripeConnectAccountDto> ExchangeConnectAuthorizationCodeAsync(

@@ -60,6 +60,11 @@ public static class HangfireInfrastructureConfiguration
             job => job.ExecuteAsync(CancellationToken.None),
             Cron.Daily(1));
 
+        recurringJobs.AddOrUpdate<SubscriptionStatusSyncJob>(
+            BackgroundJobIds.SubscriptionStatusSync,
+            job => job.ExecuteAsync(CancellationToken.None),
+            "0 */4 * * *");
+
         recurringJobs.AddOrUpdate<TokenCleanupJob>(
             BackgroundJobIds.TokenCleanup,
             job => job.ExecuteAsync(CancellationToken.None),
@@ -79,6 +84,11 @@ public static class HangfireInfrastructureConfiguration
             BackgroundJobIds.InvoiceMonthlyLimitReset,
             job => job.ExecuteAsync(CancellationToken.None),
             Cron.Monthly(1, 0));
+
+        recurringJobs.AddOrUpdate<UsageLimitAuditJob>(
+            BackgroundJobIds.UsageLimitAudit,
+            job => job.ExecuteAsync(CancellationToken.None),
+            "30 4 * * *");
     }
 }
 
@@ -96,8 +106,10 @@ public static class BackgroundJobIds
     public const string ReminderScanner = "invomir:reminder-scanner";
     public const string OverdueMarker = "invomir:overdue-marker";
     public const string TrialExpiry = "invomir:trial-expiry";
+    public const string SubscriptionStatusSync = "invomir:subscription-status-sync";
     public const string TokenCleanup = "invomir:token-cleanup";
     public const string InvitationExpiry = "invomir:invitation-expiry";
     public const string StripeConnectStateCleanup = "invomir:stripe-connect-state-cleanup";
     public const string InvoiceMonthlyLimitReset = "invomir:invoice-monthly-limit-reset";
+    public const string UsageLimitAudit = "invomir:usage-limit-audit";
 }

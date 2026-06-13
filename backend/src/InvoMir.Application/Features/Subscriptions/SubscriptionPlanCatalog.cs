@@ -1,6 +1,6 @@
 namespace InvoMir.Application.Features.Subscriptions;
 
-internal static class SubscriptionPlanCatalog
+public static class SubscriptionPlanCatalog
 {
     private static readonly IReadOnlyList<SubscriptionPlanDefinition> Plans =
     [
@@ -59,7 +59,7 @@ internal static class SubscriptionPlanCatalog
     }
 }
 
-internal sealed record SubscriptionPlanDefinition(
+public sealed record SubscriptionPlanDefinition(
     string Plan,
     string Name,
     string Description,
@@ -71,7 +71,7 @@ internal sealed record SubscriptionPlanDefinition(
     int TeamSeatLimit,
     SubscriptionFeatureSet Features);
 
-internal sealed record SubscriptionFeatureSet(
+public sealed record SubscriptionFeatureSet(
     bool Reminders,
     bool OnlinePayments,
     bool ReportsExport,
