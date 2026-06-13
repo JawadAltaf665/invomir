@@ -49,6 +49,10 @@ public sealed class DesignTimeAppDbContextFactory : IDesignTimeDbContextFactory<
     private static string ResolveApiProjectPath()
     {
         var currentDirectory = Directory.GetCurrentDirectory();
+        var repoRootPath = Path.Combine(currentDirectory, "backend", "src", "InvoMir.API", "InvoMir.API");
+        if (Directory.Exists(repoRootPath))
+            return repoRootPath;
+
         var directPath = Path.Combine(currentDirectory, "src", "InvoMir.API", "InvoMir.API");
         if (Directory.Exists(directPath))
             return directPath;
@@ -56,6 +60,16 @@ public sealed class DesignTimeAppDbContextFactory : IDesignTimeDbContextFactory<
         var parentPath = Path.Combine(currentDirectory, "..", "InvoMir.API", "InvoMir.API");
         if (Directory.Exists(parentPath))
             return Path.GetFullPath(parentPath);
+
+        var directory = new DirectoryInfo(currentDirectory);
+        while (directory is not null)
+        {
+            var nestedPath = Path.Combine(directory.FullName, "backend", "src", "InvoMir.API", "InvoMir.API");
+            if (Directory.Exists(nestedPath))
+                return nestedPath;
+
+            directory = directory.Parent;
+        }
 
         return currentDirectory;
     }
