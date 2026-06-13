@@ -1,33 +1,121 @@
-import { Tabs } from 'expo-router';
+import { Redirect, Tabs } from 'expo-router';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
-import { HapticTab } from '@/components/haptic-tab';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { AppBottomTabs } from '@/src/components/navigation/AppBottomTabs';
+import { AppMainHeader } from '@/src/components/navigation/AppMainHeader';
+import { useAuthStore } from '@/src/store/auth-store';
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
+  const { t } = useTranslation();
+  const status = useAuthStore((state) => state.status);
+
+  if (status === 'bootstrapping') {
+    return null;
+  }
+
+  if (status === 'anonymous') {
+    return <Redirect href="/welcome" />;
+  }
 
   return (
     <Tabs
+      tabBar={(props) => <AppBottomTabs {...props} />}
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-        headerShown: false,
-        tabBarButton: HapticTab,
+        header: () => <AppMainHeader />,
+        headerShown: true,
       }}>
       <Tabs.Screen
-        name="index"
+        name="dashboard"
         options={{
-          title: 'Home',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
+          title: t('tabs.home'),
         }}
       />
       <Tabs.Screen
-        name="explore"
+        name="invoices"
         options={{
-          title: 'Explore',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
+          title: t('tabs.invoices'),
+        }}
+      />
+      <Tabs.Screen
+        name="create"
+        options={{
+          title: t('tabs.create'),
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="clients"
+        options={{
+          title: t('tabs.clients'),
+        }}
+      />
+      <Tabs.Screen
+        name="reports"
+        options={{
+          title: t('tabs.reports'),
+        }}
+      />
+      <Tabs.Screen
+        name="settings"
+        options={{
+          title: t('tabs.profile'),
+        }}
+      />
+      <Tabs.Screen
+        name="invoices/[id]"
+        options={{
+          href: null,
+          title: t('invoices.detailTitle'),
+        }}
+      />
+      <Tabs.Screen
+        name="invoices/new"
+        options={{
+          href: null,
+          title: t('invoices.create'),
+        }}
+      />
+      <Tabs.Screen
+        name="invoices/edit"
+        options={{
+          href: null,
+          title: t('invoices.edit'),
+        }}
+      />
+      <Tabs.Screen
+        name="clients/[id]"
+        options={{
+          href: null,
+          title: t('clients.detailTitle'),
+        }}
+      />
+      <Tabs.Screen
+        name="clients/new"
+        options={{
+          href: null,
+          title: t('clients.add'),
+        }}
+      />
+      <Tabs.Screen
+        name="clients/edit"
+        options={{
+          href: null,
+          title: t('clients.edit'),
+        }}
+      />
+      <Tabs.Screen
+        name="payments"
+        options={{
+          href: null,
+          title: t('payments.title'),
+        }}
+      />
+      <Tabs.Screen
+        name="notifications"
+        options={{
+          href: null,
+          title: t('navigation.notifications'),
         }}
       />
     </Tabs>
