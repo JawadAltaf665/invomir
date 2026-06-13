@@ -1,50 +1,35 @@
-# Welcome to your Expo app 👋
+# InvoMir Mobile
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Expo React Native app for the InvoMir SaaS workspace.
 
-## Get started
+## Development
 
-1. Install dependencies
-
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+Install dependencies:
 
 ```bash
-npm run reset-project
+npm install
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Start Expo:
 
-## Learn more
+```bash
+npm run start
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+For Expo Go on a physical iOS or Android device, run the backend with the LAN profile:
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+```bash
+cd ../../backend/src/InvoMir.API/InvoMir.API
+dotnet run --launch-profile mobile-http
+```
 
-## Join the community
+Then start Expo in LAN mode and keep the phone on the same Wi-Fi network as the computer. The mobile app uses the same backend API contracts as the web app. In native Expo Go, a configured `http://localhost:5299` API URL is resolved to the Expo dev machine host so the phone can call `http://<your-computer-ip>:5299`.
 
-Join our community of developers creating universal apps.
+If you use an Expo tunnel or a remote device outside your local network, set `extra.apiBaseUrl` in `app.json` to a reachable public backend URL.
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## Validation
+
+```bash
+npx tsc --noEmit
+npx eslint . --max-warnings=0
+```

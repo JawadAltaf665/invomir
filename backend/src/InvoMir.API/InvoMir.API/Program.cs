@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.OpenApi;
+using System.Net;
 using System.Runtime.InteropServices;
 using System.Runtime.Loader;
 using System.Text.Json;
@@ -86,14 +87,22 @@ builder.Services.AddSwaggerGen(options =>
 
 builder.Services.AddCors(options =>
     options.AddPolicy("InvoMirPolicy", policy =>
+    {
         policy
-            .WithOrigins(
-                "http://localhost:4200",
-                "https://invomir.com",
-                "https://www.invomir.com")
             .AllowAnyHeader()
             .AllowAnyMethod()
-            .AllowCredentials()));
+            .AllowCredentials();
+
+        if (builder.Environment.IsDevelopment())
+        {
+            policy.SetIsOriginAllowed(IsAllowedDevelopmentOrigin);
+            return;
+        }
+
+        policy.WithOrigins(
+            "https://invomir.com",
+            "https://www.invomir.com");
+    }));
 
 var app = builder.Build();
 
@@ -289,6 +298,41 @@ static string BuildDeveloperHomePage()
         </body>
         </html>
         """;
+}
+
+static bool IsAllowedDevelopmentOrigin(string origin)
+{
+    if (!Uri.TryCreate(origin, UriKind.Absolute, out var uri))
+        return false;
+
+    if (uri.Scheme is not ("http" or "https"))
+        return false;
+
+    var host = uri.Host;
+
+    if (host.Equals("localhost", StringComparison.OrdinalIgnoreCase) ||
+        host.Equals("127.0.0.1", StringComparison.OrdinalIgnoreCase) ||
+        host.Equals("::1", StringComparison.OrdinalIgnoreCase))
+        return true;
+
+    return IPAddress.TryParse(host, out var address) && IsPrivateNetworkAddress(address);
+}
+
+static bool IsPrivateNetworkAddress(IPAddress address)
+{
+    if (IPAddress.IsLoopback(address))
+        return true;
+
+    var bytes = address.GetAddressBytes();
+
+    return address.AddressFamily switch
+    {
+        System.Net.Sockets.AddressFamily.InterNetwork =>
+            bytes[0] == 10 ||
+            (bytes[0] == 172 && bytes[1] is >= 16 and <= 31) ||
+            (bytes[0] == 192 && bytes[1] == 168),
+        _ => false
+    };
 }
 
 internal sealed class CustomAssemblyLoadContext : AssemblyLoadContext
