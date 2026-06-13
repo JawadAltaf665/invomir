@@ -55,6 +55,27 @@ public sealed class SendGridEmailService(
         await SendEmailAsync(request, cancellationToken);
     }
 
+    public async Task SendInvoiceReminderAsync(
+        InvoiceReminderEmailDto reminderEmail,
+        CancellationToken cancellationToken)
+    {
+        var subject = BuildReminderSubject(reminderEmail);
+        var html = BuildInvoiceReminderHtml(reminderEmail);
+        var request = new EmailDeliveryRequest(
+            reminderEmail.ToEmail,
+            subject,
+            html,
+            null,
+            null,
+            EmailConstants.Types.Reminder,
+            reminderEmail.InvoiceId,
+            null,
+            reminderEmail.TenantId,
+            reminderEmail.UserId);
+
+        await SendEmailAsync(request, cancellationToken);
+    }
+
     public async Task SendPaymentReceiptAsync(
         PaymentReceiptEmailDto receiptEmail,
         CancellationToken cancellationToken)
@@ -366,6 +387,41 @@ public sealed class SendGridEmailService(
               <p style="color:#6b7280;font-size:12px">Receipt from {Html(receiptEmail.BusinessName)} via InvoMir.</p>
             </div>
             """;
+    }
+
+    private string BuildInvoiceReminderHtml(InvoiceReminderEmailDto reminderEmail)
+    {
+        var paymentUrl = invoiceLinkBuilder.BuildPaymentLink(reminderEmail.PaymentLinkToken);
+        var intro = reminderEmail.ReminderType switch
+        {
+            ReminderConstants.Types.DueSoon => "This is a friendly reminder that your invoice is due soon.",
+            ReminderConstants.Types.OneDayOverdue => "This invoice is now past due.",
+            ReminderConstants.Types.SevenDaysOverdue => "This invoice is still awaiting payment.",
+            _ => "This is a reminder for your invoice."
+        };
+
+        return $"""
+            <div style="font-family:Arial,sans-serif;color:#111827;line-height:1.55">
+              <p>Hello {Html(reminderEmail.ClientName)},</p>
+              <p>{Html(intro)}</p>
+              <p><strong>Invoice:</strong> {Html(reminderEmail.InvoiceNumber)}</p>
+              <p><strong>Total:</strong> {Html(reminderEmail.Currency.ToUpperInvariant())} {reminderEmail.Total:0.00}</p>
+              <p><strong>Due date:</strong> {reminderEmail.DueDate:yyyy-MM-dd}</p>
+              <p><a href="{Html(paymentUrl)}" style="display:inline-block;padding:10px 16px;background:#2563eb;color:#ffffff;text-decoration:none;border-radius:6px">View and pay invoice</a></p>
+              <p style="color:#6b7280;font-size:12px">Reminder from {Html(reminderEmail.BusinessName)} via InvoMir.</p>
+            </div>
+            """;
+    }
+
+    private static string BuildReminderSubject(InvoiceReminderEmailDto reminderEmail)
+    {
+        return reminderEmail.ReminderType switch
+        {
+            ReminderConstants.Types.DueSoon => $"Reminder: invoice {reminderEmail.InvoiceNumber} is due soon",
+            ReminderConstants.Types.OneDayOverdue => $"Invoice {reminderEmail.InvoiceNumber} is past due",
+            ReminderConstants.Types.SevenDaysOverdue => $"Reminder: invoice {reminderEmail.InvoiceNumber} is still due",
+            _ => $"Reminder for invoice {reminderEmail.InvoiceNumber}"
+        };
     }
 
     private static string BuildCustomMessageHtml(string? customMessage)

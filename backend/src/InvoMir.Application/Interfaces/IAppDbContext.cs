@@ -17,6 +17,7 @@ public interface IAppDbContext
     DbSet<Subscription> Subscriptions { get; }
     DbSet<TeamInvitation> TeamInvitations { get; }
     DbSet<Notification> Notifications { get; }
+    DbSet<Reminder> Reminders { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken);
 }
