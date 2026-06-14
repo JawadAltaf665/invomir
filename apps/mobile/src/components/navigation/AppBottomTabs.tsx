@@ -1,8 +1,15 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
-import { useEffect, useRef } from 'react';
-import { Animated, Platform, Pressable, StyleSheet, useColorScheme, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Platform, Pressable, StyleSheet, useColorScheme, View } from 'react-native';
+import Animated, {
+  SharedValue,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 
@@ -22,6 +29,11 @@ const metrics = {
   barMinHeight: 46,
   tabHeight: 36,
   iconSize: 20,
+} as const;
+const springConfig = {
+  damping: 18,
+  stiffness: 220,
+  mass: 0.72,
 } as const;
 
 const tabIcons: Record<TabName, { active: IconName; inactive: IconName; labelKey: string }> = {
@@ -61,7 +73,10 @@ export function AppBottomTabs({ state, descriptors, navigation }: BottomTabBarPr
   const setBottomTabCompact = useShellChromeStore((store) => store.setBottomTabCompact);
   const isDark = colorScheme === 'dark';
   const palette = getPalette(isDark);
-  const compactProgress = useRef(new Animated.Value(isCompact ? 1 : 0)).current;
+  const [barWidth, setBarWidth] = useState(0);
+  const compactProgress = useSharedValue(isCompact ? 1 : 0);
+  const activeIndexProgress = useSharedValue(-1);
+  const indicatorOpacity = useSharedValue(0);
   const profileQuery = useQuery({
     queryKey: queryKeys.currentUser,
     queryFn: settingsApi.getCurrentUser,
@@ -71,45 +86,60 @@ export function AppBottomTabs({ state, descriptors, navigation }: BottomTabBarPr
     .filter((route) => visibleTabs.includes(route.name as TabName))
     .sort((left, right) => visibleTabs.indexOf(left.name as TabName) - visibleTabs.indexOf(right.name as TabName));
   const activeTabName = getActiveTabName(state.routes[state.index]?.name);
+  const activeVisibleIndex = activeTabName ? visibleTabs.indexOf(activeTabName) : -1;
   const profile = profileQuery.data;
   const profileCacheKey = profile ? `${profile.id}-${profile.profilePictureUrl ?? ''}` : undefined;
+  const slotWidth = routes.length > 0 && barWidth > 0 ? barWidth / routes.length : 0;
+  const indicatorWidth = slotWidth > 0 ? Math.min(70, Math.max(48, slotWidth - 20)) : 0;
 
   useEffect(() => {
     setBottomTabCompact(false);
   }, [setBottomTabCompact, state.index]);
 
   useEffect(() => {
-    Animated.spring(compactProgress, {
-      toValue: isCompact ? 1 : 0,
-      useNativeDriver: true,
-      damping: 18,
-      stiffness: 220,
-      mass: 0.7,
-    }).start();
+    compactProgress.value = withSpring(isCompact ? 1 : 0, springConfig);
   }, [compactProgress, isCompact]);
 
-  const tabBarScale = compactProgress.interpolate({
-    inputRange: [0, 1],
-    outputRange: [1, 0.94],
-  });
-  const tabBarTranslateY = compactProgress.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, 4],
-  });
+  useEffect(() => {
+    activeIndexProgress.value = withSpring(activeVisibleIndex, springConfig);
+    indicatorOpacity.value = withTiming(activeVisibleIndex >= 0 && indicatorWidth > 0 ? 1 : 0, { duration: 160 });
+  }, [activeIndexProgress, activeVisibleIndex, indicatorOpacity, indicatorWidth]);
+
+  const tabBarAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [
+      { scale: 1 - compactProgress.value * 0.06 },
+      { translateY: compactProgress.value * 4 },
+    ],
+  }));
+
+  const indicatorAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: indicatorOpacity.value,
+    transform: [
+      {
+        translateX: activeIndexProgress.value * slotWidth + (slotWidth - indicatorWidth) / 2,
+      },
+    ],
+    width: indicatorWidth,
+  }), [indicatorWidth, slotWidth]);
 
   return (
     <View pointerEvents="box-none" style={[styles.safeArea, { paddingBottom: Math.max(insets.bottom, theme.spacing.xs) }]}>
       <View style={styles.frame}>
         <Animated.View
+          onLayout={(event) => setBarWidth(event.nativeEvent.layout.width)}
           style={[
             styles.tabBar,
+            tabBarAnimatedStyle,
             {
               backgroundColor: palette.barBackground,
               borderColor: palette.border,
-              transform: [{ scale: tabBarScale }, { translateY: tabBarTranslateY }],
             },
           ]}
         >
+          <Animated.View
+            pointerEvents="none"
+            style={[styles.activePill, { backgroundColor: palette.activeBackground }, indicatorAnimatedStyle]}
+          />
           {routes.map((route) => {
             const routeName = route.name as TabName;
             const isFocused = activeTabName === routeName;
@@ -169,14 +199,15 @@ export function AppBottomTabs({ state, descriptors, navigation }: BottomTabBarPr
                 }}
                 style={({ pressed }) => [
                   styles.tabButton,
-                  isFocused ? { backgroundColor: palette.activeBackground } : null,
                   pressed ? styles.pressed : null,
                 ]}
               >
-                <Ionicons
-                  name={isFocused ? tab.active : tab.inactive}
-                  size={metrics.iconSize}
-                  color={getIconColor(isFocused, palette)}
+                <AnimatedTabIcon
+                  activeIcon={tab.active}
+                  inactiveIcon={tab.inactive}
+                  activeIndexProgress={activeIndexProgress}
+                  index={visibleTabs.indexOf(routeName)}
+                  palette={palette}
                 />
               </Pressable>
             );
@@ -184,6 +215,52 @@ export function AppBottomTabs({ state, descriptors, navigation }: BottomTabBarPr
         </Animated.View>
       </View>
     </View>
+  );
+}
+
+function AnimatedTabIcon({
+  activeIcon,
+  inactiveIcon,
+  activeIndexProgress,
+  index,
+  palette,
+}: {
+  activeIcon: IconName;
+  inactiveIcon: IconName;
+  activeIndexProgress: SharedValue<number>;
+  index: number;
+  palette: ReturnType<typeof getPalette>;
+}) {
+  const iconScaleStyle = useAnimatedStyle(() => {
+    const distance = Math.abs(activeIndexProgress.value - index);
+    const selected = Math.max(0, 1 - Math.min(distance, 1));
+
+    return {
+      transform: [{ scale: 1 + selected * 0.1 }],
+    };
+  });
+  const activeIconStyle = useAnimatedStyle(() => {
+    const distance = Math.abs(activeIndexProgress.value - index);
+    const selected = Math.max(0, 1 - Math.min(distance, 1));
+
+    return { opacity: selected };
+  });
+  const inactiveIconStyle = useAnimatedStyle(() => {
+    const distance = Math.abs(activeIndexProgress.value - index);
+    const selected = Math.max(0, 1 - Math.min(distance, 1));
+
+    return { opacity: 1 - selected };
+  });
+
+  return (
+    <Animated.View style={[styles.iconStack, iconScaleStyle]}>
+      <Animated.View style={[styles.iconLayer, inactiveIconStyle]}>
+        <Ionicons name={inactiveIcon} size={metrics.iconSize} color={palette.inactiveForeground} />
+      </Animated.View>
+      <Animated.View style={[styles.iconLayer, activeIconStyle]}>
+        <Ionicons name={activeIcon} size={metrics.iconSize} color={palette.activeForeground} />
+      </Animated.View>
+    </Animated.View>
   );
 }
 
@@ -205,10 +282,6 @@ function getActiveTabName(routeName: string | undefined): TabName | null {
   }
 
   return null;
-}
-
-function getIconColor(isFocused: boolean, palette: ReturnType<typeof getPalette>): string {
-  return isFocused ? palette.activeForeground : palette.inactiveForeground;
 }
 
 function getPalette(isDark: boolean) {
@@ -238,13 +311,19 @@ const styles = StyleSheet.create({
     maxWidth: Platform.OS === 'web' ? layout.mobileShellMaxWidth : undefined,
     width: '100%',
   },
+  activePill: {
+    borderRadius: theme.radius.full,
+    height: metrics.tabHeight,
+    left: 0,
+    position: 'absolute',
+    top: theme.spacing.xxs,
+  },
   tabBar: {
     alignItems: 'center',
     alignSelf: 'center',
     borderRadius: theme.radius.full,
     borderWidth: 1,
     flexDirection: 'row',
-    gap: theme.spacing.xs,
     minHeight: metrics.barMinHeight,
     overflow: 'visible',
     padding: theme.spacing.xxs,
@@ -260,6 +339,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     minWidth: 46,
     paddingHorizontal: theme.spacing.xs,
+  },
+  iconStack: {
+    alignItems: 'center',
+    height: metrics.iconSize,
+    justifyContent: 'center',
+    width: metrics.iconSize,
+  },
+  iconLayer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'absolute',
   },
   createSlot: {
     alignItems: 'center',

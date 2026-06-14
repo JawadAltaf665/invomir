@@ -1,6 +1,5 @@
-import { FlashList } from '@shopify/flash-list';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { StyleSheet, View } from 'react-native';
+import { FlatList, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import { AppButton } from '@/src/components/common/AppButton';
@@ -54,7 +53,7 @@ export function NotificationListScreen() {
   }
 
   return (
-    <AppScreen scroll={false}>
+    <AppScreen scroll={false} padded={false} contentStyle={styles.screenContent}>
       <View style={styles.content}>
         <AppHeader
           title={t('more.notifications')}
@@ -73,10 +72,12 @@ export function NotificationListScreen() {
           <ErrorState message={notificationsQuery.error.message} onRetry={() => notificationsQuery.refetch()} />
         ) : null}
         {!notificationsQuery.isLoading && !notificationsQuery.isError ? (
-          <FlashList
+          <FlatList
             data={notificationsQuery.data?.items ?? []}
             keyExtractor={(item) => item.id}
+            style={styles.list}
             contentContainerStyle={styles.listContent}
+            keyboardShouldPersistTaps="handled"
             onScroll={handleBottomTabScroll}
             scrollEventThrottle={16}
             ItemSeparatorComponent={() => <View style={styles.separator} />}
@@ -119,10 +120,19 @@ function NotificationCard({ notification }: { notification: NotificationDto }) {
 }
 
 const styles = StyleSheet.create({
+  screenContent: {
+    flex: 1,
+    minHeight: 0,
+  },
   content: {
     flex: 1,
     gap: theme.spacing.md,
+    minHeight: 0,
     padding: theme.spacing.md,
+  },
+  list: {
+    flex: 1,
+    minHeight: 0,
   },
   listContent: {
     paddingBottom: layout.bottomTabOverlayHeight,

@@ -1,4 +1,6 @@
-import { Pressable, StyleSheet, View } from 'react-native';
+import { useEffect } from 'react';
+import { Pressable, StyleSheet } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 
 import { UserAvatar } from '@/src/components/common/UserAvatar';
 import { theme } from '@/src/theme/theme';
@@ -22,6 +24,19 @@ export function AppFloatingProfileButton({
   focused,
   onPress,
 }: AppFloatingProfileButtonProps) {
+  const focusProgress = useSharedValue(focused ? 1 : 0);
+  const focusStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: 1 + focusProgress.value * 0.07 }],
+  }));
+
+  useEffect(() => {
+    focusProgress.value = withSpring(focused ? 1 : 0, {
+      damping: 18,
+      stiffness: 220,
+      mass: 0.72,
+    });
+  }, [focusProgress, focused]);
+
   return (
     <Pressable
       accessibilityLabel={accessibilityLabel}
@@ -30,7 +45,7 @@ export function AppFloatingProfileButton({
       onPress={onPress}
       style={({ pressed }) => [styles.pressable, pressed ? styles.pressed : null]}
     >
-      <View style={[styles.button, focused ? styles.buttonFocused : null]}>
+      <Animated.View style={[styles.button, focused ? styles.buttonFocused : null, focusStyle]}>
         <UserAvatar
           firstName={firstName}
           lastName={lastName}
@@ -40,7 +55,7 @@ export function AppFloatingProfileButton({
           borderColor={theme.colors.white}
           borderWidth={2}
         />
-      </View>
+      </Animated.View>
     </Pressable>
   );
 }
