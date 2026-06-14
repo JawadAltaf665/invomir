@@ -17,4 +17,22 @@ public interface IEmailService
         string invitationToken,
         DateTime expiresAt,
         CancellationToken cancellationToken);
+    Task SendSubscriptionStartedAsync(
+        string toEmail,
+        string planName,
+        DateTime currentPeriodEnd,
+        Guid? tenantId,
+        CancellationToken cancellationToken);
+    Task SendSubscriptionCancelledAsync(
+        string toEmail,
+        string planName,
+        DateTime currentPeriodEnd,
+        Guid? tenantId,
+        CancellationToken cancellationToken);
+    Task SendTrialExpiryReminderAsync(
+        string toEmail,
+        string userName,
+        DateTime trialEndsAt,
+        Guid? tenantId,
+        CancellationToken cancellationToken);
 }

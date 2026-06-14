@@ -89,6 +89,11 @@ public static class HangfireInfrastructureConfiguration
             BackgroundJobIds.UsageLimitAudit,
             job => job.ExecuteAsync(CancellationToken.None),
             "30 4 * * *");
+
+        recurringJobs.AddOrUpdate<QueuedEmailProcessorJob>(
+            BackgroundJobIds.QueuedEmailProcessor,
+            job => job.ExecuteAsync(CancellationToken.None),
+            "*/1 * * * *");
     }
 }
 
@@ -112,4 +117,5 @@ public static class BackgroundJobIds
     public const string StripeConnectStateCleanup = "invomir:stripe-connect-state-cleanup";
     public const string InvoiceMonthlyLimitReset = "invomir:invoice-monthly-limit-reset";
     public const string UsageLimitAudit = "invomir:usage-limit-audit";
+    public const string QueuedEmailProcessor = "invomir:queued-email-processor";
 }

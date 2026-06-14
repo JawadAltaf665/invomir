@@ -1,8 +1,8 @@
 namespace InvoMir.Infrastructure.Services;
 
-public sealed class InvoiceLinkBuilder(IOptions<SendGridSettings> settings) : IInvoiceLinkBuilder
+public sealed class InvoiceLinkBuilder(IOptions<EmailSettings> settings) : IInvoiceLinkBuilder
 {
-    private readonly SendGridSettings _settings = settings.Value;
+    private readonly EmailSettings _settings = settings.Value;
 
     public string BuildPaymentLink(string token)
     {
