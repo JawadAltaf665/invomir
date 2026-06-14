@@ -1,5 +1,6 @@
 using InvoMir.Application.Common.Behaviours;
 using InvoMir.Application.Features.Dashboard.ActionItems;
+using InvoMir.Application.Features.Emailing;
 using InvoMir.Application.Features.Notifications;
 using InvoMir.Application.Security;
 
@@ -19,6 +20,8 @@ public static class DependencyInjection
         services.AddScoped<IDashboardActionItemProvider, PaymentAccountRequiredDashboardActionItemProvider>();
         services.AddScoped<IDashboardActionItemProvider, SubscriptionDashboardActionItemProvider>();
         services.AddScoped<INotificationService, NotificationService>();
+        services.AddScoped<IEmailTemplateService, EmailTemplateService>();
+        services.AddScoped<IQueuedEmailService, QueuedEmailService>();
 
         return services;
     }
