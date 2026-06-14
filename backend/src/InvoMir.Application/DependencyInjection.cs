@@ -17,6 +17,7 @@ public static class DependencyInjection
         services.AddSingleton<IRolePermissionProvider, DefaultRolePermissionProvider>();
         services.AddSingleton<IPermissionChecker, ClaimsPermissionChecker>();
         services.AddScoped<IDashboardActionItemProvider, PaymentAccountRequiredDashboardActionItemProvider>();
+        services.AddScoped<IDashboardActionItemProvider, SubscriptionDashboardActionItemProvider>();
         services.AddScoped<INotificationService, NotificationService>();
 
         return services;

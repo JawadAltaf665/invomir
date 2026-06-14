@@ -36,6 +36,7 @@ export function MoreScreen() {
   const clearLocalSession = useAuthStore((state) => state.clearLocalSession);
   const hasPermission = useAuthStore((state) => state.hasPermission);
   const canViewNotifications = hasPermission(permissions.notification.view);
+  const canViewSubscription = hasPermission(permissions.subscription.view);
   const profileQuery = useQuery({
     queryKey: queryKeys.currentUser,
     queryFn: settingsApi.getCurrentUser,
@@ -132,6 +133,12 @@ export function MoreScreen() {
               iconName="business-outline"
               title={t('more.companyProfile')}
               value={profile.businessName}
+            />
+            <SettingsRow
+              iconName="card-outline"
+              title={t('more.subscription')}
+              value={profile.plan}
+              onPress={canViewSubscription ? () => router.push('/subscriptions') : undefined}
             />
             <SettingsRow
               iconName="language-outline"

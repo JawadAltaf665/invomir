@@ -279,6 +279,10 @@ function getActiveTabName(routeName: string | undefined): TabName | null {
     return 'clients';
   }
 
+  if (routeName.startsWith('subscriptions')) {
+    return 'settings';
+  }
+
   if (visibleTabs.includes(routeName as TabName)) {
     return routeName as TabName;
   }

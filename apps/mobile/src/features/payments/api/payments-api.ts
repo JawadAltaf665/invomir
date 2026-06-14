@@ -1,4 +1,4 @@
-import { PaymentHistoryDto, PaymentListQuery } from '@/src/features/payments/types';
+import { PaymentHistoryDto, PaymentListQuery, StripeConnectUrlDto } from '@/src/features/payments/types';
 import { apiRequest } from '@/src/services/api/api-client';
 
 export const paymentsApi = {
@@ -11,6 +11,14 @@ export const paymentsApi = {
         page: query.page,
         limit: query.limit,
       },
+    });
+  },
+
+  createStripeConnect(): Promise<StripeConnectUrlDto> {
+    return apiRequest<StripeConnectUrlDto>({
+      method: 'POST',
+      url: '/api/stripe/connect',
+      data: {},
     });
   },
 };

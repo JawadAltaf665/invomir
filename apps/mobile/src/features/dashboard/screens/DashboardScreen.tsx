@@ -2,12 +2,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import type { TFunction } from 'i18next';
-import { Platform, Pressable, ScrollView, StyleProp, StyleSheet, useWindowDimensions, View, ViewStyle } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { GestureResponderEvent, Platform, Pressable, ScrollView, StyleProp, StyleSheet, useWindowDimensions, View, ViewStyle } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
 
 import { AppCard } from '@/src/components/common/AppCard';
 import { AppText } from '@/src/components/common/AppText';
-import { DashboardActionItemCard } from '@/src/components/dashboard/DashboardActionItemCard';
 import { DashboardMetricCard } from '@/src/components/dashboard/DashboardMetricCard';
 import { EmptyState } from '@/src/components/feedback/EmptyState';
 import { ErrorState } from '@/src/components/feedback/ErrorState';
@@ -18,7 +19,7 @@ import { AppHeader } from '@/src/components/layout/AppHeader';
 import { AppScreen } from '@/src/components/layout/AppScreen';
 import { layout } from '@/src/constants/layout';
 import { dashboardApi } from '@/src/features/dashboard/api/dashboard-api';
-import type { DashboardDto } from '@/src/features/dashboard/types';
+import type { DashboardActionItemDto, DashboardDto } from '@/src/features/dashboard/types';
 import { queryKeys } from '@/src/services/api/query-keys';
 import { useAuthStore } from '@/src/store/auth-store';
 import { theme } from '@/src/theme/theme';
@@ -51,6 +52,8 @@ export function DashboardScreen() {
     queryFn: dashboardApi.getActionItems,
     enabled: canView,
   });
+  const actionItems = actionItemsQuery.data?.items ?? [];
+  const quickActions = getQuickActions(t, hasPermission);
 
   if (!canView) {
     return (
@@ -93,9 +96,6 @@ export function DashboardScreen() {
     );
   }
 
-  const actionItems = actionItemsQuery.data?.items ?? [];
-  const quickActions = getQuickActions(t, hasPermission);
-
   return (
     <AppScreen contentStyle={styles.screenContent}>
       <AppHeader
@@ -104,22 +104,7 @@ export function DashboardScreen() {
       />
 
       {actionItems.length > 0 ? (
-        <View style={styles.section}>
-          <SectionTitle title={t('dashboard.actionCenter')} />
-          <View style={styles.stack}>
-            {actionItems.map((item) => {
-              const actionUrl = item.actionUrl;
-
-              return (
-                <DashboardActionItemCard
-                  key={item.id}
-                  item={item}
-                  onPress={actionUrl ? () => router.push(toMobileHref(actionUrl)) : undefined}
-                />
-              );
-            })}
-          </View>
-        </View>
+        <ActionCenterCarousel title={t('dashboard.actionCenter')} items={actionItems} />
       ) : null}
 
       {useMetricGrid ? (
@@ -263,6 +248,156 @@ function SectionTitle({ title }: { title: string }) {
   );
 }
 
+function ActionCenterCarousel({ title, items }: { title: string; items: readonly DashboardActionItemDto[] }) {
+  const [hiddenIds, setHiddenIds] = useState<readonly string[]>([]);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const visibleItems = useMemo(
+    () => items.filter((item) => !hiddenIds.includes(item.id)),
+    [hiddenIds, items],
+  );
+  const activeItem = visibleItems[activeIndex] ?? visibleItems[0] ?? null;
+  const progress = useSharedValue(1);
+  const animatedStyle = useAnimatedStyle(() => ({
+    opacity: progress.value,
+    transform: [{ translateY: (1 - progress.value) * 8 }],
+  }));
+
+  useEffect(() => {
+    if (activeIndex >= visibleItems.length) {
+      setActiveIndex(0);
+    }
+  }, [activeIndex, visibleItems.length]);
+
+  useEffect(() => {
+    if (visibleItems.length <= 1) {
+      return;
+    }
+
+    const timer = setInterval(() => {
+      setActiveIndex((current) => (current + 1) % visibleItems.length);
+    }, 3000);
+
+    return () => clearInterval(timer);
+  }, [visibleItems.length]);
+
+  useEffect(() => {
+    progress.value = 0;
+    progress.value = withTiming(1, { duration: 260 });
+  }, [activeItem?.id, progress]);
+
+  if (!activeItem) {
+    return null;
+  }
+
+  const palette = getActionItemPalette(activeItem.type);
+  const canPress = Boolean(activeItem.actionUrl);
+
+  const dismiss = (event: GestureResponderEvent) => {
+    event.stopPropagation();
+    setHiddenIds((current) => [...current, activeItem.id]);
+  };
+
+  return (
+    <View style={styles.section}>
+      <SectionTitle title={title} />
+      <Animated.View style={animatedStyle}>
+        <Pressable
+          accessibilityRole={canPress ? 'button' : undefined}
+          disabled={!canPress}
+          onPress={canPress ? () => router.push(toMobileHref(activeItem.actionUrl ?? '')) : undefined}
+          style={({ pressed }) => [
+            styles.actionBanner,
+            { backgroundColor: palette.background, borderColor: palette.border },
+            pressed && canPress ? styles.pressed : null,
+          ]}
+        >
+          <View style={[styles.actionBannerIcon, { backgroundColor: theme.colors.surface }]}>
+            <Ionicons name={palette.iconName} size={18} color={palette.foreground} />
+          </View>
+          <View style={styles.actionBannerCopy}>
+            <AppText variant="label" numberOfLines={1}>
+              {activeItem.title}
+            </AppText>
+            <AppText variant="caption" color={theme.colors.textSecondary} numberOfLines={2}>
+              {activeItem.message}
+            </AppText>
+          </View>
+          {activeItem.actionLabel && activeItem.actionUrl ? (
+            <View style={styles.actionBannerAction}>
+              <AppText variant="caption" color={palette.foreground} numberOfLines={1}>
+                {activeItem.actionLabel}
+              </AppText>
+              <Ionicons name="chevron-forward" size={15} color={palette.foreground} />
+            </View>
+          ) : null}
+          <Pressable
+            accessibilityRole="button"
+            hitSlop={10}
+            onPress={dismiss}
+            style={({ pressed }) => [styles.actionBannerClose, pressed ? styles.pressed : null]}
+          >
+            <Ionicons name="close" size={14} color={palette.foreground} />
+          </Pressable>
+        </Pressable>
+      </Animated.View>
+      {visibleItems.length > 1 ? (
+        <View style={styles.bannerDots}>
+          {visibleItems.map((item, index) => (
+            <View
+              key={item.id}
+              style={[
+                styles.bannerDot,
+                index === activeIndex ? { backgroundColor: theme.colors.primary, width: 16 } : null,
+              ]}
+            />
+          ))}
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+function getActionItemPalette(type: string): {
+  background: string;
+  border: string;
+  foreground: string;
+  iconName: IconName;
+} {
+  if (type === 'critical') {
+    return {
+      background: theme.colors.errorLight,
+      border: theme.colors.errorLight,
+      foreground: theme.colors.error,
+      iconName: 'alert-circle-outline',
+    };
+  }
+
+  if (type === 'warning') {
+    return {
+      background: theme.colors.warningLight,
+      border: theme.colors.warningLight,
+      foreground: theme.colors.warning,
+      iconName: 'warning-outline',
+    };
+  }
+
+  if (type === 'success') {
+    return {
+      background: theme.colors.successLight,
+      border: theme.colors.successLight,
+      foreground: theme.colors.success,
+      iconName: 'checkmark-circle-outline',
+    };
+  }
+
+  return {
+    background: theme.colors.infoLight,
+    border: theme.colors.infoLight,
+    foreground: theme.colors.info,
+    iconName: 'information-circle-outline',
+  };
+}
+
 function getQuickActions(t: TFunction, hasPermission: (permission: string) => boolean): QuickAction[] {
   return [
     hasPermission(permissions.invoice.create)
@@ -387,6 +522,10 @@ function toMobileHref(actionUrl: string): string {
     return '/payments';
   }
 
+  if (actionUrl.startsWith('/app/subscriptions') || actionUrl.startsWith('/app/billing')) {
+    return '/subscriptions';
+  }
+
   if (actionUrl.startsWith('/app/invoices')) {
     return '/invoices';
   }
@@ -410,6 +549,52 @@ const styles = StyleSheet.create({
   },
   stack: {
     gap: theme.spacing.sm,
+  },
+  actionBanner: {
+    alignItems: 'center',
+    borderRadius: theme.radius.xl,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: theme.spacing.sm,
+    minHeight: 82,
+    padding: theme.spacing.sm,
+    paddingRight: theme.spacing.xs,
+  },
+  actionBannerIcon: {
+    alignItems: 'center',
+    borderRadius: theme.radius.full,
+    height: 36,
+    justifyContent: 'center',
+    width: 36,
+  },
+  actionBannerCopy: {
+    flex: 1,
+    gap: 2,
+  },
+  actionBannerAction: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 2,
+    maxWidth: 102,
+  },
+  actionBannerClose: {
+    alignItems: 'center',
+    borderRadius: theme.radius.full,
+    height: 26,
+    justifyContent: 'center',
+    width: 26,
+  },
+  bannerDots: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: theme.spacing.xxs,
+    justifyContent: 'center',
+  },
+  bannerDot: {
+    backgroundColor: theme.colors.border,
+    borderRadius: theme.radius.full,
+    height: 5,
+    width: 5,
   },
   metricsGrid: {
     flexDirection: 'row',

@@ -6,6 +6,8 @@ export interface PaymentHistoryDto {
   totalPages: number;
 }
 
+export type PaymentStatusFilter = 'all' | 'completed' | 'failed' | 'refunded';
+
 export interface PaymentHistoryItemDto {
   id: string;
   invoiceId: string;
@@ -23,7 +25,12 @@ export interface PaymentHistoryItemDto {
 }
 
 export interface PaymentListQuery {
-  status?: string | null;
+  status?: PaymentStatusFilter | string | null;
   page: number;
   limit: number;
+}
+
+export interface StripeConnectUrlDto {
+  oauthUrl: string;
+  state: string;
 }

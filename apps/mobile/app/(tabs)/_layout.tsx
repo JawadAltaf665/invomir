@@ -63,6 +63,13 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="subscriptions"
+        options={{
+          href: null,
+          title: t('more.subscription'),
+        }}
+      />
+      <Tabs.Screen
         name="invoices/[id]"
         options={{
           href: null,

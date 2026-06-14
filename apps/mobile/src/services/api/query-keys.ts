@@ -12,4 +12,5 @@ export const queryKeys = {
   notifications: (params: unknown) => ['notifications', params] as const,
   unreadNotificationCount: ['notifications', 'unread-count'] as const,
   subscription: ['subscription'] as const,
+  subscriptionPlans: ['subscription', 'plans'] as const,
 } as const;

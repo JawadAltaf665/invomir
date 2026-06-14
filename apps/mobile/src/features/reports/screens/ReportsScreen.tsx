@@ -1,9 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { format, startOfMonth, subMonths } from 'date-fns';
+import { format, subMonths } from 'date-fns';
 import * as Sharing from 'expo-sharing';
 import { useMemo, useState } from 'react';
-import { FlatList, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import { Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import { AppButton } from '@/src/components/common/AppButton';
@@ -18,14 +18,12 @@ import { DatePickerField } from '@/src/components/forms/DatePickerField';
 import { FilterChip } from '@/src/components/forms/FilterChip';
 import { AppHeader } from '@/src/components/layout/AppHeader';
 import { AppScreen } from '@/src/components/layout/AppScreen';
-import { layout } from '@/src/constants/layout';
 import { reportsApi } from '@/src/features/reports/api/reports-api';
 import type {
   MonthlyReportMonthDto,
   ReportExportFormat,
   ReportInvoiceStatus,
 } from '@/src/features/reports/types';
-import { useBottomTabScrollChrome } from '@/src/hooks/useBottomTabScrollChrome';
 import { queryKeys } from '@/src/services/api/query-keys';
 import { useAuthStore } from '@/src/store/auth-store';
 import { theme } from '@/src/theme/theme';
@@ -37,14 +35,13 @@ const reportStatuses: readonly ReportInvoiceStatus[] = ['draft', 'sent', 'viewed
 
 export function ReportsScreen() {
   const { t } = useTranslation();
-  const handleBottomTabScroll = useBottomTabScrollChrome();
   const hasPermission = useAuthStore((state) => state.hasPermission);
   const canView = hasPermission(permissions.report.view);
   const canExport = hasPermission(permissions.report.export);
   const [months, setMonths] = useState<(typeof monthOptions)[number]>(6);
   const [status, setStatus] = useState<ReportInvoiceStatus | null>(null);
-  const [fromDate, setFromDate] = useState(() => format(startOfMonth(subMonths(new Date(), 5)), 'yyyy-MM-dd'));
-  const [toDate, setToDate] = useState(() => format(new Date(), 'yyyy-MM-dd'));
+  const [fromDate, setFromDate] = useState(() => getQuickRangeFromDate(6));
+  const [toDate, setToDate] = useState(getTodayIsoDate);
   const queryMonthCount = useMemo(() => getReportMonthsToFetch(fromDate, months), [fromDate, months]);
   const selectedQuickOption = useMemo(
     () => monthOptions.find((option) => isRollingRange(option, fromDate, toDate)) ?? null,
@@ -110,8 +107,8 @@ export function ReportsScreen() {
   };
   const handleQuickRange = (option: (typeof monthOptions)[number]) => {
     setMonths(option);
-    setFromDate(format(startOfMonth(subMonths(new Date(), option - 1)), 'yyyy-MM-dd'));
-    setToDate(format(new Date(), 'yyyy-MM-dd'));
+    setFromDate(getQuickRangeFromDate(option));
+    setToDate(getTodayIsoDate());
   };
   const handleFromDate = (nextDate: string) => {
     setFromDate(nextDate);
@@ -129,178 +126,164 @@ export function ReportsScreen() {
   };
 
   return (
-    <AppScreen scroll={false} padded={false} contentStyle={styles.screenContent}>
-      <View style={styles.content}>
-        <AppHeader title={t('reports.title')} subtitle={t('reports.subtitle')} />
+    <AppScreen padded={false} contentStyle={styles.content}>
+      <AppHeader title={t('reports.title')} subtitle={t('reports.subtitle')} />
 
-        <AppCard style={styles.filterCard}>
-          <View style={styles.sectionHeader}>
-            <AppText variant="h3">{t('reports.quickFilters')}</AppText>
-            <AppText variant="caption" color={theme.colors.textMuted}>
-              {rangeLabel}
-            </AppText>
-          </View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
-            {monthOptions.map((option) => (
-              <FilterChip
-                key={option}
-                label={t('reports.monthOption', { count: option })}
-                selected={selectedQuickOption === option}
-                onPress={() => handleQuickRange(option)}
-              />
-            ))}
-          </ScrollView>
-          <View style={styles.dateGrid}>
-            <DatePickerField
-              label={t('reports.from')}
-              value={fromDate}
-              placeholder={t('invoices.datePlaceholder')}
-              sheetTitle={t('reports.pickFromDate')}
-              onSelect={handleFromDate}
+      <AppCard style={styles.filterCard}>
+        <View style={styles.sectionHeader}>
+          <AppText variant="h3">{t('reports.quickFilters')}</AppText>
+          <AppText variant="caption" color={theme.colors.textMuted}>
+            {rangeLabel}
+          </AppText>
+        </View>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
+          {monthOptions.map((option) => (
+            <FilterChip
+              key={option}
+              label={t('reports.monthOption', { count: option })}
+              selected={selectedQuickOption === option}
+              onPress={() => handleQuickRange(option)}
             />
-            <DatePickerField
-              label={t('reports.to')}
-              value={toDate}
-              placeholder={t('invoices.datePlaceholder')}
-              sheetTitle={t('reports.pickToDate')}
-              onSelect={handleToDate}
+          ))}
+        </ScrollView>
+        <View style={styles.dateGrid}>
+          <DatePickerField
+            label={t('reports.from')}
+            value={fromDate}
+            placeholder={t('invoices.datePlaceholder')}
+            sheetTitle={t('reports.pickFromDate')}
+            onSelect={handleFromDate}
+          />
+          <DatePickerField
+            label={t('reports.to')}
+            value={toDate}
+            placeholder={t('invoices.datePlaceholder')}
+            sheetTitle={t('reports.pickToDate')}
+            onSelect={handleToDate}
+          />
+        </View>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
+          <FilterChip label={t('invoices.allStatuses')} selected={status === null} onPress={() => setStatus(null)} />
+          {reportStatuses.map((invoiceStatus) => (
+            <FilterChip
+              key={invoiceStatus}
+              label={t(`invoices.statuses.${invoiceStatus}`)}
+              selected={status === invoiceStatus}
+              onPress={() => setStatus(invoiceStatus)}
             />
+          ))}
+        </ScrollView>
+      </AppCard>
+
+      {reportsQuery.isLoading ? <LoadingState rows={4} /> : null}
+      {reportsQuery.isError ? (
+        <ErrorState message={reportsQuery.error.message} onRetry={() => reportsQuery.refetch()} />
+      ) : null}
+
+      {!reportsQuery.isLoading && !reportsQuery.isError && monthsData.length === 0 ? (
+        <EmptyState title={t('reports.emptyTitle')} message={t('reports.emptyMessage')} />
+      ) : null}
+
+      {hasRows ? (
+        <>
+          <View style={styles.summaryGrid}>
+            <SummaryCard label={t('reports.paid')} value={totals.paid} currency={report?.currency ?? 'USD'} tone="success" />
+            <SummaryCard
+              label={t('reports.outstanding')}
+              value={totals.outstanding}
+              currency={report?.currency ?? 'USD'}
+              tone="primary"
+            />
+            <SummaryCard label={t('reports.overdue')} value={totals.overdue} currency={report?.currency ?? 'USD'} tone="danger" />
+            <AppCard style={styles.summaryCard}>
+              <View style={[styles.toneDot, { backgroundColor: theme.colors.info }]} />
+              <AppText variant="caption" color={theme.colors.textMuted}>
+                {t('reports.invoiceCount')}
+              </AppText>
+              <AppText variant="h2">{totals.invoiceCount}</AppText>
+            </AppCard>
           </View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
-            <FilterChip label={t('invoices.allStatuses')} selected={status === null} onPress={() => setStatus(null)} />
-            {reportStatuses.map((invoiceStatus) => (
-              <FilterChip
-                key={invoiceStatus}
-                label={t(`invoices.statuses.${invoiceStatus}`)}
-                selected={status === invoiceStatus}
-                onPress={() => setStatus(invoiceStatus)}
-              />
-            ))}
-          </ScrollView>
-        </AppCard>
 
-        {reportsQuery.isLoading ? <LoadingState rows={4} /> : null}
-        {reportsQuery.isError ? (
-          <ErrorState message={reportsQuery.error.message} onRetry={() => reportsQuery.refetch()} />
-        ) : null}
-
-        {!reportsQuery.isLoading && !reportsQuery.isError && monthsData.length === 0 ? (
-          <EmptyState title={t('reports.emptyTitle')} message={t('reports.emptyMessage')} />
-        ) : null}
-
-        {hasRows ? (
-          <>
-            <View style={styles.summaryGrid}>
-              <SummaryCard label={t('reports.paid')} value={totals.paid} currency={report?.currency ?? 'USD'} tone="success" />
-              <SummaryCard
-                label={t('reports.outstanding')}
-                value={totals.outstanding}
-                currency={report?.currency ?? 'USD'}
-                tone="primary"
-              />
-              <SummaryCard label={t('reports.overdue')} value={totals.overdue} currency={report?.currency ?? 'USD'} tone="danger" />
-              <AppCard style={styles.summaryCard}>
-                <View style={[styles.toneDot, { backgroundColor: theme.colors.info }]} />
-                <AppText variant="caption" color={theme.colors.textMuted}>
-                  {t('reports.invoiceCount')}
-                </AppText>
-                <AppText variant="h2">{totals.invoiceCount}</AppText>
-              </AppCard>
-            </View>
-
-            <AppCard style={styles.chartCard}>
-              <View style={styles.sectionHeader}>
-                <AppText variant="h3">{t('reports.revenueAnalytics')}</AppText>
-                <View style={styles.legend}>
-                  <LegendDot color={theme.colors.success} label={t('reports.paid')} />
-                  <LegendDot color={theme.colors.primary} label={t('reports.outstanding')} />
-                  <LegendDot color={theme.colors.error} label={t('reports.overdue')} />
-                </View>
+          <AppCard style={styles.chartCard}>
+            <View style={styles.sectionHeader}>
+              <AppText variant="h3">{t('reports.revenueAnalytics')}</AppText>
+              <View style={styles.legend}>
+                <LegendDot color={theme.colors.success} label={t('reports.paid')} />
+                <LegendDot color={theme.colors.primary} label={t('reports.outstanding')} />
+                <LegendDot color={theme.colors.error} label={t('reports.overdue')} />
               </View>
-              <View style={styles.chart}>
-                {monthsData.map((month) => (
-                  <View key={month.month} style={styles.monthColumn}>
-                    <View style={styles.bars}>
-                      <View style={[styles.paidBar, { height: Math.max(8, (month.paid / maxValue) * 120) }]} />
-                      <View
-                        style={[
-                          styles.outstandingBar,
-                          { height: Math.max(8, (month.outstanding / maxValue) * 120) },
-                        ]}
-                      />
-                      <View style={[styles.overdueBar, { height: Math.max(8, (month.overdue / maxValue) * 120) }]} />
-                    </View>
-                    <AppText variant="caption" color={theme.colors.textMuted}>
-                      {month.month.slice(5)}
-                    </AppText>
+            </View>
+            <View style={styles.chart}>
+              {monthsData.map((month) => (
+                <View key={month.month} style={styles.monthColumn}>
+                  <View style={styles.bars}>
+                    <View style={[styles.paidBar, { height: Math.max(8, (month.paid / maxValue) * 120) }]} />
+                    <View
+                      style={[
+                        styles.outstandingBar,
+                        { height: Math.max(8, (month.outstanding / maxValue) * 120) },
+                      ]}
+                    />
+                    <View style={[styles.overdueBar, { height: Math.max(8, (month.overdue / maxValue) * 120) }]} />
                   </View>
-                ))}
+                  <AppText variant="caption" color={theme.colors.textMuted}>
+                    {month.month.slice(5)}
+                  </AppText>
+                </View>
+              ))}
+            </View>
+          </AppCard>
+
+          {canExport ? (
+            <AppCard style={styles.exportCard}>
+              <View style={styles.sectionHeader}>
+                <View>
+                  <AppText variant="h3">{t('reports.exportTitle')}</AppText>
+                  <AppText variant="caption" color={theme.colors.textMuted}>
+                    {t('reports.exportSubtitle')}
+                  </AppText>
+                </View>
+                <Ionicons name="download-outline" size={22} color={theme.colors.primary} />
+              </View>
+              {exportMutation.isError ? <ErrorState message={exportMutation.error.message} /> : null}
+              <View style={styles.actionRow}>
+                <AppButton
+                  title={t('reports.exportPdf')}
+                  iconName="document-text-outline"
+                  fullWidth={false}
+                  isLoading={exportMutation.isPending}
+                  onPress={() => exportReport('pdf')}
+                />
+                <AppButton
+                  title={t('reports.exportCsv')}
+                  iconName="grid-outline"
+                  variant="secondary"
+                  fullWidth={false}
+                  isLoading={exportMutation.isPending}
+                  onPress={() => exportReport('csv')}
+                />
               </View>
             </AppCard>
+          ) : null}
 
-            {canExport ? (
-              <AppCard style={styles.exportCard}>
-                <View style={styles.sectionHeader}>
-                  <View>
-                    <AppText variant="h3">{t('reports.exportTitle')}</AppText>
-                    <AppText variant="caption" color={theme.colors.textMuted}>
-                      {t('reports.exportSubtitle')}
-                    </AppText>
-                  </View>
-                  <Ionicons name="download-outline" size={22} color={theme.colors.primary} />
+          <View style={styles.monthRows}>
+            {monthsData.map((item) => (
+              <AppCard key={item.month} style={styles.reportRow}>
+                <View style={styles.reportCopy}>
+                  <AppText variant="h3">{formatReportMonthPeriod(item.month, fromDate, toDate)}</AppText>
+                  <AppText variant="bodySmall" color={theme.colors.textMuted}>
+                    {item.invoiceCount} {t('reports.invoiceCount')}
+                  </AppText>
                 </View>
-                {exportMutation.isError ? <ErrorState message={exportMutation.error.message} /> : null}
-                <View style={styles.actionRow}>
-                  <AppButton
-                    title={t('reports.exportPdf')}
-                    iconName="document-text-outline"
-                    fullWidth={false}
-                    isLoading={exportMutation.isPending}
-                    onPress={() => exportReport('pdf')}
-                  />
-                  <AppButton
-                    title={t('reports.exportCsv')}
-                    iconName="grid-outline"
-                    variant="secondary"
-                    fullWidth={false}
-                    isLoading={exportMutation.isPending}
-                    onPress={() => exportReport('csv')}
-                  />
+                <View style={styles.reportAmounts}>
+                  <MoneyText amount={item.paid} currency={report?.currency ?? 'USD'} />
+                  <MoneyText amount={item.outstanding} currency={report?.currency ?? 'USD'} color={theme.colors.textSecondary} />
                 </View>
               </AppCard>
-            ) : null}
-
-            <View style={styles.monthListShell}>
-              <FlatList
-                data={monthsData}
-                keyExtractor={(item) => item.month}
-                keyboardShouldPersistTaps="handled"
-                style={styles.monthList}
-                contentContainerStyle={styles.monthListContent}
-                onScroll={handleBottomTabScroll}
-                scrollEventThrottle={16}
-                ItemSeparatorComponent={() => <View style={styles.separator} />}
-                renderItem={({ item }) => (
-                  <AppCard style={styles.reportRow}>
-                    <View>
-                      <AppText variant="h3">{formatReportMonth(item.month)}</AppText>
-                      <AppText variant="bodySmall" color={theme.colors.textMuted}>
-                        {item.invoiceCount} {t('reports.invoiceCount')}
-                      </AppText>
-                    </View>
-                    <View style={styles.reportAmounts}>
-                      <MoneyText amount={item.paid} currency={report?.currency ?? 'USD'} />
-                      <MoneyText amount={item.outstanding} currency={report?.currency ?? 'USD'} color={theme.colors.textSecondary} />
-                    </View>
-                  </AppCard>
-                )}
-                refreshing={reportsQuery.isRefetching}
-                onRefresh={reportsQuery.refetch}
-              />
-            </View>
-          </>
-        ) : null}
-      </View>
+            ))}
+          </View>
+        </>
+      ) : null}
     </AppScreen>
   );
 }
@@ -344,8 +327,31 @@ function LegendDot({ color, label }: { color: string; label: string }) {
   );
 }
 
-function formatReportMonth(month: string): string {
-  return formatDate(`${month}-01`, month);
+function formatReportMonthPeriod(month: string, fromDate: string, toDate: string): string {
+  const reportMonth = parseIsoDate(`${month}-01`);
+  const from = parseIsoDate(fromDate);
+  const to = parseIsoDate(toDate);
+
+  if (!reportMonth || !from || !to) {
+    return formatDate(`${month}-01`, month);
+  }
+
+  const monthStart = startOfLocalMonth(reportMonth);
+  const periodStart = clampDateToMonth(monthStart.getFullYear(), monthStart.getMonth(), from.getDate());
+  const nextPeriodStart = clampDateToMonth(monthStart.getFullYear(), monthStart.getMonth() + 1, from.getDate());
+  const periodEnd = addDays(nextPeriodStart, -1);
+  const clippedStart = periodStart < from ? from : periodStart;
+  const clippedEnd = periodEnd > to ? to : periodEnd;
+
+  if (clippedStart > clippedEnd) {
+    return formatDisplayDate(clippedEnd);
+  }
+
+  if (isSameCalendarDay(clippedStart, clippedEnd)) {
+    return formatDisplayDate(clippedStart);
+  }
+
+  return `${formatDisplayDate(clippedStart)} - ${formatDisplayDate(clippedEnd)}`;
 }
 
 function filterReportMonthsByRange(
@@ -390,10 +396,18 @@ function getReportMonthsToFetch(fromDate: string, fallbackMonths: number): numbe
 }
 
 function isRollingRange(monthCount: number, fromDate: string, toDate: string): boolean {
-  const expectedFrom = format(startOfMonth(subMonths(new Date(), monthCount - 1)), 'yyyy-MM-dd');
-  const expectedTo = format(new Date(), 'yyyy-MM-dd');
+  const expectedFrom = getQuickRangeFromDate(monthCount);
+  const expectedTo = getTodayIsoDate();
 
   return fromDate === expectedFrom && toDate === expectedTo;
+}
+
+function getQuickRangeFromDate(monthCount: number): string {
+  return format(subMonths(new Date(), monthCount - 1), 'yyyy-MM-dd');
+}
+
+function getTodayIsoDate(): string {
+  return format(new Date(), 'yyyy-MM-dd');
 }
 
 function compareIsoDates(left: string, right: string): number {
@@ -422,19 +436,38 @@ function startOfLocalMonth(value: Date): Date {
   return new Date(value.getFullYear(), value.getMonth(), 1);
 }
 
+function clampDateToMonth(year: number, month: number, day: number): Date {
+  const lastDay = new Date(year, month + 1, 0).getDate();
+  return new Date(year, month, Math.min(day, lastDay));
+}
+
+function addDays(value: Date, days: number): Date {
+  const next = new Date(value);
+  next.setDate(value.getDate() + days);
+  return next;
+}
+
+function isSameCalendarDay(left: Date, right: Date): boolean {
+  return left.getFullYear() === right.getFullYear() &&
+    left.getMonth() === right.getMonth() &&
+    left.getDate() === right.getDate();
+}
+
+function formatDisplayDate(value: Date): string {
+  return [
+    String(value.getDate()).padStart(2, '0'),
+    String(value.getMonth() + 1).padStart(2, '0'),
+    value.getFullYear(),
+  ].join('-');
+}
+
 function monthsBetween(from: Date, to: Date): number {
   return (to.getFullYear() - from.getFullYear()) * 12 + (to.getMonth() - from.getMonth());
 }
 
 const styles = StyleSheet.create({
-  screenContent: {
-    flex: 1,
-    minHeight: 0,
-  },
   content: {
-    flex: 1,
     gap: theme.spacing.md,
-    minHeight: 0,
     padding: theme.spacing.md,
   },
   filterCard: {
@@ -526,27 +559,20 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: theme.spacing.sm,
   },
-  monthListShell: {
-    flex: 1,
-    minHeight: 150,
-  },
-  monthList: {
-    flex: 1,
-    minHeight: 0,
-  },
-  monthListContent: {
-    paddingBottom: layout.bottomTabOverlayHeight,
+  monthRows: {
+    gap: theme.spacing.sm,
   },
   reportRow: {
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
+  reportCopy: {
+    flex: 1,
+    paddingRight: theme.spacing.sm,
+  },
   reportAmounts: {
     alignItems: 'flex-end',
     gap: theme.spacing.xxs,
-  },
-  separator: {
-    height: theme.spacing.sm,
   },
 });
