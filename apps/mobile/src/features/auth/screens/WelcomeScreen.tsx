@@ -14,7 +14,7 @@ export function WelcomeScreen() {
   const { t } = useTranslation();
 
   return (
-    <AppScreen scroll={false} contentStyle={styles.content}>
+    <AppScreen contentStyle={styles.content}>
       <View style={styles.brandBlock}>
         <View style={styles.logo}>
           <AppText variant="h2" color={theme.colors.white}>

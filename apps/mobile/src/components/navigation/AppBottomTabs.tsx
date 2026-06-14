@@ -102,8 +102,10 @@ export function AppBottomTabs({ state, descriptors, navigation }: BottomTabBarPr
 
   useEffect(() => {
     activeIndexProgress.value = withSpring(activeVisibleIndex, springConfig);
-    indicatorOpacity.value = withTiming(activeVisibleIndex >= 0 && indicatorWidth > 0 ? 1 : 0, { duration: 160 });
-  }, [activeIndexProgress, activeVisibleIndex, indicatorOpacity, indicatorWidth]);
+    indicatorOpacity.value = withTiming(activeVisibleIndex >= 0 && activeTabName !== 'settings' && indicatorWidth > 0 ? 1 : 0, {
+      duration: 160,
+    });
+  }, [activeIndexProgress, activeTabName, activeVisibleIndex, indicatorOpacity, indicatorWidth]);
 
   const tabBarAnimatedStyle = useAnimatedStyle(() => ({
     transform: [

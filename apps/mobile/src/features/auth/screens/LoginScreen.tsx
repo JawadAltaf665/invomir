@@ -6,7 +6,6 @@ import { StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import { AppButton } from '@/src/components/common/AppButton';
-import { AppText } from '@/src/components/common/AppText';
 import { ErrorState } from '@/src/components/feedback/ErrorState';
 import { AppInput } from '@/src/components/forms/AppInput';
 import { AppScreen } from '@/src/components/layout/AppScreen';
@@ -92,9 +91,6 @@ export function LoginScreen() {
           variant="ghost"
           onPress={() => router.push('/forgot-password')}
         />
-        <AppText variant="bodySmall" color={theme.colors.textSecondary} align="center">
-          {t('auth.passwordHint')}
-        </AppText>
       </View>
     </AppScreen>
   );
