@@ -26,7 +26,9 @@ type IconName = keyof typeof Ionicons.glyphMap;
 
 const visibleTabs: readonly TabName[] = ['dashboard', 'invoices', 'settings', 'clients', 'reports'];
 const metrics = {
+  barHeight: 46,
   barMinHeight: 46,
+  barPadding: 5,
   tabHeight: 36,
   iconSize: 20,
 } as const;
@@ -89,7 +91,8 @@ export function AppBottomTabs({ state, descriptors, navigation }: BottomTabBarPr
   const activeVisibleIndex = activeTabName ? visibleTabs.indexOf(activeTabName) : -1;
   const profile = profileQuery.data;
   const profileCacheKey = profile ? `${profile.id}-${profile.profilePictureUrl ?? ''}` : undefined;
-  const slotWidth = routes.length > 0 && barWidth > 0 ? barWidth / routes.length : 0;
+  const innerBarWidth = Math.max(0, barWidth - metrics.barPadding * 2);
+  const slotWidth = routes.length > 0 && innerBarWidth > 0 ? innerBarWidth / routes.length : 0;
   const indicatorWidth = slotWidth > 0 ? Math.min(70, Math.max(48, slotWidth - 20)) : 0;
 
   useEffect(() => {
@@ -118,7 +121,7 @@ export function AppBottomTabs({ state, descriptors, navigation }: BottomTabBarPr
     opacity: indicatorOpacity.value,
     transform: [
       {
-        translateX: activeIndexProgress.value * slotWidth + (slotWidth - indicatorWidth) / 2,
+        translateX: metrics.barPadding + activeIndexProgress.value * slotWidth + (slotWidth - indicatorWidth) / 2,
       },
     ],
     width: indicatorWidth,
@@ -322,7 +325,7 @@ const styles = StyleSheet.create({
     height: metrics.tabHeight,
     left: 0,
     position: 'absolute',
-    top: theme.spacing.xxs,
+    top: (metrics.barHeight - metrics.tabHeight) / 2,
   },
   tabBar: {
     alignItems: 'center',
@@ -330,9 +333,10 @@ const styles = StyleSheet.create({
     borderRadius: theme.radius.full,
     borderWidth: 1,
     flexDirection: 'row',
+    height: metrics.barHeight,
     minHeight: metrics.barMinHeight,
     overflow: 'visible',
-    padding: theme.spacing.xxs,
+    padding: metrics.barPadding,
     width: '96%',
     ...(theme.shadows.floating ?? {}),
   },
