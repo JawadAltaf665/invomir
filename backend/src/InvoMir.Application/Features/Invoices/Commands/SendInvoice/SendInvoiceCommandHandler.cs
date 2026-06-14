@@ -184,7 +184,8 @@ public sealed class SendInvoiceCommandHandler(
             request.Message,
             pdfBytes,
             emailType,
-            request.CcSelf ? snapshot.Issuer.Email : null);
+            request.CcSelf ? snapshot.Issuer.Email : null,
+            snapshot.Invoice.DueDate);
     }
 
     private async Task<string> GenerateUniqueTokenAsync(CancellationToken cancellationToken)
