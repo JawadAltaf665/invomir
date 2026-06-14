@@ -25,6 +25,7 @@ import {
   InvoiceSaveRequest,
   invoicePaymentTerms,
 } from '@/src/features/invoices/types';
+import { useConfirmationDialog } from '@/src/hooks/useConfirmationDialog';
 import { queryKeys } from '@/src/services/api/query-keys';
 import { useAuthStore } from '@/src/store/auth-store';
 import { theme } from '@/src/theme/theme';
@@ -43,6 +44,7 @@ export function InvoiceFormScreen() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const params = useLocalSearchParams<{ id?: string; clientId?: string }>();
+  const { confirm, ConfirmationDialog } = useConfirmationDialog();
   const invoiceId = params.id;
   const isEditing = Boolean(invoiceId);
   const hasPermission = useAuthStore((state) => state.hasPermission);
@@ -146,7 +148,12 @@ export function InvoiceFormScreen() {
       return;
     }
 
-    saveMutation.mutate(request);
+    confirm({
+      message: t('invoices.confirmSave'),
+      onConfirm: async () => {
+        await saveMutation.mutateAsync(request);
+      },
+    });
   };
 
   const updateItem = (localId: string, patch: Partial<InvoiceItemInputDto>) => {
@@ -380,6 +387,7 @@ export function InvoiceFormScreen() {
         <AppButton title={t('common.cancel')} iconName="close-outline" variant="ghost" onPress={() => router.back()} />
       </View>
 
+      {ConfirmationDialog}
     </AppScreen>
   );
 }

@@ -19,6 +19,7 @@ import { layout } from '@/src/constants/layout';
 import { invoicesApi } from '@/src/features/invoices/api/invoices-api';
 import { InvoiceStatus, invoiceStatuses } from '@/src/features/invoices/types';
 import { useBottomTabScrollChrome } from '@/src/hooks/useBottomTabScrollChrome';
+import { useConfirmationDialog } from '@/src/hooks/useConfirmationDialog';
 import { queryKeys } from '@/src/services/api/query-keys';
 import { useAuthStore } from '@/src/store/auth-store';
 import { theme } from '@/src/theme/theme';
@@ -31,6 +32,7 @@ export function InvoiceListScreen() {
   const queryClient = useQueryClient();
   const params = useLocalSearchParams<{ status?: string }>();
   const handleBottomTabScroll = useBottomTabScrollChrome();
+  const { confirm, ConfirmationDialog } = useConfirmationDialog();
   const initialStatus = invoiceStatuses.includes(params.status as InvoiceStatus)
     ? (params.status as InvoiceStatus)
     : 'all';
@@ -119,6 +121,31 @@ export function InvoiceListScreen() {
     setSelectedIds([]);
     setSelectionNotice(null);
   };
+  const confirmBulkAction = (action: 'send' | 'resend' | 'cancel') => {
+    const targetCount =
+      action === 'send'
+        ? sendableSelectedIds.length
+        : action === 'resend'
+          ? resendableSelectedIds.length
+          : cancelableSelectedIds.length;
+
+    if (targetCount === 0 || bulkMutation.isPending) {
+      return;
+    }
+
+    confirm({
+      message:
+        action === 'send'
+          ? t('invoices.confirmBulkSend', { count: targetCount })
+          : action === 'resend'
+            ? t('invoices.confirmBulkResend', { count: targetCount })
+            : t('invoices.confirmBulkCancel', { count: targetCount }),
+      tone: action === 'cancel' ? 'danger' : 'primary',
+      onConfirm: async () => {
+        await bulkMutation.mutateAsync(action);
+      },
+    });
+  };
 
   return (
     <AppScreen scroll={false} padded={false} contentStyle={styles.screenContent}>
@@ -203,7 +230,7 @@ export function InvoiceListScreen() {
                   fullWidth={false}
                   disabled={bulkMutation.isPending}
                   isLoading={bulkMutation.isPending}
-                  onPress={() => bulkMutation.mutate('send')}
+                  onPress={() => confirmBulkAction('send')}
                 />
               ) : null}
               {showResendAction ? (
@@ -214,7 +241,7 @@ export function InvoiceListScreen() {
                   fullWidth={false}
                   disabled={bulkMutation.isPending}
                   isLoading={bulkMutation.isPending}
-                  onPress={() => bulkMutation.mutate('resend')}
+                  onPress={() => confirmBulkAction('resend')}
                 />
               ) : null}
               {showCancelAction ? (
@@ -225,7 +252,7 @@ export function InvoiceListScreen() {
                   fullWidth={false}
                   disabled={bulkMutation.isPending}
                   isLoading={bulkMutation.isPending}
-                  onPress={() => bulkMutation.mutate('cancel')}
+                  onPress={() => confirmBulkAction('cancel')}
                 />
               ) : null}
             </View>
@@ -271,6 +298,7 @@ export function InvoiceListScreen() {
         refreshing={invoicesQuery.isRefetching}
         onRefresh={invoicesQuery.refetch}
       />
+      {ConfirmationDialog}
     </AppScreen>
   );
 }

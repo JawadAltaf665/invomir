@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as Sharing from 'expo-sharing';
 import { router, useLocalSearchParams } from 'expo-router';
-import { Alert, Platform, StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import { AppButton } from '@/src/components/common/AppButton';
@@ -15,6 +15,7 @@ import { AppHeader } from '@/src/components/layout/AppHeader';
 import { AppScreen } from '@/src/components/layout/AppScreen';
 import { invoicesApi } from '@/src/features/invoices/api/invoices-api';
 import { InvoiceStatus } from '@/src/features/invoices/types';
+import { useConfirmationDialog } from '@/src/hooks/useConfirmationDialog';
 import { queryKeys } from '@/src/services/api/query-keys';
 import { useAuthStore } from '@/src/store/auth-store';
 import { theme } from '@/src/theme/theme';
@@ -26,6 +27,7 @@ export function InvoiceDetailScreen() {
   const queryClient = useQueryClient();
   const params = useLocalSearchParams<{ id: string }>();
   const id = params.id;
+  const { confirm, ConfirmationDialog } = useConfirmationDialog();
   const hasPermission = useAuthStore((state) => state.hasPermission);
   const canUpdate = hasPermission(permissions.invoice.update);
   const canSend = hasPermission(permissions.invoice.send);
@@ -123,6 +125,24 @@ export function InvoiceDetailScreen() {
     );
   }
 
+  const confirmInvoiceAction = (
+    action: 'send' | 'resend' | 'markPaid' | 'cancel' | 'delete' | 'duplicate',
+    message: string,
+    tone: 'primary' | 'danger' = 'primary',
+  ) => {
+    if (actionMutation.isPending) {
+      return;
+    }
+
+    confirm({
+      message,
+      tone,
+      onConfirm: async () => {
+        await actionMutation.mutateAsync(action);
+      },
+    });
+  };
+
   return (
     <AppScreen>
       <AppHeader title={invoice.invoiceNumber} subtitle={invoice.client.name} action={<StatusBadge status={invoice.status} />} />
@@ -159,7 +179,7 @@ export function InvoiceDetailScreen() {
               fullWidth={false}
               style={styles.actionButton}
               isLoading={actionMutation.isPending}
-              onPress={() => actionMutation.mutate('send')}
+              onPress={() => confirmInvoiceAction('send', t('invoices.confirmSend'))}
             />
           ) : null}
           {canSend && canResendInvoice(invoice.status) ? (
@@ -169,7 +189,7 @@ export function InvoiceDetailScreen() {
               fullWidth={false}
               style={styles.actionButton}
               isLoading={actionMutation.isPending}
-              onPress={() => actionMutation.mutate('resend')}
+              onPress={() => confirmInvoiceAction('resend', t('invoices.confirmResend'))}
             />
           ) : null}
           {canMarkPaid && canMarkPaidInvoice(invoice.status) ? (
@@ -180,7 +200,7 @@ export function InvoiceDetailScreen() {
               fullWidth={false}
               style={styles.actionButton}
               isLoading={actionMutation.isPending}
-              onPress={() => actionMutation.mutate('markPaid')}
+              onPress={() => confirmInvoiceAction('markPaid', t('invoices.confirmMarkPaid'))}
             />
           ) : null}
           <AppButton
@@ -209,7 +229,7 @@ export function InvoiceDetailScreen() {
               fullWidth={false}
               style={styles.actionButton}
               isLoading={actionMutation.isPending}
-              onPress={() => actionMutation.mutate('duplicate')}
+              onPress={() => confirmInvoiceAction('duplicate', t('invoices.confirmDuplicate'))}
             />
           ) : null}
           {canCancel && canCancelInvoice(invoice.status) ? (
@@ -220,7 +240,7 @@ export function InvoiceDetailScreen() {
               fullWidth={false}
               style={styles.actionButton}
               isLoading={actionMutation.isPending}
-              onPress={() => confirmAction(t('invoices.cancelInvoice'), () => actionMutation.mutate('cancel'))}
+              onPress={() => confirmInvoiceAction('cancel', t('invoices.confirmCancel'), 'danger')}
             />
           ) : null}
           {canDelete && canDeleteInvoice(invoice.status) ? (
@@ -231,7 +251,7 @@ export function InvoiceDetailScreen() {
               fullWidth={false}
               style={styles.actionButton}
               isLoading={actionMutation.isPending}
-              onPress={() => confirmAction(t('invoices.deleteInvoice'), () => actionMutation.mutate('delete'))}
+              onPress={() => confirmInvoiceAction('delete', t('invoices.confirmDelete'), 'danger')}
             />
           ) : null}
         </View>
@@ -283,15 +303,9 @@ export function InvoiceDetailScreen() {
           <AppText color={theme.colors.textSecondary}>{invoice.notes}</AppText>
         </AppCard>
       ) : null}
+      {ConfirmationDialog}
     </AppScreen>
   );
-}
-
-function confirmAction(title: string, onConfirm: () => void) {
-  Alert.alert(title, undefined, [
-    { text: 'Cancel', style: 'cancel' },
-    { text: 'Continue', style: 'destructive', onPress: onConfirm },
-  ]);
 }
 
 function canEditInvoice(status: InvoiceStatus): boolean {

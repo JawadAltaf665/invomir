@@ -32,6 +32,7 @@ export function AppScreen({
   const segments = useSegments();
   const handleBottomTabScroll = useBottomTabScrollChrome();
   const hasFloatingTabs = segments[0] === '(tabs)';
+  const safeAreaEdges = hasFloatingTabs ? (['left', 'right'] as const) : undefined;
   const tabInsetStyle = hasFloatingTabs ? styles.floatingTabInset : null;
   const content = scroll ? (
     <ScrollView
@@ -48,7 +49,7 @@ export function AppScreen({
   );
 
   return (
-    <SafeAreaView style={[styles.safeArea, style]}>
+    <SafeAreaView edges={safeAreaEdges} style={[styles.safeArea, style]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.keyboardAvoider}

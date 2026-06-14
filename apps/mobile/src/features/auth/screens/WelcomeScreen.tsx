@@ -1,6 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
+import Animated, { Easing, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
 
 import { AppButton } from '@/src/components/common/AppButton';
@@ -58,12 +60,31 @@ export function WelcomeScreen() {
 }
 
 function FeaturePill({ iconName, label }: { iconName: keyof typeof Ionicons.glyphMap; label: string }) {
+  const shimmerProgress = useSharedValue(-1);
+  const shimmerStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: shimmerProgress.value * 360 }, { skewX: '-16deg' }],
+  }));
+
+  useEffect(() => {
+    shimmerProgress.value = withRepeat(
+      withTiming(1, {
+        duration: 1700,
+        easing: Easing.inOut(Easing.ease),
+      }),
+      -1,
+      false,
+    );
+  }, [shimmerProgress]);
+
   return (
     <View style={styles.featurePill}>
-      <Ionicons name={iconName} size={14} color={theme.colors.primary} />
-      <AppText variant="caption" color={theme.colors.textSecondary}>
-        {label}
-      </AppText>
+      <Animated.View pointerEvents="none" style={[styles.featurePillShimmer, shimmerStyle]} />
+      <View style={styles.featurePillContent}>
+        <Ionicons name={iconName} size={14} color={theme.colors.primary} />
+        <AppText variant="caption" color={theme.colors.textSecondary}>
+          {label}
+        </AppText>
+      </View>
     </View>
   );
 }
@@ -102,10 +123,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: theme.colors.surfaceMuted,
     borderRadius: theme.radius.full,
-    flexDirection: 'row',
-    gap: theme.spacing.xs,
+    overflow: 'hidden',
     paddingHorizontal: theme.spacing.sm,
     paddingVertical: theme.spacing.xs,
+    position: 'relative',
+  },
+  featurePillShimmer: {
+    backgroundColor: 'rgba(79, 70, 229, 0.10)',
+    bottom: 0,
+    position: 'absolute',
+    top: 0,
+    width: 86,
+  },
+  featurePillContent: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: theme.spacing.xs,
   },
   actions: {
     gap: theme.spacing.sm,

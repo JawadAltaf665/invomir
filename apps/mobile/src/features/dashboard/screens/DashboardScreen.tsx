@@ -54,6 +54,10 @@ export function DashboardScreen() {
   });
   const actionItems = actionItemsQuery.data?.items ?? [];
   const quickActions = getQuickActions(t, hasPermission);
+  const isRefreshingDashboard = dashboardQuery.isRefetching || actionItemsQuery.isRefetching;
+  const refreshDashboard = () => {
+    void Promise.all([dashboardQuery.refetch(), actionItemsQuery.refetch()]);
+  };
 
   if (!canView) {
     return (
@@ -101,6 +105,21 @@ export function DashboardScreen() {
       <AppHeader
         title={t('dashboard.greeting', { name: user?.firstName ?? t('common.appName') })}
         subtitle={t('dashboard.subtitle', { currency: dashboard.currency })}
+        action={
+          <Pressable
+            accessibilityLabel={t('common.refresh')}
+            accessibilityRole="button"
+            disabled={isRefreshingDashboard}
+            hitSlop={10}
+            onPress={refreshDashboard}
+            style={({ pressed }) => [
+              styles.refreshButton,
+              (pressed || isRefreshingDashboard) ? styles.pressed : null,
+            ]}
+          >
+            <Ionicons name="refresh-outline" size={19} color={theme.colors.primary} />
+          </Pressable>
+        }
       />
 
       {actionItems.length > 0 ? (
@@ -549,6 +568,16 @@ const styles = StyleSheet.create({
   },
   stack: {
     gap: theme.spacing.sm,
+  },
+  refreshButton: {
+    alignItems: 'center',
+    backgroundColor: theme.colors.surface,
+    borderColor: theme.colors.border,
+    borderRadius: theme.radius.full,
+    borderWidth: 1,
+    height: 38,
+    justifyContent: 'center',
+    width: 38,
   },
   actionBanner: {
     alignItems: 'center',

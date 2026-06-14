@@ -62,7 +62,11 @@ export function AppFloatingProfileButton({
 
 const styles = StyleSheet.create({
   pressable: {
-    marginTop: -19,
+    alignItems: 'center',
+    height: 54,
+    justifyContent: 'center',
+    marginTop: -17,
+    width: 54,
   },
   button: {
     alignItems: 'center',

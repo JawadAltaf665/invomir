@@ -21,6 +21,7 @@ import { InvoiceListItemDto, InvoiceStatus } from '@/src/features/invoices/types
 import { paymentsApi } from '@/src/features/payments/api/payments-api';
 import { PaymentHistoryItemDto, PaymentStatusFilter } from '@/src/features/payments/types';
 import { settingsApi } from '@/src/features/settings/api/settings-api';
+import { useConfirmationDialog } from '@/src/hooks/useConfirmationDialog';
 import { queryKeys } from '@/src/services/api/query-keys';
 import { useAuthStore } from '@/src/store/auth-store';
 import { theme } from '@/src/theme/theme';
@@ -34,6 +35,7 @@ const paymentQueryBase = { page: 1, limit: 20 } as const;
 export function PaymentListScreen() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
+  const { confirm, ConfirmationDialog } = useConfirmationDialog();
   const hasPermission = useAuthStore((state) => state.hasPermission);
   const canView = hasPermission(permissions.payment.view);
   const canManagePayments = hasPermission(permissions.payment.manage);
@@ -117,6 +119,18 @@ export function PaymentListScreen() {
     void paymentsQuery.refetch();
     payableInvoiceQueries.forEach((query) => void query.refetch());
   };
+  const confirmPaymentLinkAction = (invoice: InvoiceListItemDto, action: 'open' | 'share') => {
+    if (paymentLinkMutation.isPending) {
+      return;
+    }
+
+    confirm({
+      message: t('invoices.confirmResend'),
+      onConfirm: async () => {
+        await paymentLinkMutation.mutateAsync({ invoice, action });
+      },
+    });
+  };
 
   return (
     <AppScreen contentStyle={styles.content}>
@@ -187,8 +201,8 @@ export function PaymentListScreen() {
             invoice={invoice}
             disabled={!isStripeConnected || !canSendInvoices}
             isLoading={paymentLinkMutation.isPending}
-            onOpen={() => paymentLinkMutation.mutate({ invoice, action: 'open' })}
-            onShare={() => paymentLinkMutation.mutate({ invoice, action: 'share' })}
+            onOpen={() => confirmPaymentLinkAction(invoice, 'open')}
+            onShare={() => confirmPaymentLinkAction(invoice, 'share')}
           />
         ))}
 
@@ -236,6 +250,7 @@ export function PaymentListScreen() {
           <PaymentCard key={payment.id} payment={payment} />
         ))}
       </AppCard>
+      {ConfirmationDialog}
     </AppScreen>
   );
 }
