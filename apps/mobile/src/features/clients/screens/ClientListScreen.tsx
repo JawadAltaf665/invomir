@@ -1,8 +1,7 @@
-import { FlashList } from '@shopify/flash-list';
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { FlatList, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import { AppButton } from '@/src/components/common/AppButton';
@@ -53,7 +52,7 @@ export function ClientListScreen() {
   const clients = clientsQuery.data?.items ?? [];
 
   return (
-    <AppScreen scroll={false}>
+    <AppScreen scroll={false} padded={false} contentStyle={styles.screenContent}>
       <View style={styles.content}>
         <AppHeader
           title={t('clients.title')}
@@ -77,10 +76,12 @@ export function ClientListScreen() {
           <ErrorState message={clientsQuery.error.message} onRetry={() => clientsQuery.refetch()} />
         ) : null}
         {!clientsQuery.isLoading && !clientsQuery.isError ? (
-          <FlashList
+          <FlatList
             data={clients}
             keyExtractor={(item) => item.id}
+            style={styles.list}
             contentContainerStyle={styles.listContent}
+            keyboardShouldPersistTaps="handled"
             onScroll={handleBottomTabScroll}
             scrollEventThrottle={16}
             ItemSeparatorComponent={() => <View style={styles.separator} />}
@@ -106,10 +107,19 @@ export function ClientListScreen() {
 }
 
 const styles = StyleSheet.create({
+  screenContent: {
+    flex: 1,
+    minHeight: 0,
+  },
   content: {
     flex: 1,
     gap: theme.spacing.md,
+    minHeight: 0,
     padding: theme.spacing.md,
+  },
+  list: {
+    flex: 1,
+    minHeight: 0,
   },
   listContent: {
     paddingBottom: layout.bottomTabOverlayHeight,
