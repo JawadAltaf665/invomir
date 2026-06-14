@@ -35,6 +35,7 @@ import { ApiResponseError, extractApiErrors } from '../../../../core/errors/api-
 import { ApiResponse } from '../../../../core/models/api-response.model';
 import { TranslationService } from '../../../../core/i18n/translation.service';
 import { permissions } from '../../../../core/permissions/permissions';
+import { ConfirmationDialogService } from '../../../../core/services/confirmation-dialog.service';
 import { WorkspaceCurrencyRefreshService } from '../../../../core/services/workspace-currency-refresh.service';
 import { InvoiceStatusBadgeComponent } from '../../components/invoice-status-badge/invoice-status-badge.component';
 import { InvoiceTotalsSummaryComponent } from '../../components/invoice-totals-summary/invoice-totals-summary.component';
@@ -83,6 +84,7 @@ export class InvoiceDetailComponent implements OnInit {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly workspaceCurrencyRefresh = inject(WorkspaceCurrencyRefreshService);
   private readonly translation = inject(TranslationService);
+  private readonly confirmationDialog = inject(ConfirmationDialogService);
 
   protected readonly invoice = signal<InvoiceDetailDto | null>(null);
   protected readonly isLoading = signal(false);
@@ -196,7 +198,13 @@ export class InvoiceDetailComponent implements OnInit {
       return;
     }
 
-    this.executeAction(this.invoiceApi.sendInvoice(invoice.id), () => this.loadInvoice(invoice.id));
+    this.confirmAndExecuteAction(
+      this.translation.translate('invoices.confirmSend', {
+        invoiceNumber: invoice.invoiceNumber,
+      }),
+      () => this.invoiceApi.sendInvoice(invoice.id),
+      () => this.loadInvoice(invoice.id),
+    );
   }
 
   protected resendInvoice(): void {
@@ -206,8 +214,12 @@ export class InvoiceDetailComponent implements OnInit {
       return;
     }
 
-    this.executeAction(this.invoiceApi.resendInvoice(invoice.id), () =>
-      this.loadInvoice(invoice.id),
+    this.confirmAndExecuteAction(
+      this.translation.translate('invoices.confirmResend', {
+        invoiceNumber: invoice.invoiceNumber,
+      }),
+      () => this.invoiceApi.resendInvoice(invoice.id),
+      () => this.loadInvoice(invoice.id),
     );
   }
 
@@ -218,17 +230,12 @@ export class InvoiceDetailComponent implements OnInit {
       return;
     }
 
-    const confirmed = window.confirm(
+    this.confirmAndExecuteAction(
       this.translation.translate('invoices.confirmMarkPaid', {
         invoiceNumber: invoice.invoiceNumber,
       }),
-    );
-    if (!confirmed) {
-      return;
-    }
-
-    this.executeAction(this.invoiceApi.markPaid(invoice.id, { method: 'other' }), () =>
-      this.loadInvoice(invoice.id),
+      () => this.invoiceApi.markPaid(invoice.id, { method: 'other' }),
+      () => this.loadInvoice(invoice.id),
     );
   }
 
@@ -239,17 +246,13 @@ export class InvoiceDetailComponent implements OnInit {
       return;
     }
 
-    const confirmed = window.confirm(
+    this.confirmAndExecuteAction(
       this.translation.translate('invoices.confirmCancel', {
         invoiceNumber: invoice.invoiceNumber,
       }),
-    );
-    if (!confirmed) {
-      return;
-    }
-
-    this.executeAction(this.invoiceApi.cancelInvoice(invoice.id), () =>
-      this.loadInvoice(invoice.id),
+      () => this.invoiceApi.cancelInvoice(invoice.id),
+      () => this.loadInvoice(invoice.id),
+      'danger',
     );
   }
 
@@ -260,9 +263,15 @@ export class InvoiceDetailComponent implements OnInit {
       return;
     }
 
-    this.executeAction(this.invoiceApi.duplicateInvoice(invoice.id), (duplicate) => {
-      void this.router.navigate(['/app/invoices', duplicate.id]);
-    });
+    this.confirmAndExecuteAction(
+      this.translation.translate('invoices.confirmDuplicate', {
+        invoiceNumber: invoice.invoiceNumber,
+      }),
+      () => this.invoiceApi.duplicateInvoice(invoice.id),
+      (duplicate) => {
+        void this.router.navigate(['/app/invoices', duplicate.id]);
+      },
+    );
   }
 
   protected deleteInvoice(): void {
@@ -272,18 +281,16 @@ export class InvoiceDetailComponent implements OnInit {
       return;
     }
 
-    const confirmed = window.confirm(
+    this.confirmAndExecuteAction(
       this.translation.translate('invoices.confirmDelete', {
         invoiceNumber: invoice.invoiceNumber,
       }),
+      () => this.invoiceApi.deleteInvoice(invoice.id),
+      () => {
+        void this.router.navigate(['/app/invoices']);
+      },
+      'danger',
     );
-    if (!confirmed) {
-      return;
-    }
-
-    this.executeAction(this.invoiceApi.deleteInvoice(invoice.id), () => {
-      void this.router.navigate(['/app/invoices']);
-    });
   }
 
   protected updateReminders(enabled: boolean): void {
@@ -293,8 +300,12 @@ export class InvoiceDetailComponent implements OnInit {
       return;
     }
 
-    this.executeAction(this.invoiceApi.updateReminders(invoice.id, { enabled }), () =>
-      this.loadInvoice(invoice.id),
+    this.confirmAndExecuteAction(
+      this.translation.translate(enabled ? 'invoices.confirmRemindersOn' : 'invoices.confirmRemindersOff', {
+        invoiceNumber: invoice.invoiceNumber,
+      }),
+      () => this.invoiceApi.updateReminders(invoice.id, { enabled }),
+      () => this.loadInvoice(invoice.id),
     );
   }
 
@@ -350,9 +361,11 @@ export class InvoiceDetailComponent implements OnInit {
       });
   }
 
-  private executeAction<T>(
-    request$: Observable<ApiResponse<T>>,
+  private confirmAndExecuteAction<T>(
+    message: string,
+    requestFactory: () => Observable<ApiResponse<T>>,
     onSuccess: (response: T) => void = () => undefined,
+    tone: 'primary' | 'danger' = 'primary',
   ): void {
     if (this.isMutating()) {
       return;
@@ -361,11 +374,19 @@ export class InvoiceDetailComponent implements OnInit {
     this.isMutating.set(true);
     this.errorMessages.set([]);
 
-    request$
-      .pipe(
-        map((response) => this.unwrap(response, 'Invoice action failed.')),
-        finalize(() => this.isMutating.set(false)),
+    this.confirmationDialog
+      .confirmAction(
+        {
+          title: this.translation.translate('common.confirmAction'),
+          message,
+          cancelLabel: this.translation.translate('common.cancel'),
+          confirmLabel: this.translation.translate('common.confirm'),
+          processingLabel: this.translation.translate('common.loading'),
+          tone,
+        },
+        () => requestFactory().pipe(map((response) => this.unwrap(response, 'Invoice action failed.'))),
       )
+      .pipe(finalize(() => this.isMutating.set(false)))
       .subscribe({
         next: (result) => onSuccess(result),
         error: (error) => this.errorMessages.set(extractApiErrors(error)),
