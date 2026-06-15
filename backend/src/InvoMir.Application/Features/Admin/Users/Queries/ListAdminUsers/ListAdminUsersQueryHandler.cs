@@ -16,6 +16,8 @@ public sealed class ListAdminUsersQueryHandler(IAppDbContext context)
         var page = request.Page < DefaultPage ? DefaultPage : request.Page;
         var limit = request.Limit <= 0 ? DefaultLimit : Math.Min(request.Limit, MaxLimit);
         var utcNow = DateTime.UtcNow;
+        var role = NormalizeFilter(request.Role, AuthConstants.Roles.All);
+        var plan = NormalizeFilter(request.Plan, AuthConstants.Plans.All);
 
         var users =
             from user in context.Users.IgnoreQueryFilters().AsNoTracking()
@@ -32,6 +34,32 @@ public sealed class ListAdminUsersQueryHandler(IAppDbContext context)
                 row.User.FirstName.ToLower().Contains(search) ||
                 row.User.LastName.ToLower().Contains(search) ||
                 row.Tenant.Name.ToLower().Contains(search));
+        }
+
+        if (role is not null)
+            users = users.Where(row => row.User.Role == role);
+
+        if (plan is not null)
+            users = users.Where(row => row.User.Plan == plan);
+
+        if (request.IsActive is not null)
+            users = users.Where(row => row.User.IsActive == request.IsActive.Value);
+
+        if (request.EmailVerified is not null)
+            users = users.Where(row => row.User.EmailVerified == request.EmailVerified.Value);
+
+        if (request.IsTrialActive is not null)
+        {
+            users = users.Where(row =>
+                ((row.User.TrialEndsAt ?? row.Tenant.TrialEndsAt) > utcNow) ==
+                request.IsTrialActive.Value);
+        }
+
+        if (request.HasStripeCustomer is not null)
+        {
+            users = users.Where(row =>
+                (row.Tenant.StripeCustomerId != null && row.Tenant.StripeCustomerId != string.Empty) ==
+                request.HasStripeCustomer.Value);
         }
 
         var totalCount = await users.CountAsync(cancellationToken);
@@ -79,5 +107,14 @@ public sealed class ListAdminUsersQueryHandler(IAppDbContext context)
             .ToListAsync(cancellationToken);
 
         return new PagedResult<AdminUserListItemDto>(items, page, limit, totalCount);
+    }
+
+    private static string? NormalizeFilter(string? value, IReadOnlyCollection<string> allowedValues)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return null;
+
+        var normalizedValue = value.Trim().ToLowerInvariant();
+        return allowedValues.Contains(normalizedValue) ? normalizedValue : null;
     }
 }

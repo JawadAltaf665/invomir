@@ -488,6 +488,7 @@ public static class RateLimitingConfiguration
             return path switch
             {
                 "/api/subscriptions/checkout" => TokenBucket(RateLimitPolicies.Subscriptions, "subscription-checkout", 5, TimeSpan.FromMinutes(1), RateLimitKeyKind.AuthenticatedUser),
+                "/api/subscriptions/portal" => TokenBucket(RateLimitPolicies.Subscriptions, "subscription-portal", 5, TimeSpan.FromMinutes(1), RateLimitKeyKind.AuthenticatedUser),
                 "/api/subscriptions/cancel" => TokenBucket(RateLimitPolicies.Subscriptions, "subscription-cancel", 3, TimeSpan.FromMinutes(1), RateLimitKeyKind.AuthenticatedUser),
                 "/api/subscriptions/status" => Sliding(RateLimitPolicies.Subscriptions, "subscription-status", 20, TimeSpan.FromMinutes(1), RateLimitKeyKind.AuthenticatedUser),
                 "/api/subscriptions/plans" => Sliding(RateLimitPolicies.Subscriptions, "subscription-plans", 30, TimeSpan.FromMinutes(1), RateLimitKeyKind.IpAddress),

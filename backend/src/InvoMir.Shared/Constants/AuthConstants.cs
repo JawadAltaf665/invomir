@@ -31,6 +31,16 @@ public static class AuthConstants
         public const string Member = "member";
         public const string Accountant = "accountant";
         public const string Viewer = "viewer";
+
+        public static readonly string[] All =
+        [
+            SystemAdmin,
+            Owner,
+            Admin,
+            Accountant,
+            Member,
+            Viewer
+        ];
     }
 
     public static class Plans

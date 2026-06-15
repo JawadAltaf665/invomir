@@ -196,8 +196,8 @@ public sealed class User : TenantEntity
     public void UpdateRole(string role)
     {
         var normalizedRole = role.Trim().ToLowerInvariant();
-        if (!TeamConstants.Roles.Manageable.Contains(normalizedRole))
-            throw new ArgumentException("Team role is not supported.", nameof(role));
+        if (!AuthConstants.Roles.All.Contains(normalizedRole))
+            throw new ArgumentException("Role is not supported.", nameof(role));
 
         Role = normalizedRole;
     }
