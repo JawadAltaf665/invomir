@@ -63,6 +63,13 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="settings-team"
+        options={{
+          href: null,
+          title: 'Team Members',
+        }}
+      />
+      <Tabs.Screen
         name="subscriptions"
         options={{
           href: null,

@@ -12,6 +12,8 @@ export const en = {
     loading: 'Loading',
     logout: 'Logout',
     viewAll: 'View all',
+    viewMore: 'View more',
+    viewTenMore: 'View 10 more',
     add: 'Add',
     edit: 'Edit',
     close: 'Close',

@@ -21,19 +21,22 @@ import { useAuthStore } from '@/src/store/auth-store';
 import { theme } from '@/src/theme/theme';
 import { permissions } from '@/src/types/permissions';
 
+const pageSizeIncrement = 10;
+
 export function ClientListScreen() {
   const { t } = useTranslation();
   const handleBottomTabScroll = useBottomTabScrollChrome();
   const [searchTerm, setSearchTerm] = useState('');
+  const [visibleLimit, setVisibleLimit] = useState(pageSizeIncrement);
   const hasPermission = useAuthStore((state) => state.hasPermission);
   const canView = hasPermission(permissions.client.view);
   const query = useMemo(
     () => ({
       q: searchTerm,
       page: 1,
-      limit: 20,
+      limit: visibleLimit,
     }),
-    [searchTerm],
+    [searchTerm, visibleLimit],
   );
   const clientsQuery = useQuery({
     queryKey: queryKeys.clients(query),
@@ -50,6 +53,8 @@ export function ClientListScreen() {
   }
 
   const clients = clientsQuery.data?.items ?? [];
+  const totalClients = clientsQuery.data?.totalCount ?? clients.length;
+  const canViewMore = clients.length < totalClients;
 
   return (
     <AppScreen scroll={false} padded={false} contentStyle={styles.screenContent}>
@@ -69,7 +74,10 @@ export function ClientListScreen() {
           label={t('common.search')}
           placeholder={t('clients.searchPlaceholder')}
           value={searchTerm}
-          onChangeText={setSearchTerm}
+          onChangeText={(value) => {
+            setSearchTerm(value);
+            setVisibleLimit(pageSizeIncrement);
+          }}
         />
         {clientsQuery.isLoading ? <LoadingState rows={4} /> : null}
         {clientsQuery.isError ? (
@@ -85,6 +93,19 @@ export function ClientListScreen() {
             onScroll={handleBottomTabScroll}
             scrollEventThrottle={16}
             ItemSeparatorComponent={() => <View style={styles.separator} />}
+            ListFooterComponent={
+              canViewMore ? (
+                <View style={styles.footer}>
+                  <AppButton
+                    title={t('common.viewTenMore')}
+                    iconName="chevron-down-outline"
+                    variant="secondary"
+                    isLoading={clientsQuery.isFetching && !clientsQuery.isRefetching}
+                    onPress={() => setVisibleLimit((current) => current + pageSizeIncrement)}
+                  />
+                </View>
+              ) : null
+            }
             ListEmptyComponent={
               <EmptyState
                 iconName="people-outline"
@@ -126,5 +147,8 @@ const styles = StyleSheet.create({
   },
   separator: {
     height: theme.spacing.sm,
+  },
+  footer: {
+    paddingTop: theme.spacing.xs,
   },
 });

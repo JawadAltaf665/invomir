@@ -26,6 +26,7 @@ import { theme } from '@/src/theme/theme';
 import { permissions } from '@/src/types/permissions';
 
 type StatusFilter = InvoiceStatus | 'all';
+const pageSizeIncrement = 10;
 
 export function InvoiceListScreen() {
   const { t } = useTranslation();
@@ -41,6 +42,7 @@ export function InvoiceListScreen() {
   const [isSelecting, setIsSelecting] = useState(false);
   const [selectedIds, setSelectedIds] = useState<readonly string[]>([]);
   const [selectionNotice, setSelectionNotice] = useState<string | null>(null);
+  const [visibleLimit, setVisibleLimit] = useState(pageSizeIncrement);
   const hasPermission = useAuthStore((state) => state.hasPermission);
   const canView = hasPermission(permissions.invoice.view);
   const canSend = hasPermission(permissions.invoice.send);
@@ -48,13 +50,13 @@ export function InvoiceListScreen() {
   const query = useMemo(
     () => ({
       page: 1,
-      limit: 20,
+      limit: visibleLimit,
       searchTerm,
       status: status === 'all' ? null : status,
       sortBy: 'created' as const,
       sortDirection: 'desc' as const,
     }),
-    [searchTerm, status],
+    [searchTerm, status, visibleLimit],
   );
   const invoicesQuery = useQuery({
     queryKey: queryKeys.invoices(query),
@@ -102,6 +104,8 @@ export function InvoiceListScreen() {
   }
 
   const invoices = invoicesQuery.data?.items ?? [];
+  const totalInvoices = invoicesQuery.data?.totalCount ?? invoices.length;
+  const canViewMore = invoices.length < totalInvoices;
   const selectedCount = selectedIds.length;
   const selectedInvoices = invoices.filter((invoice) => selectedIds.includes(invoice.id));
   const sendableSelectedIds = selectedInvoices.filter((invoice) => canSendInvoice(invoice.status)).map((invoice) => invoice.id);
@@ -118,6 +122,7 @@ export function InvoiceListScreen() {
   };
   const applyStatusFilter = (nextStatus: StatusFilter) => {
     setStatus(nextStatus);
+    setVisibleLimit(pageSizeIncrement);
     setSelectedIds([]);
     setSelectionNotice(null);
   };
@@ -187,7 +192,12 @@ export function InvoiceListScreen() {
           label={t('common.search')}
           placeholder={t('invoices.searchPlaceholder')}
           value={searchTerm}
-          onChangeText={setSearchTerm}
+          onChangeText={(value) => {
+            setSearchTerm(value);
+            setVisibleLimit(pageSizeIncrement);
+            setSelectedIds([]);
+            setSelectionNotice(null);
+          }}
         />
         <ScrollView
           horizontal
@@ -261,6 +271,19 @@ export function InvoiceListScreen() {
           </View>
         }
         ItemSeparatorComponent={() => <View style={styles.separator} />}
+        ListFooterComponent={
+          canViewMore ? (
+            <View style={styles.footer}>
+              <AppButton
+                title={t('common.viewTenMore')}
+                iconName="chevron-down-outline"
+                variant="secondary"
+                isLoading={invoicesQuery.isFetching && !invoicesQuery.isRefetching}
+                onPress={() => setVisibleLimit((current) => current + pageSizeIncrement)}
+              />
+            </View>
+          ) : null
+        }
         ListEmptyComponent={
           !invoicesQuery.isLoading && !invoicesQuery.isError ? (
             <EmptyState
@@ -368,5 +391,8 @@ const styles = StyleSheet.create({
   },
   separator: {
     height: theme.spacing.sm,
+  },
+  footer: {
+    paddingTop: theme.spacing.xs,
   },
 });

@@ -35,6 +35,8 @@ type QuickAction = {
   onPress: () => void;
 };
 
+const dashboardPreviewLimit = 5;
+
 export function DashboardScreen() {
   const { t } = useTranslation();
   const { width } = useWindowDimensions();
@@ -86,6 +88,8 @@ export function DashboardScreen() {
   }
 
   const dashboard = dashboardQuery.data;
+  const recentInvoices = dashboard?.recentInvoices.slice(0, dashboardPreviewLimit) ?? [];
+  const topClients = dashboard?.topClients.slice(0, dashboardPreviewLimit) ?? [];
 
   if (!dashboard) {
     return (
@@ -174,9 +178,13 @@ export function DashboardScreen() {
       </View>
 
       <View style={styles.section}>
-        <SectionTitle title={t('dashboard.recentInvoices')} />
-        {dashboard.recentInvoices.length > 0 ? (
-          dashboard.recentInvoices.map((invoice) => (
+        <SectionTitle
+          title={t('dashboard.recentInvoices')}
+          actionLabel={t('common.viewMore')}
+          onAction={() => router.push('/invoices')}
+        />
+        {recentInvoices.length > 0 ? (
+          recentInvoices.map((invoice) => (
             <InvoiceCard
               key={invoice.id}
               invoice={{ ...invoice, ratesUpdatedAt: null }}
@@ -189,9 +197,13 @@ export function DashboardScreen() {
       </View>
 
       <View style={styles.section}>
-        <SectionTitle title={t('dashboard.topClients')} />
-        {dashboard.topClients.length > 0 ? (
-          dashboard.topClients.map((client) => (
+        <SectionTitle
+          title={t('dashboard.topClients')}
+          actionLabel={t('common.viewMore')}
+          onAction={() => router.push('/clients')}
+        />
+        {topClients.length > 0 ? (
+          topClients.map((client) => (
             <AppCard key={client.id} style={styles.topClient}>
               <View style={styles.clientRank}>
                 <Ionicons name="business-outline" size={17} color={theme.colors.primary} />
@@ -259,11 +271,34 @@ function renderMetricCards(
   ];
 }
 
-function SectionTitle({ title }: { title: string }) {
+function SectionTitle({
+  title,
+  actionLabel,
+  onAction,
+}: {
+  title: string;
+  actionLabel?: string;
+  onAction?: () => void;
+}) {
   return (
-    <AppText variant="h3" style={styles.sectionTitle}>
-      {title}
-    </AppText>
+    <View style={styles.sectionHeading}>
+      <AppText variant="h3" style={styles.sectionTitle}>
+        {title}
+      </AppText>
+      {actionLabel && onAction ? (
+        <Pressable
+          accessibilityRole="button"
+          hitSlop={10}
+          onPress={onAction}
+          style={({ pressed }) => [styles.viewMoreButton, pressed ? styles.pressed : null]}
+        >
+          <AppText variant="button" color={theme.colors.primary}>
+            {actionLabel}
+          </AppText>
+          <Ionicons name="chevron-forward" size={16} color={theme.colors.primary} />
+        </Pressable>
+      ) : null}
+    </View>
   );
 }
 
@@ -565,6 +600,18 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     lineHeight: 24,
+  },
+  sectionHeading: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: theme.spacing.sm,
+    justifyContent: 'space-between',
+  },
+  viewMoreButton: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 2,
+    minHeight: 32,
   },
   stack: {
     gap: theme.spacing.sm,

@@ -20,6 +20,7 @@ import { getLanguageOption, supportedLanguages } from '@/src/constants/languages
 import { authApi } from '@/src/features/auth/api/auth-api';
 import { notificationsApi } from '@/src/features/notifications/api/notifications-api';
 import { settingsApi } from '@/src/features/settings/api/settings-api';
+import { teamApi } from '@/src/features/team/api/team-api';
 import { queryKeys } from '@/src/services/api/query-keys';
 import { useAuthStore } from '@/src/store/auth-store';
 import { theme } from '@/src/theme/theme';
@@ -35,11 +36,24 @@ export function MoreScreen() {
   const [selector, setSelector] = useState<SelectorKind | null>(null);
   const clearLocalSession = useAuthStore((state) => state.clearLocalSession);
   const hasPermission = useAuthStore((state) => state.hasPermission);
+  const authUser = useAuthStore((state) => state.user);
   const canViewNotifications = hasPermission(permissions.notification.view);
   const canViewSubscription = hasPermission(permissions.subscription.view);
+  const plan = authUser?.plan?.toString().toLowerCase() ?? 'free';
+  const isBusinessPlan = plan === 'business';
   const profileQuery = useQuery({
     queryKey: queryKeys.currentUser,
     queryFn: settingsApi.getCurrentUser,
+  });
+  const teamMembersQuery = useQuery({
+    queryKey: queryKeys.teamMembers,
+    queryFn: teamApi.listMembers,
+    enabled: isBusinessPlan,
+  });
+  const teamInvitationsQuery = useQuery({
+    queryKey: queryKeys.teamInvitations,
+    queryFn: teamApi.listInvitations,
+    enabled: isBusinessPlan,
   });
   const languageQuery = useQuery({
     queryKey: queryKeys.language,
@@ -94,6 +108,15 @@ export function MoreScreen() {
   const profile = profileQuery.data;
   const language = getLanguageOption(languageQuery.data?.language ?? profile?.preferredLanguage);
   const currentCurrency = normalizeCurrency(profile?.currency);
+  const pendingInvitations = (teamInvitationsQuery.data ?? []).filter(
+    (invitation) => invitation.status?.toString().toLowerCase() === 'pending',
+  );
+  const teamSeatsUsed = (teamMembersQuery.data ?? []).filter((member) => member.isActive).length + pendingInvitations.length;
+  const teamRowValue = isBusinessPlan
+    ? teamMembersQuery.isLoading || teamInvitationsQuery.isLoading
+      ? t('common.loading')
+      : `${teamSeatsUsed} / 3 seats`
+    : 'Business plan only';
   const isSavingPreference = languageMutation.isPending || currencyMutation.isPending;
 
   return (
@@ -139,6 +162,12 @@ export function MoreScreen() {
               title={t('more.subscription')}
               value={profile.plan}
               onPress={canViewSubscription ? () => router.push('/subscriptions') : undefined}
+            />
+            <SettingsRow
+              iconName={isBusinessPlan ? 'people-outline' : 'lock-closed-outline'}
+              title="Team Members"
+              value={teamRowValue}
+              onPress={() => router.push('/settings-team')}
             />
             <SettingsRow
               iconName="language-outline"
