@@ -9,6 +9,7 @@ import {
   SubscriptionCancellationDto,
   SubscriptionCheckoutDto,
   SubscriptionCheckoutRequest,
+  SubscriptionPortalDto,
   SubscriptionPlansDto,
 } from '../models/subscription.models';
 
@@ -36,6 +37,13 @@ export class SubscriptionApiService {
   cancelSubscription(): Observable<ApiResponse<SubscriptionCancellationDto>> {
     return this.http.post<ApiResponse<SubscriptionCancellationDto>>(
       apiUrl('/api/subscriptions/cancel'),
+      {},
+    );
+  }
+
+  createPortalSession(): Observable<ApiResponse<SubscriptionPortalDto>> {
+    return this.http.post<ApiResponse<SubscriptionPortalDto>>(
+      apiUrl('/api/subscriptions/portal'),
       {},
     );
   }

@@ -15,15 +15,15 @@ import {
   LucideExternalLink,
   LucideFileText,
   LucideRefreshCcw,
-  LucideShieldCheck,
 } from '@lucide/angular';
 
 import { AuthSessionService } from '../../../../core/auth/auth-session.service';
 import { permissions } from '../../../../core/permissions/permissions';
 import { AdminUserBadgeComponent } from '../../components/admin-user-badge/admin-user-badge.component';
 import { PlanEditorComponent } from '../../components/plan-editor/plan-editor.component';
+import { RoleEditorComponent } from '../../components/role-editor/role-editor.component';
 import { TrialEditorComponent } from '../../components/trial-editor/trial-editor.component';
-import { AdminPlan, AdminUserDetailDto } from '../../models/admin-user.models';
+import { AdminPlan, AdminRole, AdminUserDetailDto } from '../../models/admin-user.models';
 import { AdminUserDetailStore } from '../../store/admin-user-detail.store';
 import {
   formatAdminAmount,
@@ -32,12 +32,10 @@ import {
   formatInitials,
   formatNullableDate,
   formatNullableDateTime,
-  formatPermissionLabel,
   formatPlanLabel,
   formatRoleLabel,
   formatStatusLabel,
   formatTrialEnds,
-  getPermissionGroupsForRole,
 } from '../../utils/admin-user-formatters';
 
 @Component({
@@ -48,12 +46,12 @@ import {
     RouterLink,
     AdminUserBadgeComponent,
     PlanEditorComponent,
+    RoleEditorComponent,
     TrialEditorComponent,
     LucideArrowLeft,
     LucideExternalLink,
     LucideFileText,
     LucideRefreshCcw,
-    LucideShieldCheck,
   ],
   providers: [AdminUserDetailStore],
   templateUrl: './admin-user-details.component.html',
@@ -82,16 +80,9 @@ export class AdminUserDetailsComponent implements OnInit {
     return user ? formatInitials(user.firstName, user.lastName, user.email) : 'IM';
   });
 
-  protected readonly permissionGroups = computed(() => {
-    const user = this.adminUserStore.user();
-
-    return user ? getPermissionGroupsForRole(user.role) : [];
-  });
-
   protected readonly formatPlanLabel = formatPlanLabel;
   protected readonly formatRoleLabel = formatRoleLabel;
   protected readonly formatStatusLabel = formatStatusLabel;
-  protected readonly formatPermissionLabel = formatPermissionLabel;
   protected readonly formatNullableDate = formatNullableDate;
   protected readonly formatNullableDateTime = formatNullableDateTime;
   protected readonly formatTrialEnds = formatTrialEnds;
@@ -125,6 +116,14 @@ export class AdminUserDetailsComponent implements OnInit {
 
     if (id) {
       this.adminUserStore.updatePlan(id, plan);
+    }
+  }
+
+  protected updateRole(role: AdminRole): void {
+    const id = this.userId();
+
+    if (id) {
+      this.adminUserStore.updateRole(id, role);
     }
   }
 

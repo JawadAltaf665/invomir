@@ -3,8 +3,10 @@ import {
   AdminBadgeTone,
   AdminPermissionGroupView,
   AdminPlan,
+  AdminRole,
   AdminUserListItemDto,
   AdminUserListItemView,
+  adminRoles,
 } from '../models/admin-user.models';
 
 const numberFormatter = new Intl.NumberFormat(undefined, {
@@ -35,13 +37,14 @@ const organizationPermissions = [
   ...Object.values(permissions.client),
   ...Object.values(permissions.payment),
   ...Object.values(permissions.report),
-  permissions.auditLog.view,
+  permissions.notification.view,
   ...Object.values(permissions.subscription),
   permissions.team.manage,
   permissions.settings.manage,
 ] as const;
 
 const systemPermissions = [
+  permissions.auditLog.view,
   permissions.system.access,
   permissions.system.users.view,
   permissions.system.users.manage,
@@ -104,6 +107,10 @@ export function formatPlanLabel(plan: string): string {
 }
 
 export function formatRoleLabel(role: string): string {
+  if (role.trim().toLowerCase() === 'system_admin') {
+    return 'Super Admin';
+  }
+
   return toTitleCase(role.replaceAll('_', ' '));
 }
 
@@ -185,7 +192,7 @@ export function getPermissionsForRole(role: string): readonly Permission[] {
         ...Object.values(permissions.client),
         ...Object.values(permissions.payment),
         ...Object.values(permissions.report),
-        permissions.auditLog.view,
+        permissions.notification.view,
         permissions.subscription.view,
         permissions.team.manage,
         permissions.settings.manage,
@@ -203,6 +210,7 @@ export function getPermissionsForRole(role: string): readonly Permission[] {
         permissions.payment.view,
         permissions.payment.manage,
         ...Object.values(permissions.report),
+        permissions.notification.view,
         permissions.subscription.view,
       ];
     case 'member':
@@ -218,6 +226,7 @@ export function getPermissionsForRole(role: string): readonly Permission[] {
         permissions.client.update,
         permissions.payment.view,
         permissions.report.view,
+        permissions.notification.view,
         permissions.subscription.view,
       ];
     case 'viewer':
@@ -227,6 +236,7 @@ export function getPermissionsForRole(role: string): readonly Permission[] {
         permissions.client.view,
         permissions.payment.view,
         permissions.report.view,
+        permissions.notification.view,
         permissions.subscription.view,
       ];
     default:
@@ -270,6 +280,14 @@ export function normalizeAdminPlan(plan: string): AdminPlan {
   return ['free', 'starter', 'professional', 'business'].includes(normalizedPlan)
     ? (normalizedPlan as AdminPlan)
     : 'free';
+}
+
+export function normalizeAdminRole(role: string): AdminRole {
+  const normalizedRole = role.trim().toLowerCase();
+
+  return adminRoles.includes(normalizedRole as AdminRole)
+    ? (normalizedRole as AdminRole)
+    : 'viewer';
 }
 
 export function toDateInputValue(value: string | null | undefined): string {

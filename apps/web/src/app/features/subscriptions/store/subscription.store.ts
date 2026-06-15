@@ -11,6 +11,7 @@ import {
   SubscriptionInterval,
   SubscriptionPlanCardView,
   SubscriptionPlanDto,
+  SubscriptionPortalDto,
   SubscriptionUsageMetricView,
 } from '../models/subscription.models';
 import { SubscriptionApiService } from '../services/subscription-api.service';
@@ -32,6 +33,8 @@ export class SubscriptionStore {
   private readonly isCancellingSignal = signal(false);
   private readonly cancellationErrorMessagesSignal = signal<readonly string[]>([]);
   private readonly cancellationSuccessMessageSignal = signal('');
+  private readonly isOpeningPortalSignal = signal(false);
+  private readonly portalErrorMessagesSignal = signal<readonly string[]>([]);
 
   readonly currentSubscription = this.currentSubscriptionSignal.asReadonly();
   readonly plans = this.plansSignal.asReadonly();
@@ -45,9 +48,11 @@ export class SubscriptionStore {
   readonly isCancelling = this.isCancellingSignal.asReadonly();
   readonly cancellationErrorMessages = this.cancellationErrorMessagesSignal.asReadonly();
   readonly cancellationSuccessMessage = this.cancellationSuccessMessageSignal.asReadonly();
+  readonly isOpeningPortal = this.isOpeningPortalSignal.asReadonly();
+  readonly portalErrorMessages = this.portalErrorMessagesSignal.asReadonly();
 
   readonly isBusy = computed(
-    () => this.isLoading() || this.isStartingCheckout() || this.isCancelling(),
+    () => this.isLoading() || this.isStartingCheckout() || this.isCancelling() || this.isOpeningPortal(),
   );
 
   readonly usageMetrics = computed<readonly SubscriptionUsageMetricView[]>(() => {
@@ -151,6 +156,20 @@ export class SubscriptionStore {
         return throwError(() => error);
       }),
       finalize(() => this.isCancellingSignal.set(false)),
+    );
+  }
+
+  openBillingPortal(): Observable<SubscriptionPortalDto> {
+    this.isOpeningPortalSignal.set(true);
+    this.portalErrorMessagesSignal.set([]);
+
+    return this.subscriptionApi.createPortalSession().pipe(
+      map((response) => this.unwrap(response, 'Billing portal could not be opened.')),
+      catchError((error) => {
+        this.portalErrorMessagesSignal.set(extractApiErrors(error));
+        return throwError(() => error);
+      }),
+      finalize(() => this.isOpeningPortalSignal.set(false)),
     );
   }
 

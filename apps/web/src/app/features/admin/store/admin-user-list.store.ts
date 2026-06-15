@@ -13,6 +13,12 @@ import { toAdminUserListItemView } from '../utils/admin-user-formatters';
 
 const defaultFilters: AdminUserListFilters = {
   q: '',
+  role: '',
+  plan: '',
+  isActive: '',
+  emailVerified: '',
+  isTrialActive: '',
+  hasStripeCustomer: '',
   page: 1,
   limit: 20,
 };
@@ -77,6 +83,13 @@ export class AdminUserListStore {
   private normalizeFilters(filters: AdminUserListFilters): AdminUserListFilters {
     return {
       q: filters.q.trim(),
+      role: filters.role || '',
+      plan: filters.plan || '',
+      isActive: filters.isActive === '' ? '' : Boolean(filters.isActive),
+      emailVerified: filters.emailVerified === '' ? '' : Boolean(filters.emailVerified),
+      isTrialActive: filters.isTrialActive === '' ? '' : Boolean(filters.isTrialActive),
+      hasStripeCustomer:
+        filters.hasStripeCustomer === '' ? '' : Boolean(filters.hasStripeCustomer),
       page: Math.max(1, filters.page || 1),
       limit: Math.min(100, Math.max(1, filters.limit || 20)),
     };

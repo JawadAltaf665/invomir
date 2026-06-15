@@ -71,6 +71,7 @@ interface SidebarNavItem {
   icon: SidebarIcon;
   permissions: readonly Permission[];
   disabled?: boolean;
+  requiresBusinessPlan?: boolean;
 }
 
 interface SidebarSubNavItem {
@@ -170,6 +171,9 @@ export class DashboardLayoutComponent implements OnInit {
 
     return initials.length > 0 ? initials.toUpperCase() : 'IM';
   });
+  protected readonly isBusinessPlan = computed(
+    () => this.authSession.user()?.plan?.toString().toLowerCase() === 'business',
+  );
 
   private readonly mainNavItems: readonly SidebarNavItem[] = [
     {
@@ -216,6 +220,7 @@ export class DashboardLayoutComponent implements OnInit {
       route: '/app/team',
       icon: 'team',
       permissions: [permissions.team.manage],
+      requiresBusinessPlan: true,
     },
     {
       labelKey: 'navigation.auditLogs',
@@ -387,7 +392,11 @@ export class DashboardLayoutComponent implements OnInit {
   }
 
   private visibleNavItems(items: readonly SidebarNavItem[]): readonly SidebarNavItem[] {
-    return items.filter((item) => this.authSession.hasAnyPermission(item.permissions));
+    return items.filter(
+      (item) =>
+        this.authSession.hasAnyPermission(item.permissions) &&
+        (!item.requiresBusinessPlan || this.isBusinessPlan()),
+    );
   }
 
   private visibleSubNavItems(items: readonly SidebarSubNavItem[]): readonly SidebarSubNavItem[] {

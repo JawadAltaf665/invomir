@@ -15,6 +15,7 @@ import { LucideRefreshCcw } from '@lucide/angular';
 
 import { AuthSessionService } from '../../../../core/auth/auth-session.service';
 import { permissions } from '../../../../core/permissions/permissions';
+import { ConfirmationDialogService } from '../../../../core/services/confirmation-dialog.service';
 import { WorkspaceCurrencyRefreshService } from '../../../../core/services/workspace-currency-refresh.service';
 import { BillingActionsCardComponent } from '../../components/billing-actions-card/billing-actions-card.component';
 import { CurrentPlanCardComponent } from '../../components/current-plan-card/current-plan-card.component';
@@ -44,6 +45,7 @@ export class SubscriptionPageComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly platformId = inject(PLATFORM_ID);
   private readonly document = inject(DOCUMENT);
+  private readonly confirmationDialog = inject(ConfirmationDialogService);
   private readonly workspaceCurrencyRefresh = inject(WorkspaceCurrencyRefreshService);
   private observedCurrencyRefreshVersion = this.workspaceCurrencyRefresh.version();
   private readonly refreshOnWorkspaceCurrencyChange = effect(() => {
@@ -125,27 +127,28 @@ export class SubscriptionPageComponent implements OnInit {
       return;
     }
 
-    if (isPlatformBrowser(this.platformId)) {
-      const selectedPlan = this.subscriptionStore
-        .plans()
-        .find((availablePlan) => availablePlan.plan === plan);
-      const interval = this.subscriptionStore.interval();
-      const confirmed = window.confirm(
-        `Continue to Stripe Checkout for ${selectedPlan?.name ?? plan} (${interval === 'year' ? 'yearly' : 'monthly'})?`,
-      );
-
-      if (!confirmed) {
-        return;
-      }
-    }
+    const selectedPlan = this.subscriptionStore
+      .plans()
+      .find((availablePlan) => availablePlan.plan === plan);
+    const interval = this.subscriptionStore.interval();
 
     this.activeCheckoutPlan.set(plan);
 
-    this.subscriptionStore
-      .startCheckout({
-        plan,
-        interval: this.subscriptionStore.interval(),
-      })
+    this.confirmationDialog
+      .confirmAction(
+        {
+          title: 'Confirm Action',
+          message: `Continue to Stripe Checkout for ${selectedPlan?.name ?? plan} (${interval === 'year' ? 'yearly' : 'monthly'})?`,
+          cancelLabel: 'Cancel',
+          confirmLabel: 'Confirm',
+          processingLabel: 'Opening checkout',
+        },
+        () =>
+          this.subscriptionStore.startCheckout({
+            plan,
+            interval,
+          }),
+      )
       .subscribe({
         next: (checkout) => {
           if (isPlatformBrowser(this.platformId)) {
@@ -153,6 +156,7 @@ export class SubscriptionPageComponent implements OnInit {
           }
         },
         error: () => this.activeCheckoutPlan.set(null),
+        complete: () => this.activeCheckoutPlan.set(null),
       });
   }
 
@@ -162,6 +166,21 @@ export class SubscriptionPageComponent implements OnInit {
     }
 
     this.subscriptionStore.cancelSubscription().subscribe({
+      error: () => undefined,
+    });
+  }
+
+  protected openBillingPortal(): void {
+    if (!this.canManageSubscriptions() || this.subscriptionStore.isOpeningPortal()) {
+      return;
+    }
+
+    this.subscriptionStore.openBillingPortal().subscribe({
+      next: (portal) => {
+        if (isPlatformBrowser(this.platformId)) {
+          window.location.assign(portal.portalUrl);
+        }
+      },
       error: () => undefined,
     });
   }

@@ -23,6 +23,14 @@
     </div>
   }
 
+  @if (portalErrorMessages().length > 0) {
+    <div class="mt-5 rounded-2xl border border-red-200 bg-red-50 p-4">
+      @for (error of portalErrorMessages(); track error) {
+        <p class="text-sm font-medium text-red-700">{{ error }}</p>
+      }
+    </div>
+  }
+
   <div class="mt-6 rounded-2xl bg-neutral-50 p-4">
     @if (subscription()?.cancelAtPeriodEnd) {
       <p class="text-sm font-medium text-neutral-900">Cancellation scheduled</p>
@@ -67,14 +75,41 @@
   </div>
 
   <div class="mt-4 grid grid-cols-1 gap-3">
-    <button mat-stroked-button type="button" disabled>
+    @if (!canOpenBillingPortal()) {
+      <p class="rounded-2xl bg-neutral-50 p-4 text-sm text-neutral-500">
+        Payment method and billing invoice management becomes available after Stripe creates a
+        customer for this workspace.
+      </p>
+    }
+
+    <button
+      mat-stroked-button
+      type="button"
+      [disabled]="!canOpenBillingPortal() || isOpeningPortal()"
+      (click)="openBillingPortal()"
+    >
       <svg lucideCreditCard class="size-4" aria-hidden="true"></svg>
       Manage payment method
+      @if (isOpeningPortal()) {
+        <mat-spinner diameter="18" />
+      } @else {
+        <svg lucideExternalLink class="size-4" aria-hidden="true"></svg>
+      }
     </button>
 
-    <button mat-stroked-button type="button" disabled>
+    <button
+      mat-stroked-button
+      type="button"
+      [disabled]="!canOpenBillingPortal() || isOpeningPortal()"
+      (click)="openBillingPortal()"
+    >
       <svg lucideReceiptText class="size-4" aria-hidden="true"></svg>
       Billing invoices
+      @if (isOpeningPortal()) {
+        <mat-spinner diameter="18" />
+      } @else {
+        <svg lucideExternalLink class="size-4" aria-hidden="true"></svg>
+      }
     </button>
   </div>
 </article>
