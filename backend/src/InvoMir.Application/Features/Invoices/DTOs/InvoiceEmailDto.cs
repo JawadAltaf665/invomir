@@ -12,4 +12,5 @@ public sealed record InvoiceEmailDto(
     string? CustomMessage,
     byte[] PdfAttachment,
     string EmailType,
-    string? CcEmail);
+    string? CcEmail,
+    DateOnly? DueDate = null);

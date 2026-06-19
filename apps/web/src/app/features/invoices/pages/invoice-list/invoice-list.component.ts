@@ -20,6 +20,7 @@ import { ApiResponseError, extractApiErrors } from '../../../../core/errors/api-
 import { ApiResponse } from '../../../../core/models/api-response.model';
 import { TranslationService } from '../../../../core/i18n/translation.service';
 import { permissions } from '../../../../core/permissions/permissions';
+import { ConfirmationDialogService } from '../../../../core/services/confirmation-dialog.service';
 import { WorkspaceCurrencyRefreshService } from '../../../../core/services/workspace-currency-refresh.service';
 import { InvoiceFiltersComponent } from '../../components/invoice-filters/invoice-filters.component';
 import { InvoiceTableComponent } from '../../components/invoice-table/invoice-table.component';
@@ -51,6 +52,7 @@ export class InvoiceListComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly workspaceCurrencyRefresh = inject(WorkspaceCurrencyRefreshService);
   private readonly translation = inject(TranslationService);
+  private readonly confirmationDialog = inject(ConfirmationDialogService);
   protected readonly isActionRunning = signal(false);
   protected readonly actionErrorMessages = signal<readonly string[]>([]);
   private observedCurrencyRefreshVersion = this.workspaceCurrencyRefresh.version();
@@ -114,35 +116,40 @@ export class InvoiceListComponent implements OnInit {
   protected handleInvoiceAction(event: InvoiceTableActionEvent): void {
     switch (event.action) {
       case 'send':
-        this.executeAction(this.invoiceApi.sendInvoice(event.invoice.id));
+        this.confirmAndExecuteAction(
+          this.translation.translate('invoices.confirmSend', {
+            invoiceNumber: event.invoice.invoiceNumber,
+          }),
+          () => this.invoiceApi.sendInvoice(event.invoice.id),
+        );
         return;
       case 'resend':
-        this.executeAction(this.invoiceApi.resendInvoice(event.invoice.id));
+        this.confirmAndExecuteAction(
+          this.translation.translate('invoices.confirmResend', {
+            invoiceNumber: event.invoice.invoiceNumber,
+          }),
+          () => this.invoiceApi.resendInvoice(event.invoice.id),
+        );
         return;
       case 'markPaid':
-        if (
-          window.confirm(
-            this.translation.translate('invoices.confirmMarkPaid', {
-              invoiceNumber: event.invoice.invoiceNumber,
-            }),
-          )
-        ) {
-          this.executeAction(this.invoiceApi.markPaid(event.invoice.id, { method: 'other' }));
-        }
+        this.confirmAndExecuteAction(
+          this.translation.translate('invoices.confirmMarkPaid', {
+            invoiceNumber: event.invoice.invoiceNumber,
+          }),
+          () => this.invoiceApi.markPaid(event.invoice.id, { method: 'other' }),
+        );
         return;
       case 'downloadPdf':
         this.downloadPdf(event.invoice.id, event.invoice.invoiceNumber);
         return;
       case 'cancel':
-        if (
-          window.confirm(
-            this.translation.translate('invoices.confirmCancel', {
-              invoiceNumber: event.invoice.invoiceNumber,
-            }),
-          )
-        ) {
-          this.executeAction(this.invoiceApi.cancelInvoice(event.invoice.id));
-        }
+        this.confirmAndExecuteAction(
+          this.translation.translate('invoices.confirmCancel', {
+            invoiceNumber: event.invoice.invoiceNumber,
+          }),
+          () => this.invoiceApi.cancelInvoice(event.invoice.id),
+          'danger',
+        );
         return;
     }
   }
@@ -151,7 +158,11 @@ export class InvoiceListComponent implements OnInit {
     void this.router.navigate(['/app/invoices/new']);
   }
 
-  private executeAction<T>(request$: Observable<ApiResponse<T>>): void {
+  private confirmAndExecuteAction<T>(
+    message: string,
+    requestFactory: () => Observable<ApiResponse<T>>,
+    tone: 'primary' | 'danger' = 'primary',
+  ): void {
     if (this.isActionRunning()) {
       return;
     }
@@ -159,11 +170,19 @@ export class InvoiceListComponent implements OnInit {
     this.isActionRunning.set(true);
     this.actionErrorMessages.set([]);
 
-    request$
-      .pipe(
-        map((response) => this.unwrap(response, 'Invoice action failed.')),
-        finalize(() => this.isActionRunning.set(false)),
+    this.confirmationDialog
+      .confirmAction(
+        {
+          title: this.translation.translate('common.confirmAction'),
+          message,
+          cancelLabel: this.translation.translate('common.cancel'),
+          confirmLabel: this.translation.translate('common.confirm'),
+          processingLabel: this.translation.translate('common.loading'),
+          tone,
+        },
+        () => requestFactory().pipe(map((response) => this.unwrap(response, 'Invoice action failed.'))),
       )
+      .pipe(finalize(() => this.isActionRunning.set(false)))
       .subscribe({
         next: () => this.invoiceStore.loadInvoices({ page: this.invoiceStore.filters().page }),
         error: (error) => this.actionErrorMessages.set(extractApiErrors(error)),

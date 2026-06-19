@@ -8,7 +8,16 @@ import {
   inject,
 } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
-import { LucideRefreshCcw, LucideShieldCheck, LucideUserPlus, LucideUsers } from '@lucide/angular';
+import { RouterLink } from '@angular/router';
+import {
+  LucideArrowRight,
+  LucideCheck,
+  LucideLockKeyhole,
+  LucideRefreshCcw,
+  LucideShieldCheck,
+  LucideUserPlus,
+  LucideUsers,
+} from '@lucide/angular';
 
 import { AuthSessionService } from '../../../../core/auth/auth-session.service';
 import { permissions } from '../../../../core/permissions/permissions';
@@ -29,15 +38,20 @@ import { formatRole } from '../../utils/team-formatters';
   standalone: true,
   imports: [
     MatButtonModule,
+    RouterLink,
     TeamInvitationTableComponent,
     TeamInviteCardComponent,
     TeamMemberTableComponent,
+    LucideArrowRight,
+    LucideCheck,
+    LucideLockKeyhole,
     LucideRefreshCcw,
     LucideShieldCheck,
     LucideUserPlus,
     LucideUsers,
   ],
   templateUrl: './team-page.component.html',
+  styleUrl: './team-page.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TeamPageComponent implements OnInit {
@@ -52,6 +66,17 @@ export class TeamPageComponent implements OnInit {
   protected readonly isBusinessPlan = computed(
     () => this.authSession.user()?.plan?.toString().toLowerCase() === 'business',
   );
+  protected readonly currentPlanLabel = computed(() => {
+    const plan = this.authSession.user()?.plan?.toString().toLowerCase();
+    const labels: Record<string, string> = {
+      free: 'Free',
+      starter: 'Starter',
+      professional: 'Professional',
+      business: 'Business',
+    };
+
+    return labels[plan ?? ''] ?? 'Free';
+  });
   protected readonly canManageTeam = computed(() => this.canViewTeam() && this.isOwner());
   protected readonly inviteDisabledReason = computed(() => {
     if (!this.canViewTeam()) {
@@ -79,7 +104,9 @@ export class TeamPageComponent implements OnInit {
       return;
     }
 
-    this.teamStore.loadTeam();
+    if (this.isBusinessPlan()) {
+      this.teamStore.loadTeam();
+    }
   }
 
   protected refresh(): void {

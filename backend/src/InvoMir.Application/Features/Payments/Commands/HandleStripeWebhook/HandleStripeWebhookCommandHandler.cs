@@ -288,6 +288,26 @@ public sealed class HandleStripeWebhookCommandHandler(
                 subscription.CurrentPeriodEnd
             },
             cancellationToken);
+
+        var userEmail = await context.Users
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .Where(user =>
+                user.Id == userId.Value &&
+                user.TenantId == tenantId.Value &&
+                !user.IsDeleted)
+            .Select(user => user.Email)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (!string.IsNullOrWhiteSpace(userEmail))
+        {
+            await emailService.SendSubscriptionStartedAsync(
+                userEmail,
+                subscription.Plan,
+                subscription.CurrentPeriodEnd,
+                tenantId.Value,
+                cancellationToken);
+        }
     }
 
     private async Task HandleSubscriptionSyncedAsync(

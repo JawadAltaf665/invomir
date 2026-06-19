@@ -4,6 +4,7 @@ public interface IEmailService
 {
     Task SendAsync(string to, string subject, string htmlBody, byte[]? attachment, CancellationToken cancellationToken);
     Task SendInvoiceAsync(InvoiceEmailDto invoiceEmail, CancellationToken cancellationToken);
+    Task SendInvoiceReminderAsync(InvoiceReminderEmailDto reminderEmail, CancellationToken cancellationToken);
     Task SendPaymentReceiptAsync(PaymentReceiptEmailDto receiptEmail, CancellationToken cancellationToken);
     Task SendPasswordResetAsync(string toEmail, string resetToken, CancellationToken cancellationToken);
     Task SendEmailVerificationAsync(string toEmail, string verificationToken, CancellationToken cancellationToken);
@@ -15,5 +16,23 @@ public interface IEmailService
         string role,
         string invitationToken,
         DateTime expiresAt,
+        CancellationToken cancellationToken);
+    Task SendSubscriptionStartedAsync(
+        string toEmail,
+        string planName,
+        DateTime currentPeriodEnd,
+        Guid? tenantId,
+        CancellationToken cancellationToken);
+    Task SendSubscriptionCancelledAsync(
+        string toEmail,
+        string planName,
+        DateTime currentPeriodEnd,
+        Guid? tenantId,
+        CancellationToken cancellationToken);
+    Task SendTrialExpiryReminderAsync(
+        string toEmail,
+        string userName,
+        DateTime trialEndsAt,
+        Guid? tenantId,
         CancellationToken cancellationToken);
 }

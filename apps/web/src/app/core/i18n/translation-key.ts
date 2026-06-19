@@ -22,6 +22,9 @@ export const translationKeys = {
     auditLogs: 'navigation.auditLogs',
     settings: 'navigation.settings',
     admin: 'navigation.admin',
+    emailTemplates: 'navigation.emailTemplates',
+    queuedEmails: 'navigation.queuedEmails',
+    users: 'navigation.users',
   },
 } as const;
 

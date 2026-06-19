@@ -16,6 +16,8 @@ public sealed class AppDbContext(
     public DbSet<StripeConnectState> StripeConnectStates => Set<StripeConnectState>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     public DbSet<EmailLog> EmailLogs => Set<EmailLog>();
+    public DbSet<EmailTemplate> EmailTemplates => Set<EmailTemplate>();
+    public DbSet<QueuedEmail> QueuedEmails => Set<QueuedEmail>();
     public DbSet<Client> Clients => Set<Client>();
     public DbSet<Invoice> Invoices => Set<Invoice>();
     public DbSet<InvoiceItem> InvoiceItems => Set<InvoiceItem>();
@@ -23,6 +25,7 @@ public sealed class AppDbContext(
     public DbSet<Subscription> Subscriptions => Set<Subscription>();
     public DbSet<TeamInvitation> TeamInvitations => Set<TeamInvitation>();
     public DbSet<Notification> Notifications => Set<Notification>();
+    public DbSet<Reminder> Reminders => Set<Reminder>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

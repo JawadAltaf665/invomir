@@ -12,6 +12,7 @@ global using InvoMir.Application.Features.Payments.DTOs;
 global using InvoMir.Application.Features.Users.DTOs;
 global using InvoMir.Application.Interfaces;
 global using InvoMir.Domain.Entities;
+global using InvoMir.Domain.Enums;
 global using InvoMir.Shared.Constants;
 global using InvoMir.Shared.Exceptions;
 global using InvoMir.Shared.Response;

@@ -1,31 +1,35 @@
-@if (items().length > 0) {
-  <section class="space-y-3" aria-label="Workshop action center">
-    @for (item of items(); track item.id) {
-      <article [class]="itemClass(item.type)">
-        <div class="flex min-w-0 gap-4">
-          <div [class]="iconClass(item.type)">
-            @switch (item.type.toLowerCase()) {
-              @case ('critical') {
-                <svg lucideShieldAlert class="size-5" aria-hidden="true"></svg>
-              }
-              @case ('warning') {
-                <svg lucideAlertTriangle class="size-5" aria-hidden="true"></svg>
-              }
-              @case ('success') {
-                <svg lucideCheckCircle2 class="size-5" aria-hidden="true"></svg>
-              }
-              @default {
-                <svg lucideInfo class="size-5" aria-hidden="true"></svg>
-              }
+@if (activeItem(); as item) {
+  <section class="space-y-3" aria-label="Workshop action center" aria-live="polite">
+    <article
+      [class]="itemClass(item.type)"
+      [class.opacity-0]="isTransitioning()"
+      [class.translate-y-1]="isTransitioning()"
+    >
+      <div class="flex min-w-0 gap-4">
+        <div [class]="iconClass(item.type)">
+          @switch (item.type.toLowerCase()) {
+            @case ('critical') {
+              <svg lucideShieldAlert class="size-5" aria-hidden="true"></svg>
             }
-          </div>
-
-          <div class="min-w-0">
-            <h2 class="text-base font-semibold text-neutral-900">{{ item.title }}</h2>
-            <p class="mt-1 max-w-3xl text-sm text-neutral-600">{{ item.message }}</p>
-          </div>
+            @case ('warning') {
+              <svg lucideAlertTriangle class="size-5" aria-hidden="true"></svg>
+            }
+            @case ('success') {
+              <svg lucideCheckCircle2 class="size-5" aria-hidden="true"></svg>
+            }
+            @default {
+              <svg lucideInfo class="size-5" aria-hidden="true"></svg>
+            }
+          }
         </div>
 
+        <div class="min-w-0">
+          <h2 class="text-base font-semibold text-neutral-900">{{ item.title }}</h2>
+          <p class="mt-1 max-w-3xl text-sm text-neutral-600">{{ item.message }}</p>
+        </div>
+      </div>
+
+      <div class="flex shrink-0 items-center gap-2">
         @if (item.actionLabel && item.actionUrl) {
           <button
             mat-stroked-button
@@ -37,7 +41,32 @@
             <svg lucideArrowRight class="size-4" aria-hidden="true"></svg>
           </button>
         }
-      </article>
+
+        @if (item.dismissible) {
+          <button
+            type="button"
+            class="grid size-9 shrink-0 place-items-center rounded-full text-neutral-500 transition hover:bg-white/70 hover:text-neutral-900"
+            aria-label="Dismiss action"
+            (click)="dismissItem(item, $event)"
+          >
+            <svg lucideX class="size-4" aria-hidden="true"></svg>
+          </button>
+        }
+      </div>
+    </article>
+
+    @if (visibleItems().length > 1) {
+      <div class="flex justify-center gap-1.5" aria-hidden="true">
+        @for (visibleItem of visibleItems(); track visibleItem.id; let index = $index) {
+          <span
+            class="h-1.5 rounded-full transition-all duration-200"
+            [class.w-4]="index === activeIndex()"
+            [class.w-1.5]="index !== activeIndex()"
+            [class.bg-primary]="index === activeIndex()"
+            [class.bg-neutral-300]="index !== activeIndex()"
+          ></span>
+        }
+      </div>
     }
   </section>
 }

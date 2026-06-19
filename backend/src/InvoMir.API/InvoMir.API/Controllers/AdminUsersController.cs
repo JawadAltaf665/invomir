@@ -14,11 +14,28 @@ public sealed class AdminUsersController(ISender mediator) : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<PagedResult<AdminUserListItemDto>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> List(
         [FromQuery] string? q,
+        [FromQuery] string? role,
+        [FromQuery] string? plan,
+        [FromQuery] bool? isActive,
+        [FromQuery] bool? emailVerified,
+        [FromQuery] bool? isTrialActive,
+        [FromQuery] bool? hasStripeCustomer,
         [FromQuery] int page,
         [FromQuery(Name = "limit")] int limit,
         CancellationToken cancellationToken)
     {
-        var result = await mediator.Send(new ListAdminUsersQuery(q, page, limit), cancellationToken);
+        var result = await mediator.Send(
+            new ListAdminUsersQuery(
+                q,
+                role,
+                plan,
+                isActive,
+                emailVerified,
+                isTrialActive,
+                hasStripeCustomer,
+                page,
+                limit),
+            cancellationToken);
         return Ok(ApiResponse<PagedResult<AdminUserListItemDto>>.Ok(result));
     }
 
@@ -44,6 +61,21 @@ public sealed class AdminUsersController(ISender mediator) : ControllerBase
     {
         var result = await mediator.Send(command with { Id = id }, cancellationToken);
         return Ok(ApiResponse<AdminUserPlanUpdateDto>.Ok(result, "User plan updated successfully."));
+    }
+
+    [HttpPatch("{id:guid}/role")]
+    [RequirePermission(Permissions.System.Users.Manage)]
+    [ProducesResponseType(typeof(ApiResponse<AdminUserRoleUpdateDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status422UnprocessableEntity)]
+    public async Task<IActionResult> UpdateRole(
+        Guid id,
+        [FromBody] UpdateAdminUserRoleCommand command,
+        CancellationToken cancellationToken)
+    {
+        var result = await mediator.Send(command with { Id = id }, cancellationToken);
+        return Ok(ApiResponse<AdminUserRoleUpdateDto>.Ok(result, "User role updated successfully."));
     }
 
     [HttpPatch("{id:guid}/trial")]

@@ -138,9 +138,12 @@
       [canManage]="canManageSubscriptions()"
       [canCancel]="subscriptionStore.canCancelCurrentPlan()"
       [isCancelling]="subscriptionStore.isCancelling()"
+      [isOpeningPortal]="subscriptionStore.isOpeningPortal()"
       [errorMessages]="subscriptionStore.cancellationErrorMessages()"
+      [portalErrorMessages]="subscriptionStore.portalErrorMessages()"
       [successMessage]="subscriptionStore.cancellationSuccessMessage()"
       (cancelRequested)="cancelSubscription()"
+      (billingPortalRequested)="openBillingPortal()"
     />
   </div>
 </section>

@@ -5,8 +5,10 @@ import { ApiResponseError, extractApiErrors } from '../../../core/errors/api-res
 import { ApiResponse } from '../../../core/models/api-response.model';
 import {
   AdminPlan,
+  AdminRole,
   AdminUserDetailDto,
   AdminUserPlanUpdateDto,
+  AdminUserRoleUpdateDto,
   AdminUserTrialUpdateDto,
 } from '../models/admin-user.models';
 import { AdminUserApiService } from '../services/admin-user-api.service';
@@ -18,6 +20,7 @@ export class AdminUserDetailStore {
   private readonly userSignal = signal<AdminUserDetailDto | null>(null);
   private readonly isLoadingSignal = signal(false);
   private readonly isUpdatingPlanSignal = signal(false);
+  private readonly isUpdatingRoleSignal = signal(false);
   private readonly isUpdatingTrialSignal = signal(false);
   private readonly errorMessagesSignal = signal<readonly string[]>([]);
   private readonly actionErrorMessagesSignal = signal<readonly string[]>([]);
@@ -26,6 +29,7 @@ export class AdminUserDetailStore {
   readonly user = this.userSignal.asReadonly();
   readonly isLoading = this.isLoadingSignal.asReadonly();
   readonly isUpdatingPlan = this.isUpdatingPlanSignal.asReadonly();
+  readonly isUpdatingRole = this.isUpdatingRoleSignal.asReadonly();
   readonly isUpdatingTrial = this.isUpdatingTrialSignal.asReadonly();
   readonly errorMessages = this.errorMessagesSignal.asReadonly();
   readonly actionErrorMessages = this.actionErrorMessagesSignal.asReadonly();
@@ -72,6 +76,32 @@ export class AdminUserDetailStore {
         next: (user) => {
           this.userSignal.set(user);
           this.successMessageSignal.set('User plan updated successfully.');
+        },
+        error: (error) => this.actionErrorMessagesSignal.set(extractApiErrors(error)),
+      });
+  }
+
+  updateRole(id: string, role: AdminRole): void {
+    if (this.isUpdatingRole()) {
+      return;
+    }
+
+    this.isUpdatingRoleSignal.set(true);
+    this.actionErrorMessagesSignal.set([]);
+    this.successMessageSignal.set('');
+
+    this.adminUserApi
+      .updateRole(id, { role })
+      .pipe(
+        map((response) => this.unwrap<AdminUserRoleUpdateDto>(response, 'Role update failed.')),
+        switchMap(() => this.adminUserApi.getUser(id)),
+        map((response) => this.unwrap(response, 'Admin user refresh failed.')),
+        finalize(() => this.isUpdatingRoleSignal.set(false)),
+      )
+      .subscribe({
+        next: (user) => {
+          this.userSignal.set(user);
+          this.successMessageSignal.set('User role updated successfully.');
         },
         error: (error) => this.actionErrorMessagesSignal.set(extractApiErrors(error)),
       });

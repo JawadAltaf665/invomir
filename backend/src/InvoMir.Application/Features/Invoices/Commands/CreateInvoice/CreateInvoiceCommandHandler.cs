@@ -1,5 +1,6 @@
 using InvoMir.Application.Features.Invoices;
 using InvoMir.Application.Features.Notifications;
+using InvoMir.Application.Features.Subscriptions;
 
 namespace InvoMir.Application.Features.Invoices.Commands.CreateInvoice;
 
@@ -35,11 +36,22 @@ public sealed class CreateInvoiceCommandHandler(
         var userSettings = await context.Users
             .AsNoTracking()
             .Where(user => user.Id == userId)
-            .Select(user => new { user.Currency, user.TaxPercent })
+            .Select(user => new { user.Currency, user.TaxPercent, user.Plan })
             .FirstOrDefaultAsync(cancellationToken);
 
         if (userSettings is null)
             throw new UnauthorizedAccessException("User context is not available.");
+
+        var tenantPlan = await context.Tenants
+            .AsNoTracking()
+            .Where(tenant => tenant.Id == tenantContext.TenantId)
+            .Select(tenant => tenant.Plan)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        await EnforceMonthlyInvoiceLimitAsync(
+            string.IsNullOrWhiteSpace(tenantPlan) ? userSettings.Plan : tenantPlan,
+            tenantContext.TenantId,
+            cancellationToken);
 
         var issueDate = DateOnly.FromDateTime(DateTime.UtcNow);
         var dueDate = InvoiceDraftCalculator.ResolveDueDate(
@@ -182,5 +194,35 @@ public sealed class CreateInvoiceCommandHandler(
     private static string? NormalizeOptional(string? value)
     {
         return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+    }
+
+    private async Task EnforceMonthlyInvoiceLimitAsync(
+        string plan,
+        Guid tenantId,
+        CancellationToken cancellationToken)
+    {
+        var planDefinition = SubscriptionPlanCatalog.GetPlan(plan);
+        if (planDefinition.InvoiceLimitPerMonth is null)
+            return;
+
+        var utcNow = DateTime.UtcNow;
+        var monthStart = new DateTime(utcNow.Year, utcNow.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+        var nextMonthStart = monthStart.AddMonths(1);
+
+        var invoiceCount = await context.Invoices
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .CountAsync(invoice =>
+                invoice.TenantId == tenantId &&
+                !invoice.IsDeleted &&
+                invoice.CreationTime >= monthStart &&
+                invoice.CreationTime < nextMonthStart,
+                cancellationToken);
+
+        if (invoiceCount >= planDefinition.InvoiceLimitPerMonth.Value)
+        {
+            throw new ForbiddenException(
+                $"Your current plan allows {planDefinition.InvoiceLimitPerMonth.Value} invoices per month. Upgrade to create more invoices.");
+        }
     }
 }

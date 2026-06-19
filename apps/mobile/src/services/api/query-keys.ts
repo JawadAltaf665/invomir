@@ -1,0 +1,18 @@
+export const queryKeys = {
+  dashboard: ['dashboard'] as const,
+  dashboardActionItems: ['dashboard', 'action-items'] as const,
+  clients: (params: unknown) => ['clients', params] as const,
+  client: (id: string) => ['client', id] as const,
+  invoices: (params: unknown) => ['invoices', params] as const,
+  invoice: (id: string) => ['invoice', id] as const,
+  payments: (params: unknown) => ['payments', params] as const,
+  reports: (params: unknown) => ['reports', params] as const,
+  currentUser: ['current-user'] as const,
+  language: ['settings', 'language'] as const,
+  notifications: (params: unknown) => ['notifications', params] as const,
+  unreadNotificationCount: ['notifications', 'unread-count'] as const,
+  subscription: ['subscription'] as const,
+  subscriptionPlans: ['subscription', 'plans'] as const,
+  teamMembers: ['team', 'members'] as const,
+  teamInvitations: ['team', 'invitations'] as const,
+} as const;

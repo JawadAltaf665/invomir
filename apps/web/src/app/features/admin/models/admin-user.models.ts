@@ -1,8 +1,10 @@
 import { PagedResult } from '../../../core/models/api-response.model';
 
 export const adminPlans = ['free', 'starter', 'professional', 'business'] as const;
+export const adminRoles = ['system_admin', 'owner', 'admin', 'accountant', 'member', 'viewer'] as const;
 
 export type AdminPlan = (typeof adminPlans)[number];
+export type AdminRole = (typeof adminRoles)[number];
 export type AdminBadgeTone = 'neutral' | 'success' | 'warning' | 'danger' | 'info';
 
 export interface AdminUserListItemDto {
@@ -99,8 +101,19 @@ export interface AdminUserTrialUpdateDto {
   isTrialActive: boolean;
 }
 
+export interface AdminUserRoleUpdateDto {
+  id: string;
+  tenantId: string;
+  role: string;
+  permissions: readonly string[];
+}
+
 export interface UpdateAdminUserPlanRequest {
   plan: AdminPlan;
+}
+
+export interface UpdateAdminUserRoleRequest {
+  role: AdminRole;
 }
 
 export interface UpdateAdminUserTrialRequest {
@@ -109,6 +122,12 @@ export interface UpdateAdminUserTrialRequest {
 
 export interface AdminUserListQuery {
   q: string;
+  role: AdminRole | '';
+  plan: AdminPlan | '';
+  isActive: boolean | '';
+  emailVerified: boolean | '';
+  isTrialActive: boolean | '';
+  hasStripeCustomer: boolean | '';
   page: number;
   limit: number;
 }

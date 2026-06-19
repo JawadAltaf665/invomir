@@ -86,3 +86,9 @@ public sealed record AdminUserTrialUpdateDto(
     DateTime TrialEndsAt,
     DateTime? TenantTrialEndsAt,
     bool IsTrialActive);
+
+public sealed record AdminUserRoleUpdateDto(
+    Guid Id,
+    Guid TenantId,
+    string Role,
+    IReadOnlyCollection<string> Permissions);

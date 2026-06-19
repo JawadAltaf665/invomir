@@ -38,10 +38,11 @@ import {
   LucideSave,
   LucideTrash2,
 } from '@lucide/angular';
-import { distinctUntilChanged, finalize, map } from 'rxjs';
+import { Observable, distinctUntilChanged, finalize, map } from 'rxjs';
 
 import { ApiResponseError, extractApiErrors } from '../../../../core/errors/api-response-error';
 import { ApiResponse, PagedResult } from '../../../../core/models/api-response.model';
+import { ConfirmationDialogService } from '../../../../core/services/confirmation-dialog.service';
 import { CurrentUserApiService } from '../../../../core/services/current-user-api.service';
 import { WorkspaceCurrencyRefreshService } from '../../../../core/services/workspace-currency-refresh.service';
 import {
@@ -118,6 +119,7 @@ export class InvoiceFormComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly workspaceCurrencyRefresh = inject(WorkspaceCurrencyRefreshService);
   private readonly translation = inject(TranslationService);
+  private readonly confirmationDialog = inject(ConfirmationDialogService);
 
   protected readonly isLoading = signal(false);
   protected readonly isSubmitting = signal(false);
@@ -250,18 +252,7 @@ export class InvoiceFormComponent implements OnInit {
       ? this.invoiceApi.updateInvoice(invoiceId, request)
       : this.invoiceApi.createInvoice(request);
 
-    this.isSubmitting.set(true);
-    this.errorMessages.set([]);
-
-    request$
-      .pipe(
-        map((response) => this.unwrap(response, 'Invoice could not be saved.')),
-        finalize(() => this.isSubmitting.set(false)),
-      )
-      .subscribe({
-        next: (invoice) => void this.router.navigate(['/app/invoices', invoice.id]),
-        error: (error) => this.errorMessages.set(extractApiErrors(error)),
-      });
+    this.confirmAndSave(request$);
   }
 
   protected draftTotals(): {
@@ -380,6 +371,32 @@ export class InvoiceFormComponent implements OnInit {
           this.editingInvoice.set(invoice);
           this.patchForm(invoice);
         },
+        error: (error) => this.errorMessages.set(extractApiErrors(error)),
+      });
+  }
+
+  private confirmAndSave(request$: Observable<ApiResponse<InvoiceDetailDto>>): void {
+    if (this.isSubmitting()) {
+      return;
+    }
+
+    this.isSubmitting.set(true);
+    this.errorMessages.set([]);
+
+    this.confirmationDialog
+      .confirmAction(
+        {
+          title: this.translation.translate('common.confirmAction'),
+          message: this.translation.translate('invoices.confirmSave'),
+          cancelLabel: this.translation.translate('common.cancel'),
+          confirmLabel: this.translation.translate('common.confirm'),
+          processingLabel: this.translation.translate('common.loading'),
+        },
+        () => request$.pipe(map((response) => this.unwrap(response, 'Invoice could not be saved.'))),
+      )
+      .pipe(finalize(() => this.isSubmitting.set(false)))
+      .subscribe({
+        next: (invoice) => void this.router.navigate(['/app/invoices', invoice.id]),
         error: (error) => this.errorMessages.set(extractApiErrors(error)),
       });
   }

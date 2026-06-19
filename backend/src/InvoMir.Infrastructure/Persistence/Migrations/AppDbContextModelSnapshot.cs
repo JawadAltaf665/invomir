@@ -281,6 +281,294 @@ namespace InvoMir.Infrastructure.Persistence.Migrations
                     b.ToTable("email_logs", (string)null);
                 });
 
+            modelBuilder.Entity("InvoMir.Domain.Entities.EmailTemplate", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<DateTime>("CreationTime")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<Guid?>("CreatorUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("DeleterUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("DeletionTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<bool>("IsSystemTemplate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
+                    b.Property<string>("Language")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasDefaultValue("en");
+
+                    b.Property<DateTime?>("LastModificationTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("LastModifierUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Subject")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<string>("TemplateType")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IsActive");
+
+                    b.HasIndex("Language");
+
+                    b.HasIndex("TemplateType");
+
+                    b.HasIndex("TemplateType", "Language");
+
+                    b.HasIndex("TemplateType", "Language", "IsActive")
+                        .IsUnique()
+                        .HasFilter("\"IsActive\" = TRUE AND \"IsDeleted\" = FALSE");
+
+                    b.ToTable("email_templates", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("10000000-0000-0000-0000-000000000001"),
+                            Body = "<p>Hello {{UserName}},</p>\n<p>Invoice <strong>{{InvoiceNumber}}</strong> has been created for {{CustomerName}}.</p>\n<p>Amount: {{InvoiceAmount}}</p>\n<p>You can review it here: <a href=\"{{InvoiceUrl}}\">Open invoice</a></p>\n<p>Thank you.</p>",
+                            ConcurrencyStamp = "email-template-seed-01",
+                            CreationTime = new DateTime(2026, 6, 14, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            IsDeleted = false,
+                            IsSystemTemplate = true,
+                            Language = "en",
+                            Name = "Invoice created",
+                            Subject = "Invoice {{InvoiceNumber}} was created",
+                            TemplateType = "InvoiceCreated"
+                        },
+                        new
+                        {
+                            Id = new Guid("10000000-0000-0000-0000-000000000002"),
+                            Body = "<p>Hello {{CustomerName}},</p>\n{{CustomMessage}}\n<p>You have received invoice <strong>{{InvoiceNumber}}</strong> from {{CompanyName}}.</p>\n<p>Amount: {{InvoiceAmount}}</p>\n<p>Due Date: {{DueDate}}</p>\n<p>You can view your invoice here: <a href=\"{{InvoiceUrl}}\">View Invoice</a></p>\n<p>Thank you.</p>\n<img src=\"{{TrackingPixelUrl}}\" alt=\"\" width=\"1\" height=\"1\" style=\"display:none\" />",
+                            ConcurrencyStamp = "email-template-seed-02",
+                            CreationTime = new DateTime(2026, 6, 14, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            IsDeleted = false,
+                            IsSystemTemplate = true,
+                            Language = "en",
+                            Name = "Invoice sent",
+                            Subject = "Invoice {{InvoiceNumber}} from {{CompanyName}}",
+                            TemplateType = "InvoiceSent"
+                        },
+                        new
+                        {
+                            Id = new Guid("10000000-0000-0000-0000-000000000003"),
+                            Body = "<p>Hello {{UserName}},</p>\n<p>{{CustomerName}} viewed invoice <strong>{{InvoiceNumber}}</strong>.</p>\n<p>Amount: {{InvoiceAmount}}</p>\n<p><a href=\"{{InvoiceUrl}}\">Open invoice</a></p>",
+                            ConcurrencyStamp = "email-template-seed-03",
+                            CreationTime = new DateTime(2026, 6, 14, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            IsDeleted = false,
+                            IsSystemTemplate = true,
+                            Language = "en",
+                            Name = "Invoice viewed",
+                            Subject = "Invoice {{InvoiceNumber}} was viewed",
+                            TemplateType = "InvoiceViewed"
+                        },
+                        new
+                        {
+                            Id = new Guid("10000000-0000-0000-0000-000000000004"),
+                            Body = "<p>Hello {{CustomerName}},</p>\n<p>Payment has been received for invoice <strong>{{InvoiceNumber}}</strong>.</p>\n<p>Amount: {{InvoiceAmount}}</p>\n<p>Thank you for your payment.</p>",
+                            ConcurrencyStamp = "email-template-seed-04",
+                            CreationTime = new DateTime(2026, 6, 14, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            IsDeleted = false,
+                            IsSystemTemplate = true,
+                            Language = "en",
+                            Name = "Invoice paid",
+                            Subject = "Payment received for invoice {{InvoiceNumber}}",
+                            TemplateType = "InvoicePaid"
+                        },
+                        new
+                        {
+                            Id = new Guid("10000000-0000-0000-0000-000000000005"),
+                            Body = "<p>Hello {{CustomerName}},</p>\n<p>Invoice <strong>{{InvoiceNumber}}</strong> from {{CompanyName}} is now overdue.</p>\n<p>Amount: {{InvoiceAmount}}</p>\n<p>Due Date: {{DueDate}}</p>\n<p>Payment link: <a href=\"{{PaymentLink}}\">Pay Now</a></p>\n<p>Thank you.</p>",
+                            ConcurrencyStamp = "email-template-seed-05",
+                            CreationTime = new DateTime(2026, 6, 14, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            IsDeleted = false,
+                            IsSystemTemplate = true,
+                            Language = "en",
+                            Name = "Invoice overdue",
+                            Subject = "Invoice {{InvoiceNumber}} is overdue",
+                            TemplateType = "InvoiceOverdue"
+                        },
+                        new
+                        {
+                            Id = new Guid("10000000-0000-0000-0000-000000000006"),
+                            Body = "<p>Hello {{CustomerName}},</p>\n<p>This is a reminder that invoice <strong>{{InvoiceNumber}}</strong> is due on {{DueDate}}.</p>\n<p>Amount: {{InvoiceAmount}}</p>\n<p>Payment link: <a href=\"{{PaymentLink}}\">Pay Now</a></p>\n<p>Thank you.</p>",
+                            ConcurrencyStamp = "email-template-seed-06",
+                            CreationTime = new DateTime(2026, 6, 14, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            IsDeleted = false,
+                            IsSystemTemplate = true,
+                            Language = "en",
+                            Name = "Payment reminder",
+                            Subject = "Payment reminder for invoice {{InvoiceNumber}}",
+                            TemplateType = "PaymentReminder"
+                        },
+                        new
+                        {
+                            Id = new Guid("10000000-0000-0000-0000-000000000007"),
+                            Body = "<p>Hello {{UserName}},</p>\n<p>Welcome to InvoMir. We are excited to help you manage invoices faster and more professionally.</p>\n<p>Thank you for joining us.</p>",
+                            ConcurrencyStamp = "email-template-seed-07",
+                            CreationTime = new DateTime(2026, 6, 14, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            IsDeleted = false,
+                            IsSystemTemplate = true,
+                            Language = "en",
+                            Name = "Welcome email",
+                            Subject = "Welcome to InvoMir, {{UserName}}",
+                            TemplateType = "WelcomeEmail"
+                        },
+                        new
+                        {
+                            Id = new Guid("10000000-0000-0000-0000-000000000008"),
+                            Body = "<p>Hello {{UserName}},</p>\n<p>Please verify your email address for your InvoMir account.</p>\n<p><a href=\"{{VerificationLink}}\">Verify your email</a></p>\n<p>This link expires in 24 hours.</p>",
+                            ConcurrencyStamp = "email-template-seed-08",
+                            CreationTime = new DateTime(2026, 6, 14, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            IsDeleted = false,
+                            IsSystemTemplate = true,
+                            Language = "en",
+                            Name = "Email verification",
+                            Subject = "Verify your InvoMir email",
+                            TemplateType = "EmailVerification"
+                        },
+                        new
+                        {
+                            Id = new Guid("10000000-0000-0000-0000-000000000009"),
+                            Body = "<p>Hello {{UserName}},</p>\n<p>You requested a password reset for your InvoMir account.</p>\n<p><a href=\"{{ResetPasswordLink}}\">Reset your password</a></p>\n<p>This link expires in 15 minutes.</p>",
+                            ConcurrencyStamp = "email-template-seed-09",
+                            CreationTime = new DateTime(2026, 6, 14, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            IsDeleted = false,
+                            IsSystemTemplate = true,
+                            Language = "en",
+                            Name = "Password reset",
+                            Subject = "Reset your InvoMir password",
+                            TemplateType = "PasswordReset"
+                        },
+                        new
+                        {
+                            Id = new Guid("10000000-0000-0000-0000-000000000010"),
+                            Body = "<p>Hello {{UserName}},</p>\n<p>Your InvoMir <strong>{{PlanName}}</strong> plan is active.</p>\n<p>Thank you for choosing InvoMir.</p>",
+                            ConcurrencyStamp = "email-template-seed-10",
+                            CreationTime = new DateTime(2026, 6, 14, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            IsDeleted = false,
+                            IsSystemTemplate = true,
+                            Language = "en",
+                            Name = "Subscription started",
+                            Subject = "Your {{PlanName}} plan is active",
+                            TemplateType = "SubscriptionStarted"
+                        },
+                        new
+                        {
+                            Id = new Guid("10000000-0000-0000-0000-000000000011"),
+                            Body = "<p>Hello {{UserName}},</p>\n<p>Your InvoMir <strong>{{PlanName}}</strong> subscription has renewed successfully.</p>\n<p>Thank you for staying with InvoMir.</p>",
+                            ConcurrencyStamp = "email-template-seed-11",
+                            CreationTime = new DateTime(2026, 6, 14, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            IsDeleted = false,
+                            IsSystemTemplate = true,
+                            Language = "en",
+                            Name = "Subscription renewed",
+                            Subject = "Your {{PlanName}} plan has renewed",
+                            TemplateType = "SubscriptionRenewed"
+                        },
+                        new
+                        {
+                            Id = new Guid("10000000-0000-0000-0000-000000000012"),
+                            Body = "<p>Hello {{UserName}},</p>\n<p>Your InvoMir <strong>{{PlanName}}</strong> subscription cancellation has been scheduled.</p>\n<p>You can continue using your paid plan until the end of the current billing period.</p>",
+                            ConcurrencyStamp = "email-template-seed-12",
+                            CreationTime = new DateTime(2026, 6, 14, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            IsDeleted = false,
+                            IsSystemTemplate = true,
+                            Language = "en",
+                            Name = "Subscription cancelled",
+                            Subject = "Your InvoMir subscription cancellation is scheduled",
+                            TemplateType = "SubscriptionCancelled"
+                        },
+                        new
+                        {
+                            Id = new Guid("10000000-0000-0000-0000-000000000013"),
+                            Body = "<p>Hello {{UserName}},</p>\n<p>Your InvoMir trial ends on {{DueDate}}.</p>\n<p>Upgrade your workspace to keep reminders, online payments, exports, and higher limits active.</p>",
+                            ConcurrencyStamp = "email-template-seed-13",
+                            CreationTime = new DateTime(2026, 6, 14, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            IsDeleted = false,
+                            IsSystemTemplate = true,
+                            Language = "en",
+                            Name = "Trial expiry reminder",
+                            Subject = "Your InvoMir trial ends soon",
+                            TemplateType = "TrialExpiryReminder"
+                        },
+                        new
+                        {
+                            Id = new Guid("10000000-0000-0000-0000-000000000014"),
+                            Body = "<p>Hello,</p>\n<p>{{UserName}} invited you to join <strong>{{CompanyName}}</strong> on InvoMir.</p>\n<p><a href=\"{{InvitationLink}}\">Accept invitation</a></p>\n<p>This invitation expires soon.</p>",
+                            ConcurrencyStamp = "email-template-seed-14",
+                            CreationTime = new DateTime(2026, 6, 14, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            IsDeleted = false,
+                            IsSystemTemplate = true,
+                            Language = "en",
+                            Name = "Team member invitation",
+                            Subject = "Join {{CompanyName}} on InvoMir",
+                            TemplateType = "TeamMemberInvitation"
+                        });
+                });
+
             modelBuilder.Entity("InvoMir.Domain.Entities.EmailVerificationToken", b =>
                 {
                     b.Property<Guid>("Id")
@@ -845,6 +1133,136 @@ namespace InvoMir.Infrastructure.Persistence.Migrations
                     b.ToTable("payments", (string)null);
                 });
 
+            modelBuilder.Entity("InvoMir.Domain.Entities.QueuedEmail", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("AttachmentContentBase64")
+                        .HasColumnType("text");
+
+                    b.Property<string>("AttachmentContentType")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("AttachmentFileName")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<string>("Bcc")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Cc")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<DateTime>("CreationTime")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<Guid?>("CreatorUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("DeleterUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("DeletionTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ErrorMessage")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<DateTime?>("LastAttemptAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("LastModificationTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("LastModifierUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("MaxRetryCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(3);
+
+                    b.Property<int>("RetryCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.Property<DateTime?>("ScheduledAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("SentAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasDefaultValue("Pending");
+
+                    b.Property<string>("Subject")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<string>("TemplateType")
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ToEmail")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("ToName")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreationTime");
+
+                    b.HasIndex("ScheduledAt");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("TemplateType");
+
+                    b.HasIndex("TenantId");
+
+                    b.HasIndex("TenantId", "Status");
+
+                    b.HasIndex("Status", "ScheduledAt", "CreationTime");
+
+                    b.ToTable("queued_emails", (string)null);
+                });
+
             modelBuilder.Entity("InvoMir.Domain.Entities.RefreshToken", b =>
                 {
                     b.Property<Guid>("Id")
@@ -932,6 +1350,100 @@ namespace InvoMir.Infrastructure.Persistence.Migrations
                     b.HasIndex("TenantId", "UserId", "IsRevoked", "IsDeleted");
 
                     b.ToTable("refresh_tokens", (string)null);
+                });
+
+            modelBuilder.Entity("InvoMir.Domain.Entities.Reminder", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("CancelledAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<DateTime>("CreationTime")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<Guid?>("CreatorUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("DeleterUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("DeletionTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("FailureReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("HangfireJobId")
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.Property<Guid>("InvoiceId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<DateTime?>("LastModificationTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("LastModifierUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("ScheduledForUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("SentAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasDefaultValue("pending");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("HangfireJobId");
+
+                    b.HasIndex("InvoiceId");
+
+                    b.HasIndex("TenantId");
+
+                    b.HasIndex("TenantId", "InvoiceId");
+
+                    b.HasIndex("TenantId", "UserId");
+
+                    b.HasIndex("TenantId", "Status", "ScheduledForUtc");
+
+                    b.HasIndex("TenantId", "InvoiceId", "Type", "Status");
+
+                    b.ToTable("reminders", (string)null);
                 });
 
             modelBuilder.Entity("InvoMir.Domain.Entities.StripeConnectState", b =>
@@ -1476,6 +1988,17 @@ namespace InvoMir.Infrastructure.Persistence.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("InvoMir.Domain.Entities.Reminder", b =>
+                {
+                    b.HasOne("InvoMir.Domain.Entities.Invoice", "Invoice")
+                        .WithMany()
+                        .HasForeignKey("InvoiceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Invoice");
                 });
 
             modelBuilder.Entity("InvoMir.Domain.Entities.Subscription", b =>

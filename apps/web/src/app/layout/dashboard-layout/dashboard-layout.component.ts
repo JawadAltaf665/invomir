@@ -3,6 +3,7 @@ import { Dir } from '@angular/cdk/bidi';
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   OnInit,
   PLATFORM_ID,
   computed,
@@ -14,7 +15,7 @@ import {
 import { MatButtonModule } from '@angular/material/button';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import {
   LucideBadgeDollarSign,
   LucideChartNoAxesCombined,
@@ -33,7 +34,8 @@ import {
   LucideShieldCheck,
   LucideUsers,
 } from '@lucide/angular';
-import { finalize, map } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { filter, finalize, map } from 'rxjs';
 
 import { AuthSessionService } from '../../core/auth/auth-session.service';
 import { SupportedCurrency, supportedCurrencies } from '../../core/auth/auth.models';
@@ -69,6 +71,14 @@ interface SidebarNavItem {
   icon: SidebarIcon;
   permissions: readonly Permission[];
   disabled?: boolean;
+  requiresBusinessPlan?: boolean;
+}
+
+interface SidebarSubNavItem {
+  labelKey: string;
+  route: string;
+  icon: SidebarIcon;
+  permissions: readonly Permission[];
 }
 
 @Component({
@@ -117,9 +127,12 @@ export class DashboardLayoutComponent implements OnInit {
   protected readonly currencyErrorMessages = signal<readonly string[]>([]);
   protected readonly currencyOptions = supportedCurrencies;
   protected readonly currentUserProfile = signal<CurrentUserProfileDto | null>(null);
+  protected readonly currentUrl = signal('');
   protected readonly profilePictureVersion = signal(Date.now());
+  protected readonly isAdminMenuOpen = signal(false);
   protected readonly languagePreference = inject(LanguagePreferenceService);
   private readonly router = inject(Router);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly currentUserApi = inject(CurrentUserApiService);
   private readonly currentUserProfileRefresh = inject(CurrentUserProfileRefreshService);
   private readonly workspaceCurrencyRefresh = inject(WorkspaceCurrencyRefreshService);
@@ -158,6 +171,9 @@ export class DashboardLayoutComponent implements OnInit {
 
     return initials.length > 0 ? initials.toUpperCase() : 'IM';
   });
+  protected readonly isBusinessPlan = computed(
+    () => this.authSession.user()?.plan?.toString().toLowerCase() === 'business',
+  );
 
   private readonly mainNavItems: readonly SidebarNavItem[] = [
     {
@@ -204,6 +220,7 @@ export class DashboardLayoutComponent implements OnInit {
       route: '/app/team',
       icon: 'team',
       permissions: [permissions.team.manage],
+      requiresBusinessPlan: true,
     },
     {
       labelKey: 'navigation.auditLogs',
@@ -217,11 +234,26 @@ export class DashboardLayoutComponent implements OnInit {
       icon: 'settings',
       permissions: [permissions.settings.manage],
     },
+  ];
+
+  private readonly adminSubNavItems: readonly SidebarSubNavItem[] = [
     {
-      labelKey: 'navigation.admin',
-      route: '/app/admin/users',
-      icon: 'admin',
+      labelKey: 'navigation.emailTemplates',
+      route: '/app/admin/email-templates',
+      icon: 'invoices',
       permissions: [permissions.system.access],
+    },
+    {
+      labelKey: 'navigation.queuedEmails',
+      route: '/app/admin/queued-emails',
+      icon: 'auditLogs',
+      permissions: [permissions.system.access],
+    },
+    {
+      labelKey: 'navigation.users',
+      route: '/app/admin/users',
+      icon: 'team',
+      permissions: [permissions.system.users.view],
     },
   ];
 
@@ -229,6 +261,13 @@ export class DashboardLayoutComponent implements OnInit {
   protected readonly visibleManageNavItems = computed(() =>
     this.visibleNavItems(this.manageNavItems),
   );
+  protected readonly visibleAdminSubNavItems = computed(() =>
+    this.visibleSubNavItems(this.adminSubNavItems),
+  );
+  protected readonly hasVisibleManageItems = computed(
+    () => this.visibleManageNavItems().length > 0 || this.visibleAdminSubNavItems().length > 0,
+  );
+  protected readonly isAdminRouteActive = computed(() => this.currentUrl().startsWith('/app/admin'));
 
   private readonly reloadProfileOnChange = effect(() => {
     const version = this.currentUserProfileRefresh.version();
@@ -267,6 +306,23 @@ export class DashboardLayoutComponent implements OnInit {
       this.languagePreference.load();
       this.loadCurrentUserProfile();
     }
+
+    this.currentUrl.set(this.router.url);
+    if (this.router.url.startsWith('/app/admin')) {
+      this.isAdminMenuOpen.set(true);
+    }
+
+    this.router.events
+      .pipe(
+        filter((event): event is NavigationEnd => event instanceof NavigationEnd),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((event) => {
+        this.currentUrl.set(event.urlAfterRedirects);
+        if (event.urlAfterRedirects.startsWith('/app/admin')) {
+          this.isAdminMenuOpen.set(true);
+        }
+      });
   }
 
   protected toggleSidebar(): void {
@@ -279,6 +335,16 @@ export class DashboardLayoutComponent implements OnInit {
 
   protected closeMobileSidebar(): void {
     this.isMobileSidebarOpen.set(false);
+  }
+
+  protected toggleAdminMenu(): void {
+    if (!this.isSidebarExpanded()) {
+      this.isSidebarExpanded.set(true);
+      this.isAdminMenuOpen.set(true);
+      return;
+    }
+
+    this.isAdminMenuOpen.update((isOpen) => !isOpen);
   }
 
   protected logout(): void {
@@ -326,6 +392,14 @@ export class DashboardLayoutComponent implements OnInit {
   }
 
   private visibleNavItems(items: readonly SidebarNavItem[]): readonly SidebarNavItem[] {
+    return items.filter(
+      (item) =>
+        this.authSession.hasAnyPermission(item.permissions) &&
+        (!item.requiresBusinessPlan || this.isBusinessPlan()),
+    );
+  }
+
+  private visibleSubNavItems(items: readonly SidebarSubNavItem[]): readonly SidebarSubNavItem[] {
     return items.filter((item) => this.authSession.hasAnyPermission(item.permissions));
   }
 

@@ -35,6 +35,7 @@ public static class AuditConstants
         public const string SubscriptionCancelled = "subscription_cancelled";
         public const string SubscriptionSynced = "subscription_synced";
         public const string PlanOverridden = "plan_overridden";
+        public const string RoleOverridden = "role_overridden";
         public const string TrialExtended = "trial_extended";
         public const string TeamInvited = "team_invited";
         public const string TeamInvitationCancelled = "team_invitation_cancelled";

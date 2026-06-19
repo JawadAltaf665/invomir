@@ -10,6 +10,8 @@ public interface IAppDbContext
     DbSet<StripeConnectState> StripeConnectStates { get; }
     DbSet<AuditLog> AuditLogs { get; }
     DbSet<EmailLog> EmailLogs { get; }
+    DbSet<EmailTemplate> EmailTemplates { get; }
+    DbSet<QueuedEmail> QueuedEmails { get; }
     DbSet<Client> Clients { get; }
     DbSet<Invoice> Invoices { get; }
     DbSet<InvoiceItem> InvoiceItems { get; }
@@ -17,6 +19,7 @@ public interface IAppDbContext
     DbSet<Subscription> Subscriptions { get; }
     DbSet<TeamInvitation> TeamInvitations { get; }
     DbSet<Notification> Notifications { get; }
+    DbSet<Reminder> Reminders { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken);
 }

@@ -48,6 +48,16 @@ public sealed class SubscriptionsController(ISender mediator) : ControllerBase
         return Ok(ApiResponse<SubscriptionCheckoutDto>.Ok(result, "Subscription checkout session created."));
     }
 
+    [HttpPost("portal")]
+    [RequirePermission(Permissions.Subscription.Manage)]
+    [ProducesResponseType(typeof(ApiResponse<SubscriptionPortalDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> Portal(CancellationToken cancellationToken)
+    {
+        var result = await mediator.Send(new CreateSubscriptionPortalCommand(), cancellationToken);
+        return Ok(ApiResponse<SubscriptionPortalDto>.Ok(result, "Billing portal session created."));
+    }
+
     [HttpPost("cancel")]
     [RequirePermission(Permissions.Subscription.Manage)]
     [ProducesResponseType(typeof(ApiResponse<SubscriptionCancellationDto>), StatusCodes.Status200OK)]

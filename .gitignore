@@ -145,6 +145,7 @@ vite.config.ts.timestamp-*
 # .NET build output
 **/bin/
 **/obj/
+.tmp-build/
 
 # Visual Studio workspace files
 .vs/
@@ -160,3 +161,6 @@ backend/src/InvoMir.API/InvoMir.API/appsettings.Production.json
 backend/src/InvoMir.API/InvoMir.API/App_Data/
 backend/src/InvoMir.API/InvoMir.API/wwwroot/profile-pictures/
 backend/src/InvoMir.API/InvoMir.API/wwwroot/invoices/
+
+# Local project docs/prompts - keep private and do not publish
+docs/

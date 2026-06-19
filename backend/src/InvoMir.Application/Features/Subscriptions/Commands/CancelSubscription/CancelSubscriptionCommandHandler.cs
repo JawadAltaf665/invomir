@@ -51,11 +51,11 @@ public sealed class CancelSubscriptionCommandHandler(
 
         await context.SaveChangesAsync(cancellationToken);
 
-        await emailService.SendAsync(
+        await emailService.SendSubscriptionCancelledAsync(
             userEmail,
-            "Your InvoMir subscription cancellation is scheduled",
-            BuildCancellationEmail(subscription),
-            null,
+            subscription.Plan,
+            subscription.CurrentPeriodEnd,
+            subscription.TenantId,
             cancellationToken);
 
         await auditService.LogAsync(
@@ -94,18 +94,6 @@ public sealed class CancelSubscriptionCommandHandler(
             subscription.CancelAtPeriodEnd,
             subscription.CurrentPeriodEnd,
             subscription.CancelledAt);
-    }
-
-    private static string BuildCancellationEmail(Subscription subscription)
-    {
-        return $"""
-            <div style="font-family:Arial,sans-serif;color:#111827;line-height:1.55">
-              <p>Your InvoMir subscription cancellation has been scheduled.</p>
-              <p><strong>Plan:</strong> {subscription.Plan}</p>
-              <p><strong>Access ends:</strong> {subscription.CurrentPeriodEnd:yyyy-MM-dd HH:mm} UTC</p>
-              <p>You can continue using your paid plan until the end of the current billing period.</p>
-            </div>
-            """;
     }
 
     private static object ToAuditSnapshot(Subscription subscription)

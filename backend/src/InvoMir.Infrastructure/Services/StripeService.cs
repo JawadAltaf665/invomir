@@ -6,6 +6,7 @@ public sealed class StripeService(
     : IStripeService
 {
     private const string CheckoutSessionsUrl = "https://api.stripe.com/v1/checkout/sessions";
+    private const string BillingPortalSessionsUrl = "https://api.stripe.com/v1/billing_portal/sessions";
     private const string ConnectAuthorizeUrl = "https://connect.stripe.com/oauth/authorize";
     private const string ConnectOAuthTokenUrl = "https://connect.stripe.com/oauth/token";
     private const string SubscriptionsUrl = "https://api.stripe.com/v1/subscriptions";
@@ -102,10 +103,91 @@ public sealed class StripeService(
         return new StripeCheckoutSessionDto(id, url);
     }
 
+    public async Task<StripeBillingPortalSessionDto> CreateBillingPortalSessionAsync(
+        StripeBillingPortalSessionRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(_settings.SecretKey))
+            throw new BadRequestException("Stripe customer portal is not available.");
+
+        if (string.IsNullOrWhiteSpace(request.StripeCustomerId))
+            throw new BadRequestException("Stripe customer id is required.");
+
+        using var httpRequest = new HttpRequestMessage(HttpMethod.Post, BillingPortalSessionsUrl)
+        {
+            Content = new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["customer"] = request.StripeCustomerId.Trim(),
+                ["return_url"] = _settings.SubscriptionPortalReturnUrl
+            })
+        };
+
+        httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _settings.SecretKey);
+
+        using var response = await HttpClient.SendAsync(httpRequest, cancellationToken);
+        var body = await response.Content.ReadAsStringAsync(cancellationToken);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            logger.LogWarning(
+                "Stripe billing portal session failed with status {StatusCode}: {ResponseBody}",
+                response.StatusCode,
+                body);
+
+            throw new BadRequestException("Unable to create Stripe billing portal session.");
+        }
+
+        using var document = JsonDocument.Parse(body);
+        var root = document.RootElement;
+        var id = root.GetProperty("id").GetString();
+        var url = root.GetProperty("url").GetString();
+
+        if (string.IsNullOrWhiteSpace(id) || string.IsNullOrWhiteSpace(url))
+            throw new BadRequestException("Stripe billing portal response was invalid.");
+
+        return new StripeBillingPortalSessionDto(id, url);
+    }
+
     public bool IsSubscriptionCheckoutConfigured(string plan, string interval)
     {
         return !string.IsNullOrWhiteSpace(_settings.SecretKey) &&
             !string.IsNullOrWhiteSpace(ResolveSubscriptionPriceId(plan, interval));
+    }
+
+    public bool IsSubscriptionStatusSyncConfigured()
+    {
+        return !string.IsNullOrWhiteSpace(_settings.SecretKey);
+    }
+
+    public async Task<StripeSubscriptionEventDto?> GetSubscriptionAsync(
+        string stripeSubscriptionId,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(_settings.SecretKey))
+            throw new BadRequestException("Stripe is not configured.");
+
+        if (string.IsNullOrWhiteSpace(stripeSubscriptionId))
+            throw new BadRequestException("Stripe subscription id is required.");
+
+        var subscriptionUrl = $"{SubscriptionsUrl}/{Uri.EscapeDataString(stripeSubscriptionId.Trim())}";
+        using var httpRequest = new HttpRequestMessage(HttpMethod.Get, subscriptionUrl);
+        httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _settings.SecretKey);
+
+        using var response = await HttpClient.SendAsync(httpRequest, cancellationToken);
+        var body = await response.Content.ReadAsStringAsync(cancellationToken);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            logger.LogWarning(
+                "Stripe subscription retrieval failed with status {StatusCode}: {ResponseBody}",
+                response.StatusCode,
+                body);
+
+            throw new BadRequestException("Unable to retrieve Stripe subscription.");
+        }
+
+        using var document = JsonDocument.Parse(body);
+        return TryReadSubscriptionObject(document.RootElement);
     }
 
     public async Task<StripeSubscriptionCancellationDto> CancelSubscriptionAtPeriodEndAsync(
@@ -482,6 +564,11 @@ public sealed class StripeService(
     private static StripeSubscriptionEventDto? TryReadCustomerSubscription(JsonElement root)
     {
         var subscription = root.GetProperty("data").GetProperty("object");
+        return TryReadSubscriptionObject(subscription);
+    }
+
+    private static StripeSubscriptionEventDto? TryReadSubscriptionObject(JsonElement subscription)
+    {
         var subscriptionId = TryReadString(subscription, "id");
 
         if (string.IsNullOrWhiteSpace(subscriptionId))
