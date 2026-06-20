@@ -1,9 +1,8 @@
 [build]
-builder = "nixpacks"
-buildCommand = "dotnet publish InvoMir.API/InvoMir.API.csproj -c Release -o out"
+builder = "dockerfile"
+dockerfilePath = "Dockerfile"
 
 [deploy]
-startCommand = "dotnet out/InvoMir.API.dll"
 healthcheckPath = "/health"
 healthcheckTimeout = 30
 restartPolicyType = "on_failure"
