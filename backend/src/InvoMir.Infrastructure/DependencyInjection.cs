@@ -6,9 +6,7 @@ public static class DependencyInjection
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        var connectionString = configuration.GetConnectionString("DefaultConnection");
-        if (string.IsNullOrWhiteSpace(connectionString))
-            throw new InvalidOperationException("DefaultConnection is not configured.");
+        var connectionString = DatabaseConnectionStringResolver.GetRequiredDefaultConnectionString(configuration);
 
         services.AddDbContext<AppDbContext>(options =>
             options.UseNpgsql(
@@ -25,7 +23,8 @@ public static class DependencyInjection
         services.AddScoped<IPasswordHasher, BcryptPasswordHasher>();
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<IAuditService, AuditService>();
-        services.AddScoped<IEmailService, SendGridEmailService>();
+        services.AddScoped<IEmailService, QueuedEmailFacadeService>();
+        services.AddScoped<ISmtpEmailSender, MailKitSmtpEmailSender>();
         services.AddScoped<IInvoiceNumberService, InvoiceNumberService>();
         services.AddScoped<IInvoiceReminderJobService, InvoiceReminderJobService>();
         services.AddScoped<IInvoiceLinkBuilder, InvoiceLinkBuilder>();
@@ -41,7 +40,7 @@ public static class DependencyInjection
         services.AddSingleton<ICurrencyConversionService, ExchangeRateCurrencyConversionService>();
 
         services.Configure<JwtSettings>(configuration.GetSection(JwtSettings.SectionName));
-        services.Configure<SendGridSettings>(configuration.GetSection(SendGridSettings.SectionName));
+        services.Configure<EmailSettings>(configuration.GetSection(EmailSettings.SectionName));
         services.Configure<StripeSettings>(configuration.GetSection(StripeSettings.SectionName));
         services.Configure<GoogleAuthSettings>(configuration.GetSection(GoogleAuthSettings.SectionName));
         services.Configure<CurrencyExchangeSettings>(configuration.GetSection(CurrencyExchangeSettings.SectionName));

@@ -71,6 +71,11 @@ export interface SubscriptionCheckoutDto {
   sessionId: string;
 }
 
+export interface SubscriptionPortalDto {
+  portalUrl: string;
+  sessionId: string;
+}
+
 export interface SubscriptionCancellationDto {
   stripeSubscriptionId: string;
   status: SubscriptionStatus;

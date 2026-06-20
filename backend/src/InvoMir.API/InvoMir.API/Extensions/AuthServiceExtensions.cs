@@ -16,9 +16,9 @@ public static class AuthServiceExtensions
         var jwtSettings = configuration.GetSection(JwtSettings.SectionName).Get<JwtSettings>()
             ?? throw new InvalidOperationException("JWT settings are not configured.");
 
-        if (string.IsNullOrWhiteSpace(jwtSettings.Secret) || jwtSettings.Secret.Length < 32)
+        if (string.IsNullOrWhiteSpace(jwtSettings.SigningSecret) || jwtSettings.SigningSecret.Length < 32)
             throw new InvalidOperationException(
-                "JWT secret must be at least 32 characters. Set Jwt:Secret in appsettings.Development.json or environment variables.");
+                "JWT secret must be at least 32 characters. Set Jwt:Secret or Jwt:Key in appsettings.Development.json or environment variables.");
 
         services
             .AddAuthentication(options =>
@@ -35,7 +35,7 @@ public static class AuthServiceExtensions
                     ValidateAudience = true,
                     ValidAudience = jwtSettings.Audience,
                     ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Secret)),
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.SigningSecret)),
                     ValidateLifetime = true,
                     ClockSkew = TimeSpan.Zero
                 };

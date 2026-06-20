@@ -1,15 +1,18 @@
 {
   "expo": {
-    "name": "mobile",
-    "slug": "mobile",
+    "name": "InvoMir",
+    "slug": "invomir-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "mobile",
+    "scheme": "invomir",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSFaceIDUsageDescription": "Use Face ID to securely unlock your InvoMir workspace."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -19,7 +22,12 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.USE_BIOMETRIC",
+        "android.permission.USE_FINGERPRINT"
+      ],
+      "package": "com.mirzadevg.invomirmobile"
     },
     "web": {
       "output": "static",
@@ -27,21 +35,36 @@
     },
     "plugins": [
       "expo-router",
+      "expo-secure-store",
+      "expo-local-authentication",
       [
         "expo-splash-screen",
         {
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff",
+          "backgroundColor": "#F8FAFC",
           "dark": {
-            "backgroundColor": "#000000"
+            "backgroundColor": "#0F172A"
           }
         }
-      ]
+      ],
+      "expo-font"
     ],
+    "extra": {
+      "apiBaseUrl": "http://localhost:5299",
+      "apiPort": 5299,
+      "webBillingUrl": "https://app.invomir.com/billing",
+      "googleWebClientId": "91013579082-9uapuh4nca2dujsoc0jhl4fku738pvcl.apps.googleusercontent.com",
+      "googleIosClientId": "91013579082-9uapuh4nca2dujsoc0jhl4fku738pvcl.apps.googleusercontent.com",
+      "googleAndroidClientId": "91013579082-9uapuh4nca2dujsoc0jhl4fku738pvcl.apps.googleusercontent.com",
+      "router": {},
+      "eas": {
+        "projectId": "72a508dc-5656-4b0f-a3e5-557dff516ff2"
+      }
+    },
     "experiments": {
-      "typedRoutes": true,
+      "typedRoutes": false,
       "reactCompiler": true
     }
   }

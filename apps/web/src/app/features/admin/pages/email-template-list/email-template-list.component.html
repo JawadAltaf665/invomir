@@ -1,0 +1,224 @@
+<section class="mx-auto max-w-7xl p-6 lg:p-8">
+  <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+    <div>
+      <p class="text-xs font-medium uppercase tracking-normal text-neutral-500">Admin</p>
+      <h1 class="mt-2 text-2xl font-semibold tracking-tight text-neutral-900">Email templates</h1>
+      <p class="mt-2 text-sm text-neutral-500">
+        System email templates used by queued email delivery.
+      </p>
+    </div>
+
+    <div class="flex flex-wrap gap-2">
+      <button mat-stroked-button type="button" [disabled]="isLoading()" (click)="refresh()">
+        <svg lucideRefreshCcw class="size-4" aria-hidden="true"></svg>
+        Refresh
+      </button>
+      <a mat-flat-button routerLink="/app/admin/email-templates/create">
+        <svg lucideFileText class="size-4" aria-hidden="true"></svg>
+        Create template
+      </a>
+    </div>
+  </div>
+
+  @if (errorMessages().length > 0) {
+    <div class="mt-6 rounded-2xl border border-red-200 bg-red-50 p-5 shadow-sm">
+      <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+        <div>
+          <p class="text-sm font-medium text-red-800">Email templates could not be loaded</p>
+          <div class="mt-2 space-y-1">
+            @for (error of errorMessages(); track error) {
+              <p class="text-xs text-red-600">{{ error }}</p>
+            }
+          </div>
+        </div>
+
+        <button mat-button type="button" [disabled]="isLoading()" (click)="refresh()">Retry</button>
+      </div>
+    </div>
+  }
+
+  <form
+    class="mt-6 rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm lg:p-5"
+    [formGroup]="form"
+    (ngSubmit)="applyFilters()"
+  >
+    <div class="grid grid-cols-1 gap-4 lg:grid-cols-12">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-full min-w-0 lg:col-span-6">
+        <mat-label>Search templates</mat-label>
+        <input matInput type="search" formControlName="search" autocomplete="off" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-full min-w-0 lg:col-span-3">
+        <mat-label>Template type</mat-label>
+        <mat-select formControlName="templateType">
+          <mat-option value="">All types</mat-option>
+          @for (type of emailTemplateTypes; track type) {
+            <mat-option [value]="type">{{ type }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-full min-w-0 lg:col-span-3">
+        <mat-label>Language</mat-label>
+        <input matInput formControlName="language" autocomplete="off" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-full min-w-0 lg:col-span-3">
+        <mat-label>Status</mat-label>
+        <mat-select formControlName="isActive">
+          <mat-option value="">All statuses</mat-option>
+          <mat-option [value]="true">Active</mat-option>
+          <mat-option [value]="false">Inactive</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    <div class="mt-4 flex flex-col gap-3 sm:flex-row sm:justify-end">
+      <button mat-button type="button" [disabled]="isLoading()" (click)="resetFilters()">
+        <svg lucideRotateCcw class="size-4" aria-hidden="true"></svg>
+        Reset
+      </button>
+      <button mat-flat-button color="primary" type="submit" [disabled]="isLoading()">
+        <svg lucideSearch class="size-4" aria-hidden="true"></svg>
+        Apply filters
+      </button>
+    </div>
+  </form>
+
+  <article class="mt-6 rounded-2xl border border-neutral-200 bg-white shadow-sm">
+    @if (isLoading() && rows().length === 0) {
+      <div class="p-5">
+        <div class="h-5 w-40 animate-pulse rounded-xl bg-neutral-100"></div>
+        <div class="mt-6 space-y-4">
+          @for (row of skeletonRows; track row) {
+            <div class="h-16 animate-pulse rounded-xl bg-neutral-100"></div>
+          }
+        </div>
+      </div>
+    } @else if (rows().length > 0) {
+      <div class="overflow-x-auto">
+        <table class="w-full min-w-[1080px] table-fixed text-sm">
+          <colgroup>
+            <col class="w-[28%]" />
+            <col class="w-[18%]" />
+            <col class="w-[12%]" />
+            <col class="w-[12%]" />
+            <col class="w-[16%]" />
+            <col class="w-[14%]" />
+          </colgroup>
+          <thead>
+            <tr class="border-b border-neutral-200">
+              <th class="px-5 py-3 text-left font-medium text-neutral-600">Template</th>
+              <th class="px-5 py-3 text-left font-medium text-neutral-600">Type</th>
+              <th class="px-5 py-3 text-left font-medium text-neutral-600">Language</th>
+              <th class="px-5 py-3 text-left font-medium text-neutral-600">Status</th>
+              <th class="px-5 py-3 text-left font-medium text-neutral-600">Updated</th>
+              <th class="px-5 py-3 text-right font-medium text-neutral-600">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (template of rows(); track template.id) {
+              <tr class="border-b border-neutral-100 transition last:border-0 hover:bg-neutral-50">
+                <td class="px-5 py-4">
+                  <p class="truncate font-semibold text-neutral-900">{{ template.name }}</p>
+                  <p class="mt-1 truncate text-xs text-neutral-500">{{ template.subject }}</p>
+                </td>
+                <td class="px-5 py-4 text-neutral-600">{{ template.templateTypeName }}</td>
+                <td class="px-5 py-4 text-neutral-600">{{ template.language }}</td>
+                <td class="px-5 py-4">
+                  <span
+                    class="rounded-full px-2 py-1 text-xs font-medium"
+                    [class.bg-emerald-50]="template.isActive"
+                    [class.text-emerald-700]="template.isActive"
+                    [class.bg-neutral-100]="!template.isActive"
+                    [class.text-neutral-600]="!template.isActive"
+                  >
+                    {{ template.isActive ? 'Active' : 'Inactive' }}
+                  </span>
+                </td>
+                <td class="px-5 py-4 text-neutral-600">
+                  {{ (template.updatedAt ?? template.createdAt) | date: 'mediumDate' }}
+                </td>
+                <td class="px-4 py-4">
+                  <div class="flex justify-end">
+                    <button
+                      mat-stroked-button
+                      type="button"
+                      class="min-w-24"
+                      [matMenuTriggerFor]="templateActionsMenu"
+                      (menuOpened)="openActionTemplateId.set(template.id)"
+                      (menuClosed)="openActionTemplateId.set(null)"
+                      aria-label="Open email template actions"
+                    >
+                      Actions
+                      @if (openActionTemplateId() === template.id) {
+                        <svg lucideChevronUp class="size-4" aria-hidden="true"></svg>
+                      } @else {
+                        <svg lucideChevronDown class="size-4" aria-hidden="true"></svg>
+                      }
+                    </button>
+
+                    <mat-menu #templateActionsMenu="matMenu" xPosition="before" yPosition="below">
+                      <button
+                        mat-menu-item
+                        type="button"
+                        [disabled]="previewingTemplateId() === template.id"
+                        (click)="previewTemplateNow(template)"
+                      >
+                        <svg lucideEye class="size-4" aria-hidden="true"></svg>
+                        <span>{{ previewingTemplateId() === template.id ? 'Opening...' : 'Preview' }}</span>
+                      </button>
+
+                      <a mat-menu-item [routerLink]="['/app/admin/email-templates', template.id, 'edit']">
+                        <svg lucideSlidersHorizontal class="size-4" aria-hidden="true"></svg>
+                        <span>Edit template</span>
+                      </a>
+
+                      @if (template.isActive) {
+                        <button mat-menu-item type="button" (click)="deactivate(template)">
+                          <svg lucideXCircle class="size-4" aria-hidden="true"></svg>
+                          <span>Deactivate</span>
+                        </button>
+                      } @else {
+                        <button mat-menu-item type="button" (click)="activate(template)">
+                          <svg lucideRotateCcw class="size-4" aria-hidden="true"></svg>
+                          <span>Activate</span>
+                        </button>
+                      }
+
+                      <button mat-menu-item type="button" class="text-red-600" (click)="delete(template)">
+                        <svg lucideTrash2 class="size-4" aria-hidden="true"></svg>
+                        <span>Delete</span>
+                      </button>
+                    </mat-menu>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <app-pagination
+        itemLabel="email templates"
+        [page]="filters().page"
+        [pageSize]="filters().limit"
+        [totalCount]="totalCount()"
+        [totalPages]="totalPages()"
+        [isLoading]="isLoading()"
+        (pageChange)="changePage($event)"
+        (pageSizeChange)="changePageSize($event)"
+      />
+    } @else {
+      <div class="flex flex-col items-center justify-center px-6 py-24 text-center">
+        <div class="grid size-12 place-items-center rounded-2xl bg-primary/10 text-primary">
+          <svg lucideFileText class="size-5" aria-hidden="true"></svg>
+        </div>
+        <h3 class="mt-5 text-base font-semibold text-neutral-900">No email templates found</h3>
+        <p class="mt-2 max-w-sm text-sm text-neutral-500">
+          Adjust your filters or create a reusable system email template.
+        </p>
+      </div>
+    }
+  </article>
+</section>

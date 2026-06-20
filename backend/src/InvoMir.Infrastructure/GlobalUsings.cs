@@ -11,6 +11,7 @@ global using InvoMir.Application.Features.Invoices.DTOs;
 global using InvoMir.Application.Features.Payments.DTOs;
 global using InvoMir.Application.Interfaces;
 global using InvoMir.Domain.Entities;
+global using InvoMir.Domain.Enums;
 global using InvoMir.Infrastructure.Identity;
 global using InvoMir.Infrastructure.BackgroundJobs;
 global using InvoMir.Infrastructure.Persistence;

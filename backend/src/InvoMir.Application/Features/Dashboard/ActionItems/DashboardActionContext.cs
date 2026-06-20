@@ -7,4 +7,8 @@ public sealed record DashboardActionContext(
     string Plan,
     bool EmailVerified,
     string? StripeAccountId,
+    string SubscriptionStatus,
+    DateTime? TrialEndsAt,
+    int? TrialDaysRemaining,
+    bool CancelAtPeriodEnd,
     IReadOnlyCollection<string> Permissions);

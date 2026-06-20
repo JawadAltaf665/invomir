@@ -7,7 +7,55 @@ export const adminRoutes: Routes = [
   {
     path: '',
     pathMatch: 'full',
-    redirectTo: 'users',
+    redirectTo: 'email-templates',
+  },
+  {
+    path: 'email-templates',
+    canActivate: [permissionGuard],
+    data: {
+      permissions: [permissions.system.access],
+    },
+    title: 'Email templates | InvoMir',
+    loadComponent: () =>
+      import('./pages/email-template-list/email-template-list.component').then(
+        (component) => component.EmailTemplateListComponent,
+      ),
+  },
+  {
+    path: 'email-templates/create',
+    canActivate: [permissionGuard],
+    data: {
+      permissions: [permissions.system.access],
+    },
+    title: 'Create email template | InvoMir',
+    loadComponent: () =>
+      import('./pages/email-template-editor/email-template-editor.component').then(
+        (component) => component.EmailTemplateEditorComponent,
+      ),
+  },
+  {
+    path: 'email-templates/:id/edit',
+    canActivate: [permissionGuard],
+    data: {
+      permissions: [permissions.system.access],
+    },
+    title: 'Edit email template | InvoMir',
+    loadComponent: () =>
+      import('./pages/email-template-editor/email-template-editor.component').then(
+        (component) => component.EmailTemplateEditorComponent,
+      ),
+  },
+  {
+    path: 'queued-emails',
+    canActivate: [permissionGuard],
+    data: {
+      permissions: [permissions.system.access],
+    },
+    title: 'Queued emails | InvoMir',
+    loadComponent: () =>
+      import('./pages/queued-email-list/queued-email-list.component').then(
+        (component) => component.QueuedEmailListComponent,
+      ),
   },
   {
     path: 'users',

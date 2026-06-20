@@ -1,0 +1,55 @@
+<article class="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
+  <div class="flex items-start gap-3">
+    <span class="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
+      <svg lucideShieldCheck class="size-5" aria-hidden="true"></svg>
+    </span>
+    <div>
+      <h2 class="text-lg font-semibold text-neutral-900">Role & permissions</h2>
+      <p class="mt-2 text-sm text-neutral-500">
+        Change the user role and preview the permissions that will be granted.
+      </p>
+    </div>
+  </div>
+
+  <form class="mt-5 space-y-5" [formGroup]="form" (ngSubmit)="submitRole()">
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-full">
+      <mat-label>Role</mat-label>
+      <mat-select formControlName="role" [disabled]="!canManage() || isSaving()">
+        @for (role of roleOptions; track role.value) {
+          <mat-option [value]="role.value">{{ role.label }}</mat-option>
+        }
+      </mat-select>
+      <mat-hint>Role changes revoke active refresh sessions for the selected user.</mat-hint>
+    </mat-form-field>
+
+    <div class="space-y-5 rounded-2xl bg-neutral-50 p-4">
+      @for (group of permissionGroupsForRole(form.controls.role.value); track group.label) {
+        <div>
+          <p class="text-xs font-medium uppercase tracking-normal text-neutral-500">
+            {{ group.label }}
+          </p>
+          <div class="mt-3 flex flex-wrap gap-2">
+            @for (permission of group.permissions; track permission) {
+              <app-admin-user-badge [label]="formatPermissionLabel(permission)" tone="neutral" />
+            }
+          </div>
+        </div>
+      } @empty {
+        <p class="text-sm text-neutral-500">This role has no resolved permissions.</p>
+      }
+    </div>
+
+    <button
+      mat-flat-button
+      color="primary"
+      type="submit"
+      class="w-full"
+      [disabled]="
+        !canManage() || isSaving() || form.controls.role.value === normalizeAdminRole(currentRole())
+      "
+    >
+      <svg lucideSave class="size-4" aria-hidden="true"></svg>
+      Save role
+    </button>
+  </form>
+</article>

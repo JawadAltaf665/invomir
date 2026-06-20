@@ -1,0 +1,80 @@
+<section class="mx-auto max-w-5xl p-6 lg:p-8">
+  <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+    <div>
+      <p class="text-xs font-medium uppercase tracking-normal text-neutral-500">Admin</p>
+      <h1 class="mt-2 text-2xl font-semibold tracking-tight text-neutral-900">
+        {{ id() ? 'Edit email template' : 'Create email template' }}
+      </h1>
+      <p class="mt-2 text-sm text-neutral-500">
+        Use reusable tokens to keep system emails consistent.
+      </p>
+    </div>
+    <a mat-stroked-button routerLink="/app/admin/email-templates">Back to templates</a>
+  </div>
+
+  @if (errorMessages().length > 0) {
+    <div class="mt-6 rounded-2xl border border-red-200 bg-red-50 p-5 text-sm text-red-700">
+      @for (error of errorMessages(); track error) {
+        <p>{{ error }}</p>
+      }
+    </div>
+  }
+
+  <form class="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_280px]" [formGroup]="form" (ngSubmit)="save()">
+    <div class="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
+      <div class="grid gap-4 md:grid-cols-2">
+        <label class="grid gap-2 text-sm font-medium text-neutral-700">
+          Template type
+          <select class="rounded-xl border border-neutral-200 px-3 py-2 text-sm" formControlName="templateType">
+            @for (type of emailTemplateTypes; track type) {
+              <option [value]="type">{{ type }}</option>
+            }
+          </select>
+        </label>
+
+        <label class="grid gap-2 text-sm font-medium text-neutral-700">
+          Language
+          <input class="rounded-xl border border-neutral-200 px-3 py-2 text-sm" formControlName="language" />
+        </label>
+      </div>
+
+      <label class="mt-4 grid gap-2 text-sm font-medium text-neutral-700">
+        Name
+        <input class="rounded-xl border border-neutral-200 px-3 py-2 text-sm" formControlName="name" />
+      </label>
+
+      <label class="mt-4 grid gap-2 text-sm font-medium text-neutral-700">
+        Subject
+        <input class="rounded-xl border border-neutral-200 px-3 py-2 text-sm" formControlName="subject" />
+      </label>
+
+      <label class="mt-4 grid gap-2 text-sm font-medium text-neutral-700">
+        Body
+        <textarea class="min-h-80 rounded-xl border border-neutral-200 px-3 py-2 font-mono text-sm" formControlName="body"></textarea>
+      </label>
+
+      <label class="mt-4 flex items-center gap-2 text-sm font-medium text-neutral-700">
+        <input type="checkbox" formControlName="isActive" />
+        Active
+      </label>
+
+      <div class="mt-6 flex flex-wrap gap-2">
+        <button mat-flat-button type="submit" [disabled]="isSaving() || isLoading()">
+          {{ isSaving() ? 'Saving...' : 'Save template' }}
+        </button>
+        <button mat-stroked-button type="button" [disabled]="isSaving() || isPreviewing()" (click)="renderPreview()">
+          {{ isPreviewing() ? 'Opening preview...' : 'Preview' }}
+        </button>
+      </div>
+    </div>
+
+    <aside class="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
+      <h2 class="text-sm font-semibold text-neutral-900">Available tokens</h2>
+      <div class="mt-3 flex flex-wrap gap-2">
+        @for (token of ['CompanyName','CustomerName','InvoiceNumber','InvoiceAmount','DueDate','InvoiceUrl','PaymentLink','UserName','PlanName','VerificationLink','ResetPasswordLink','InvitationLink','CustomMessage','TrackingPixelUrl']; track token) {
+          <code class="rounded-lg bg-neutral-100 px-2 py-1 text-xs text-neutral-700">{{ '{{' }}{{ token }}{{ '}}' }}</code>
+        }
+      </div>
+    </aside>
+  </form>
+</section>

@@ -5,6 +5,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import {
   LucideCircleAlert,
   LucideCreditCard,
+  LucideExternalLink,
   LucideReceiptText,
   LucideXCircle,
 } from '@lucide/angular';
@@ -24,6 +25,7 @@ import { formatBillingDate } from '../../utils/subscription-formatters';
     MatProgressSpinnerModule,
     LucideCircleAlert,
     LucideCreditCard,
+    LucideExternalLink,
     LucideReceiptText,
     LucideXCircle,
   ],
@@ -35,10 +37,13 @@ export class BillingActionsCardComponent {
   readonly canManage = input(false);
   readonly canCancel = input(false);
   readonly isCancelling = input(false);
+  readonly isOpeningPortal = input(false);
   readonly errorMessages = input<readonly string[]>([]);
+  readonly portalErrorMessages = input<readonly string[]>([]);
   readonly successMessage = input('');
 
   readonly cancelRequested = output<void>();
+  readonly billingPortalRequested = output<void>();
 
   protected readonly cancellationConfirmed = signal(false);
   protected readonly formatBillingDate = formatBillingDate;
@@ -49,5 +54,17 @@ export class BillingActionsCardComponent {
     }
 
     this.cancelRequested.emit();
+  }
+
+  protected canOpenBillingPortal(): boolean {
+    return this.canManage() && Boolean(this.subscription()?.stripeCustomerId);
+  }
+
+  protected openBillingPortal(): void {
+    if (!this.canOpenBillingPortal() || this.isOpeningPortal()) {
+      return;
+    }
+
+    this.billingPortalRequested.emit();
   }
 }

@@ -13,6 +13,7 @@ public sealed class StripeSettings
     public string CheckoutCancelUrl { get; init; } = "http://localhost:4200/pay/{TOKEN}";
     public string SubscriptionSuccessUrl { get; init; } = "http://localhost:4200/billing/success?session_id={CHECKOUT_SESSION_ID}";
     public string SubscriptionCancelUrl { get; init; } = "http://localhost:4200/billing";
+    public string SubscriptionPortalReturnUrl { get; init; } = "http://localhost:4200/app/subscriptions";
     public string StarterMonthlyPriceId { get; init; } = string.Empty;
     public string StarterYearlyPriceId { get; init; } = string.Empty;
     public string ProfessionalMonthlyPriceId { get; init; } = string.Empty;

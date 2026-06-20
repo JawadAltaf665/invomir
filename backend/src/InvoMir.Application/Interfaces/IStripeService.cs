@@ -10,6 +10,10 @@ public interface IStripeService
         StripeSubscriptionCheckoutRequestDto request,
         CancellationToken cancellationToken);
 
+    Task<StripeBillingPortalSessionDto> CreateBillingPortalSessionAsync(
+        StripeBillingPortalSessionRequestDto request,
+        CancellationToken cancellationToken);
+
     bool IsSubscriptionCheckoutConfigured(string plan, string interval);
 
     Task<StripeSubscriptionCancellationDto> CancelSubscriptionAtPeriodEndAsync(

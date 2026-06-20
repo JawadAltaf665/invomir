@@ -109,7 +109,7 @@
           </div>
         </div>
 
-        @if (visibleManageNavItems().length > 0) {
+        @if (hasVisibleManageItems()) {
           <div>
             @if (isSidebarExpanded()) {
               <p class="px-3 text-xs font-medium text-neutral-500">
@@ -160,6 +160,66 @@
                   </a>
                 }
               }
+
+              @if (visibleAdminSubNavItems().length > 0) {
+                <div>
+                  <button
+                    type="button"
+                    class="flex h-10 w-full items-center gap-3 rounded-xl px-3 text-sm font-medium transition hover:bg-neutral-100 hover:text-neutral-900"
+                    [ngClass]="
+                      isAdminRouteActive() ? 'bg-primary/10 text-primary' : 'text-neutral-600'
+                    "
+                    [class.justify-center]="!isSidebarExpanded()"
+                    [attr.aria-expanded]="isAdminMenuOpen()"
+                    [attr.aria-controls]="'admin-sidebar-submenu'"
+                    [matTooltip]="isSidebarExpanded() ? '' : ('navigation.admin' | translate)"
+                    [attr.aria-label]="isSidebarExpanded() ? null : ('navigation.admin' | translate)"
+                    (click)="toggleAdminMenu()"
+                  >
+                    <ng-container
+                      [ngTemplateOutlet]="navIcon"
+                      [ngTemplateOutletContext]="{ icon: 'admin' }"
+                    />
+                    @if (isSidebarExpanded()) {
+                      <span class="truncate">{{ 'navigation.admin' | translate }}</span>
+                      <svg
+                        lucideChevronDown
+                        class="ml-auto size-4 shrink-0 transition-transform duration-200"
+                        [class.rotate-180]="isAdminMenuOpen()"
+                        aria-hidden="true"
+                      ></svg>
+                    }
+                  </button>
+
+                  @if (isSidebarExpanded() && isAdminMenuOpen()) {
+                    <div
+                      id="admin-sidebar-submenu"
+                      class="mt-1 space-y-1 border-neutral-200"
+                      [class.ml-7]="languagePreference.direction() === 'ltr'"
+                      [class.border-l]="languagePreference.direction() === 'ltr'"
+                      [class.pl-3]="languagePreference.direction() === 'ltr'"
+                      [class.mr-7]="languagePreference.direction() === 'rtl'"
+                      [class.border-r]="languagePreference.direction() === 'rtl'"
+                      [class.pr-3]="languagePreference.direction() === 'rtl'"
+                    >
+                      @for (subItem of visibleAdminSubNavItems(); track subItem.route) {
+                        <a
+                          [routerLink]="subItem.route"
+                          routerLinkActive="bg-primary/10 text-primary"
+                          class="flex h-9 items-center gap-2 rounded-lg px-3 text-sm font-medium text-neutral-600 transition hover:bg-neutral-100 hover:text-neutral-900"
+                          (click)="closeMobileSidebar()"
+                        >
+                          <ng-container
+                            [ngTemplateOutlet]="navIcon"
+                            [ngTemplateOutletContext]="{ icon: subItem.icon }"
+                          />
+                          <span class="truncate">{{ subItem.labelKey | translate }}</span>
+                        </a>
+                      }
+                    </div>
+                  }
+                </div>
+              }
             </div>
           </div>
         }
@@ -197,12 +257,6 @@
             <svg lucideMenu class="size-4" aria-hidden="true"></svg>
           </button>
 
-          <div>
-            <p class="text-sm font-semibold text-neutral-900">
-              {{ 'layout.workspace' | translate }}
-            </p>
-            <p class="text-xs text-neutral-500">{{ 'layout.invomirDashboard' | translate }}</p>
-          </div>
         </div>
 
         <div class="flex items-center gap-2">

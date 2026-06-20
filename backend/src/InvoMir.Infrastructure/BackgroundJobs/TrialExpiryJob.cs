@@ -6,6 +6,7 @@ namespace InvoMir.Infrastructure.BackgroundJobs;
 
 public sealed class TrialExpiryJob(
     IAppDbContext context,
+    IEmailService emailService,
     INotificationService notificationService,
     ILogger<TrialExpiryJob> logger)
 {
@@ -39,6 +40,7 @@ public sealed class TrialExpiryJob(
             if (await HasActivePaidSubscriptionAsync(tenant.Id, utcNow, cancellationToken))
                 continue;
 
+            var trialEndsAt = tenant.TrialEndsAt.GetValueOrDefault();
             var alreadyNotified = await context.Notifications
                 .IgnoreQueryFilters()
                 .AsNoTracking()
@@ -56,16 +58,41 @@ public sealed class TrialExpiryJob(
                 tenant.Id,
                 AuthConstants.Roles.Owner,
                 "Trial ending soon",
-                $"Your InvoMir trial ends on {tenant.TrialEndsAt:MMM d, yyyy}.",
+                $"Your InvoMir trial ends on {trialEndsAt:MMM d, yyyy}.",
                 NotificationConstants.Types.Subscription,
                 NotificationConstants.Priorities.High,
                 "/app/subscriptions",
                 new
                 {
                     tenant.Id,
-                    tenant.TrialEndsAt
+                    TrialEndsAt = trialEndsAt
                 },
                 cancellationToken);
+
+            var owners = await context.Users
+                .IgnoreQueryFilters()
+                .AsNoTracking()
+                .Where(user =>
+                    user.TenantId == tenant.Id &&
+                    user.Role == AuthConstants.Roles.Owner &&
+                    user.IsActive &&
+                    !user.IsDeleted)
+                .Select(user => new
+                {
+                    user.Email,
+                    user.FirstName
+                })
+                .ToListAsync(cancellationToken);
+
+            foreach (var owner in owners)
+            {
+                await emailService.SendTrialExpiryReminderAsync(
+                    owner.Email,
+                    owner.FirstName,
+                    trialEndsAt,
+                    tenant.Id,
+                    cancellationToken);
+            }
         }
     }
 

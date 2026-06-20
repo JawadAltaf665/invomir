@@ -9,8 +9,10 @@ import {
   AdminUserListQuery,
   AdminUserPageResult,
   AdminUserPlanUpdateDto,
+  AdminUserRoleUpdateDto,
   AdminUserTrialUpdateDto,
   UpdateAdminUserPlanRequest,
+  UpdateAdminUserRoleRequest,
   UpdateAdminUserTrialRequest,
 } from '../models/admin-user.models';
 
@@ -50,6 +52,16 @@ export class AdminUserApiService {
     );
   }
 
+  updateRole(
+    id: string,
+    request: UpdateAdminUserRoleRequest,
+  ): Observable<ApiResponse<AdminUserRoleUpdateDto>> {
+    return this.http.patch<ApiResponse<AdminUserRoleUpdateDto>>(
+      apiUrl(`/api/admin/users/${encodeURIComponent(id)}/role`),
+      request,
+    );
+  }
+
   private toListParams(query: AdminUserListQuery): HttpParams {
     let params = new HttpParams()
       .set('page', Math.max(1, query.page || 1))
@@ -59,6 +71,19 @@ export class AdminUserApiService {
 
     if (search) {
       params = params.set('q', search);
+    }
+
+    if (query.role) params = params.set('role', query.role);
+    if (query.plan) params = params.set('plan', query.plan);
+    if (query.isActive !== '') params = params.set('isActive', String(query.isActive));
+    if (query.emailVerified !== '') {
+      params = params.set('emailVerified', String(query.emailVerified));
+    }
+    if (query.isTrialActive !== '') {
+      params = params.set('isTrialActive', String(query.isTrialActive));
+    }
+    if (query.hasStripeCustomer !== '') {
+      params = params.set('hasStripeCustomer', String(query.hasStripeCustomer));
     }
 
     return params;

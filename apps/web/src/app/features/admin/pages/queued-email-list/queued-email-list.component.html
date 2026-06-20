@@ -1,0 +1,233 @@
+<section class="mx-auto max-w-7xl p-6 lg:p-8">
+  <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+    <div>
+      <p class="text-xs font-medium uppercase tracking-normal text-neutral-500">Admin</p>
+      <h1 class="mt-2 text-2xl font-semibold tracking-tight text-neutral-900">Queued emails</h1>
+      <p class="mt-2 text-sm text-neutral-500">
+        Delivery queue diagnostics, retries, and cancellation controls.
+      </p>
+    </div>
+
+    <button mat-stroked-button type="button" [disabled]="isLoading()" (click)="load()">
+      <svg lucideRefreshCcw class="size-4" aria-hidden="true"></svg>
+      Refresh
+    </button>
+  </div>
+
+  @if (errorMessages().length > 0) {
+    <div class="mt-6 rounded-2xl border border-red-200 bg-red-50 p-5 shadow-sm">
+      <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+        <div>
+          <p class="text-sm font-medium text-red-800">Queued emails could not be loaded</p>
+          <div class="mt-2 space-y-1">
+            @for (error of errorMessages(); track error) {
+              <p class="text-xs text-red-600">{{ error }}</p>
+            }
+          </div>
+        </div>
+
+        <button mat-button type="button" [disabled]="isLoading()" (click)="load()">Retry</button>
+      </div>
+    </div>
+  }
+
+  <form
+    class="mt-6 rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm lg:p-5"
+    [formGroup]="form"
+    (ngSubmit)="applyFilters()"
+  >
+    <div class="grid grid-cols-1 gap-4 lg:grid-cols-12">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-full min-w-0 lg:col-span-6">
+        <mat-label>Search recipient or subject</mat-label>
+        <input matInput type="search" formControlName="searchEmail" autocomplete="off" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-full min-w-0 lg:col-span-3">
+        <mat-label>Status</mat-label>
+        <mat-select formControlName="status">
+          <mat-option value="">All statuses</mat-option>
+          @for (status of queuedEmailStatuses; track status) {
+            <mat-option [value]="status">{{ status }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-full min-w-0 lg:col-span-3">
+        <mat-label>Template</mat-label>
+        <mat-select formControlName="templateType">
+          <mat-option value="">All templates</mat-option>
+          @for (type of emailTemplateTypes; track type) {
+            <mat-option [value]="type">{{ type }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-full min-w-0 lg:col-span-3">
+        <mat-label>Tenant id</mat-label>
+        <input matInput formControlName="tenantId" autocomplete="off" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-full min-w-0 lg:col-span-3">
+        <mat-label>Created from</mat-label>
+        <input matInput [matDatepicker]="fromPicker" formControlName="from" placeholder="dd/mm/yyyy" />
+        <mat-datepicker-toggle matIconSuffix [for]="fromPicker" />
+        <mat-datepicker #fromPicker />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-full min-w-0 lg:col-span-3">
+        <mat-label>Created to</mat-label>
+        <input matInput [matDatepicker]="toPicker" formControlName="to" placeholder="dd/mm/yyyy" />
+        <mat-datepicker-toggle matIconSuffix [for]="toPicker" />
+        <mat-datepicker #toPicker />
+      </mat-form-field>
+    </div>
+
+    @if (form.hasError('dateRange') && (form.controls.from.touched || form.controls.to.touched)) {
+      <p class="mt-3 text-xs font-medium text-red-600">
+        Created from date cannot be after created to date.
+      </p>
+    }
+
+    <div class="mt-4 flex flex-col gap-3 sm:flex-row sm:justify-end">
+      <button mat-button type="button" [disabled]="isLoading()" (click)="resetFilters()">
+        <svg lucideRotateCcw class="size-4" aria-hidden="true"></svg>
+        Reset
+      </button>
+      <button mat-flat-button color="primary" type="submit" [disabled]="isLoading()">
+        <svg lucideSearch class="size-4" aria-hidden="true"></svg>
+        Apply filters
+      </button>
+    </div>
+  </form>
+
+  <article class="mt-6 rounded-2xl border border-neutral-200 bg-white shadow-sm">
+    @if (isLoading() && rows().length === 0) {
+      <div class="p-5">
+        <div class="h-5 w-40 animate-pulse rounded-xl bg-neutral-100"></div>
+        <div class="mt-6 space-y-4">
+          @for (row of skeletonRows; track row) {
+            <div class="h-16 animate-pulse rounded-xl bg-neutral-100"></div>
+          }
+        </div>
+      </div>
+    } @else if (rows().length > 0) {
+      <div class="overflow-x-auto">
+        <table class="w-full min-w-[1200px] table-fixed text-sm">
+          <colgroup>
+            <col class="w-[20%]" />
+            <col class="w-[24%]" />
+            <col class="w-[13%]" />
+            <col class="w-[12%]" />
+            <col class="w-[8%]" />
+            <col class="w-[11%]" />
+            <col class="w-[12%]" />
+          </colgroup>
+          <thead>
+            <tr class="border-b border-neutral-200">
+              <th class="px-5 py-3 text-left font-medium text-neutral-600">Recipient</th>
+              <th class="px-5 py-3 text-left font-medium text-neutral-600">Subject</th>
+              <th class="px-5 py-3 text-left font-medium text-neutral-600">Template</th>
+              <th class="px-5 py-3 text-left font-medium text-neutral-600">Status</th>
+              <th class="px-5 py-3 text-left font-medium text-neutral-600">Retries</th>
+              <th class="px-5 py-3 text-left font-medium text-neutral-600">Created</th>
+              <th class="px-5 py-3 text-right font-medium text-neutral-600">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (email of rows(); track email.id) {
+              <tr class="border-b border-neutral-100 transition last:border-0 hover:bg-neutral-50">
+                <td class="px-5 py-4">
+                  <p class="break-words font-semibold text-neutral-900 [overflow-wrap:anywhere]">
+                    {{ email.toEmail }}
+                  </p>
+                  <p class="mt-1 text-xs text-neutral-500">{{ email.toName || 'No name' }}</p>
+                </td>
+                <td class="px-5 py-4">
+                  <p class="truncate text-neutral-700">{{ email.subject }}</p>
+                  @if (email.hasAttachment) {
+                    <p class="mt-1 truncate text-xs text-neutral-500">
+                      Attachment: {{ email.attachmentFileName }}
+                    </p>
+                  }
+                </td>
+                <td class="px-5 py-4 text-neutral-600">{{ email.templateTypeName || 'Custom' }}</td>
+                <td class="px-5 py-4">
+                  <span class="rounded-full bg-neutral-100 px-2 py-1 text-xs font-medium text-neutral-700">
+                    {{ email.statusName }}
+                  </span>
+                </td>
+                <td class="px-5 py-4 text-neutral-600">
+                  {{ email.retryCount }} / {{ email.maxRetryCount }}
+                </td>
+                <td class="px-5 py-4 text-neutral-600">{{ email.createdAt | date: 'short' }}</td>
+                <td class="px-4 py-4">
+                  <div class="flex justify-end">
+                    <button
+                      mat-stroked-button
+                      type="button"
+                      class="min-w-24 text-neutral-700"
+                      [matMenuTriggerFor]="queuedEmailActionsMenu"
+                      (menuOpened)="openActionEmailId.set(email.id)"
+                      (menuClosed)="openActionEmailId.set(null)"
+                      aria-label="Open queued email actions"
+                    >
+                      Actions
+                      @if (openActionEmailId() === email.id) {
+                        <svg lucideChevronUp class="size-4" aria-hidden="true"></svg>
+                      } @else {
+                        <svg lucideChevronDown class="size-4" aria-hidden="true"></svg>
+                      }
+                    </button>
+
+                    <mat-menu #queuedEmailActionsMenu="matMenu" xPosition="before" yPosition="below">
+                      <button mat-menu-item type="button" (click)="openDetails(email)">
+                        <svg lucideEye class="size-4" aria-hidden="true"></svg>
+                        <span>Details</span>
+                      </button>
+                      <button mat-menu-item type="button" [disabled]="!canRetry(email)" (click)="retry(email)">
+                        <svg lucideRotateCcw class="size-4" aria-hidden="true"></svg>
+                        <span>Retry</span>
+                      </button>
+                      <button
+                        mat-menu-item
+                        type="button"
+                        class="text-red-600"
+                        [disabled]="!canCancel(email)"
+                        (click)="cancel(email)"
+                      >
+                        <svg lucideXCircle class="size-4" aria-hidden="true"></svg>
+                        <span>Cancel</span>
+                      </button>
+                    </mat-menu>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <app-pagination
+        itemLabel="queued emails"
+        [page]="filters().page"
+        [pageSize]="filters().limit"
+        [totalCount]="totalCount()"
+        [totalPages]="totalPages()"
+        [isLoading]="isLoading()"
+        (pageChange)="changePage($event)"
+        (pageSizeChange)="changePageSize($event)"
+      />
+    } @else {
+      <div class="flex flex-col items-center justify-center px-6 py-24 text-center">
+        <div class="grid size-12 place-items-center rounded-2xl bg-primary/10 text-primary">
+          <svg lucideInbox class="size-5" aria-hidden="true"></svg>
+        </div>
+        <h3 class="mt-5 text-base font-semibold text-neutral-900">No queued emails found</h3>
+        <p class="mt-2 max-w-sm text-sm text-neutral-500">
+          Adjust your filters to review delivery attempts, retries, and cancellations.
+        </p>
+      </div>
+    }
+  </article>
+
+</section>
