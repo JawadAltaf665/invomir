@@ -152,10 +152,9 @@ vite.config.ts.timestamp-*
 *.user
 *.suo
 
-# .NET secrets - never push to GitHub
-backend/src/InvoMir.API/InvoMir.API/appsettings.json
+# .NET secrets - Development overrides contain local passwords, never commit
 backend/src/InvoMir.API/InvoMir.API/appsettings.Development.json
-backend/src/InvoMir.API/InvoMir.API/appsettings.Production.json
+# appsettings.json and appsettings.Production.json are sanitized (no secrets) and tracked
 
 # .NET runtime generated files
 backend/src/InvoMir.API/InvoMir.API/App_Data/

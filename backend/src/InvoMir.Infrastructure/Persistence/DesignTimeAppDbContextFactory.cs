@@ -16,7 +16,11 @@ public sealed class DesignTimeAppDbContextFactory : IDesignTimeDbContextFactory<
     private static string GetConnectionString()
     {
         var environmentConnectionString = Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection")
-            ?? Environment.GetEnvironmentVariable("ConnectionStrings:DefaultConnection");
+            ?? Environment.GetEnvironmentVariable("ConnectionStrings:DefaultConnection")
+            ?? Environment.GetEnvironmentVariable("ConnectionStrings__Default")
+            ?? Environment.GetEnvironmentVariable("ConnectionStrings:Default")
+            ?? Environment.GetEnvironmentVariable("DATABASE_URL")
+            ?? TryBuildPostgresEnvironmentConnectionString();
 
         var connectionString = string.IsNullOrWhiteSpace(environmentConnectionString)
             ? GetConnectionStringFromAppSettings()
@@ -24,13 +28,9 @@ public sealed class DesignTimeAppDbContextFactory : IDesignTimeDbContextFactory<
 
         if (string.IsNullOrWhiteSpace(connectionString))
             throw new InvalidOperationException(
-                "ConnectionStrings:DefaultConnection is not configured for EF migrations.");
+                "ConnectionStrings:DefaultConnection, ConnectionStrings:Default, or DATABASE_URL is not configured for EF migrations.");
 
-        if (LooksLikeSqlServerConnectionString(connectionString))
-            throw new InvalidOperationException(
-                "DefaultConnection is a SQL Server connection string, but InvoMir is configured for PostgreSQL/Npgsql. Use a PostgreSQL connection string like: Host=localhost;Port=5432;Database=invomir_db;Username=postgres;Password=your_password");
-
-        return connectionString;
+        return DatabaseConnectionStringResolver.NormalizePostgreSqlConnectionString(connectionString);
     }
 
     private static string? GetConnectionStringFromAppSettings()
@@ -85,17 +85,43 @@ public sealed class DesignTimeAppDbContextFactory : IDesignTimeDbContextFactory<
         if (!document.RootElement.TryGetProperty("ConnectionStrings", out var connectionStrings))
             return null;
 
-        if (!connectionStrings.TryGetProperty("DefaultConnection", out var defaultConnection))
-            return null;
+        if (connectionStrings.TryGetProperty("DefaultConnection", out var defaultConnection))
+            return defaultConnection.GetString();
 
-        return defaultConnection.GetString();
+        return connectionStrings.TryGetProperty("Default", out var defaultRailwayConnection)
+            ? defaultRailwayConnection.GetString()
+            : null;
     }
 
-    private static bool LooksLikeSqlServerConnectionString(string connectionString)
+    private static string? TryBuildPostgresEnvironmentConnectionString()
     {
-        return connectionString.Contains("TrustServerCertificate", StringComparison.OrdinalIgnoreCase)
-            || connectionString.Contains("MultipleActiveResultSets", StringComparison.OrdinalIgnoreCase)
-            || connectionString.Contains("User Id=sa", StringComparison.OrdinalIgnoreCase);
+        var host = Environment.GetEnvironmentVariable("PGHOST");
+        var database = Environment.GetEnvironmentVariable("PGDATABASE");
+        var username = Environment.GetEnvironmentVariable("PGUSER");
+
+        if (string.IsNullOrWhiteSpace(host) ||
+            string.IsNullOrWhiteSpace(database) ||
+            string.IsNullOrWhiteSpace(username))
+        {
+            return null;
+        }
+
+        var port = int.TryParse(Environment.GetEnvironmentVariable("PGPORT"), out var parsedPort)
+            ? parsedPort
+            : 5432;
+
+        var builder = new Npgsql.NpgsqlConnectionStringBuilder
+        {
+            Host = host,
+            Port = port,
+            Database = database,
+            Username = username,
+            Password = Environment.GetEnvironmentVariable("PGPASSWORD") ?? string.Empty,
+            SslMode = Npgsql.SslMode.Require,
+            TrustServerCertificate = true
+        };
+
+        return builder.ConnectionString;
     }
 
     private sealed class DesignTimeTenantContext : ITenantContext

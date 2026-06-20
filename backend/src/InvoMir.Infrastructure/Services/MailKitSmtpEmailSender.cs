@@ -13,7 +13,7 @@ public sealed class MailKitSmtpEmailSender(
 
     public async Task SendAsync(QueuedEmail email, CancellationToken cancellationToken)
     {
-        var smtp = _settings.Smtp;
+        var smtp = _settings.GetSmtpSettings();
         EnsureConfigured(smtp);
 
         var message = new MimeMessage();

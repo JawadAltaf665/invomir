@@ -9,9 +9,7 @@ public static class HangfireInfrastructureConfiguration
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        var connectionString = configuration.GetConnectionString("DefaultConnection");
-        if (string.IsNullOrWhiteSpace(connectionString))
-            throw new InvalidOperationException("DefaultConnection is not configured.");
+        var connectionString = DatabaseConnectionStringResolver.GetRequiredDefaultConnectionString(configuration);
 
         services.AddHangfire(hangfire =>
         {

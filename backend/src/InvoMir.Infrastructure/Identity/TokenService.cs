@@ -86,10 +86,10 @@ public sealed class TokenService(
 
     private SymmetricSecurityKey GetSigningKey()
     {
-        if (string.IsNullOrWhiteSpace(_settings.Secret) || _settings.Secret.Length < 32)
+        if (string.IsNullOrWhiteSpace(_settings.SigningSecret) || _settings.SigningSecret.Length < 32)
             throw new InvalidOperationException("JWT secret must be at least 32 characters.");
 
-        return new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_settings.Secret));
+        return new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_settings.SigningSecret));
     }
 
     private static bool IsAdminRole(string role)

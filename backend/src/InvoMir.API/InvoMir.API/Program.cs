@@ -1,4 +1,4 @@
-using DinkToPdf;
+﻿using DinkToPdf;
 using DinkToPdf.Contracts;
 using Hangfire;
 using Hangfire.Dashboard;
@@ -8,12 +8,15 @@ using InvoMir.API.Middlewares;
 using InvoMir.Application;
 using InvoMir.Infrastructure;
 using InvoMir.Infrastructure.BackgroundJobs;
+using InvoMir.Infrastructure.Persistence;
 using InvoMir.Infrastructure.RateLimiting;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.OpenApi;
+using System.Globalization;
 using System.Net;
 using System.Runtime.InteropServices;
 using System.Runtime.Loader;
@@ -28,6 +31,15 @@ var nativePdfLibraryPath = Path.Combine(AppContext.BaseDirectory, nativePdfLibra
 new CustomAssemblyLoadContext().LoadUnmanagedLibrary(nativePdfLibraryPath);
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Configuration.AddEnvironmentVariables();
+ConfigureRailwayPort(builder);
+
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
 
 if (builder.Environment.IsDevelopment())
 {
@@ -53,11 +65,13 @@ builder.Services
     .AddJsonOptions(options =>
         options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase);
 builder.Services.AddEndpointsApiExplorer();
-builder.Services
+var healthChecksBuilder = builder.Services
     .AddHealthChecks()
     .AddCheck("self", () => HealthCheckResult.Healthy(), tags: ["live"])
-    .AddCheck<DatabaseHealthCheck>("database", tags: ["ready"])
-    .AddCheck<RedisHealthCheck>("redis", tags: ["ready"]);
+    .AddCheck<DatabaseHealthCheck>("database", tags: ["ready"]);
+
+if (HasRedisConnectionString(builder.Configuration))
+    healthChecksBuilder.AddCheck<RedisHealthCheck>("redis", tags: ["ready"]);
 
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
@@ -99,9 +113,14 @@ builder.Services.AddCors(options =>
             return;
         }
 
-        policy.WithOrigins(
-            "https://invomir.com",
-            "https://www.invomir.com");
+        var allowedOrigins = GetConfiguredCorsOrigins(builder.Configuration);
+        if (allowedOrigins.Length == 0)
+        {
+            throw new InvalidOperationException(
+                "CORS origins are not configured. Set Cors:AllowedOrigins or App:ClientUrl for production.");
+        }
+
+        policy.WithOrigins(allowedOrigins);
     }));
 
 var app = builder.Build();
@@ -113,6 +132,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseMiddleware<GlobalExceptionMiddleware>();
+app.UseForwardedHeaders();
 
 if (!app.Environment.IsDevelopment())
     app.UseHttpsRedirection();
@@ -156,6 +176,8 @@ app.MapHealthChecks("/health/ready", new HealthCheckOptions
 app.MapControllers();
 HangfireInfrastructureConfiguration.RegisterRecurringJobs(
     app.Services.GetRequiredService<IRecurringJobManager>());
+
+await app.MigrateDatabaseAsync();
 
 app.Run();
 
@@ -333,6 +355,62 @@ static bool IsPrivateNetworkAddress(IPAddress address)
             (bytes[0] == 192 && bytes[1] == 168),
         _ => false
     };
+}
+
+static void ConfigureRailwayPort(WebApplicationBuilder builder)
+{
+    var hasExplicitUrlBinding =
+        !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("ASPNETCORE_URLS")) ||
+        !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("ASPNETCORE_HTTP_PORTS")) ||
+        !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("DOTNET_URLS"));
+
+    var port = Environment.GetEnvironmentVariable("PORT");
+    if (!hasExplicitUrlBinding &&
+        int.TryParse(port, NumberStyles.None, CultureInfo.InvariantCulture, out var parsedPort) &&
+        parsedPort > 0)
+    {
+        builder.WebHost.UseUrls($"http://0.0.0.0:{parsedPort}");
+    }
+}
+
+static string[] GetConfiguredCorsOrigins(IConfiguration configuration)
+{
+    var origins = new List<string>();
+    AddOrigins(origins, configuration.GetSection("Cors:AllowedOrigins").Get<string[]>());
+    AddOrigins(origins, SplitOrigins(configuration["Cors:AllowedOrigins"]));
+    AddOrigins(origins, SplitOrigins(configuration["App:ClientUrl"]));
+    AddOrigins(origins, SplitOrigins(configuration["App:ClientUrls"]));
+    AddOrigins(origins, SplitOrigins(configuration["App:FrontendUrl"]));
+
+    return origins
+        .Select(origin => origin.Trim().TrimEnd('/'))
+        .Where(origin => Uri.TryCreate(origin, UriKind.Absolute, out var uri) &&
+            uri.Scheme is "http" or "https")
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .ToArray();
+}
+
+static void AddOrigins(List<string> origins, IEnumerable<string>? values)
+{
+    if (values is null)
+        return;
+
+    origins.AddRange(values.Where(value => !string.IsNullOrWhiteSpace(value)));
+}
+
+static string[] SplitOrigins(string? rawOrigins)
+{
+    return string.IsNullOrWhiteSpace(rawOrigins)
+        ? []
+        : rawOrigins
+            .Split([',', ';', ' '], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+}
+
+static bool HasRedisConnectionString(IConfiguration configuration)
+{
+    return !string.IsNullOrWhiteSpace(configuration.GetConnectionString("Redis")) ||
+        !string.IsNullOrWhiteSpace(configuration["REDIS_URL"]) ||
+        !string.IsNullOrWhiteSpace(configuration["Redis:Url"]);
 }
 
 internal sealed class CustomAssemblyLoadContext : AssemblyLoadContext
