@@ -6,6 +6,10 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Server,
   },
   {
+    path: 'app/admin/email-templates/:id/edit',
+    renderMode: RenderMode.Server,
+  },
+  {
     path: 'app/admin/users/:id',
     renderMode: RenderMode.Server,
   },
