@@ -12,7 +12,9 @@ public sealed class RedisHealthCheck(IConfiguration configuration) : IHealthChec
         HealthCheckContext context,
         CancellationToken cancellationToken = default)
     {
-        var connectionString = configuration.GetConnectionString("Redis");
+        var connectionString = configuration.GetConnectionString("Redis")
+            ?? configuration["REDIS_URL"]
+            ?? configuration["Redis:Url"];
         if (string.IsNullOrWhiteSpace(connectionString))
             return HealthCheckResult.Unhealthy("Redis connection string is not configured.");
 
