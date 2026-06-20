@@ -1,0 +1,22 @@
+# .NET build artifacts – never needed in Docker build context
+**/bin/
+**/obj/
+
+# IDE and OS artifacts
+.vs/
+*.user
+*.suo
+.DS_Store
+Thumbs.db
+
+# Runtime-generated files
+src/InvoMir.API/InvoMir.API/App_Data/
+src/InvoMir.API/InvoMir.API/wwwroot/profile-pictures/
+src/InvoMir.API/InvoMir.API/wwwroot/logos/
+src/InvoMir.API/InvoMir.API/wwwroot/invoices/
+
+# Railway config (not needed inside the image)
+railway.toml
+
+# Test output
+TestResults/
