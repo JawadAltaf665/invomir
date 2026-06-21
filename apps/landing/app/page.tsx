@@ -1,15 +1,19 @@
 import type { Metadata } from "next";
 import { Hero } from "./components/hero";
 import {
-  ComparisonSection,
-  FeaturesSection,
-  FinalCta,
+  StatsBand,
   HowItWorksSection,
-  LogoBar,
-  ProblemSection,
+  FeaturesSection,
   TestimonialsSection,
+  ProductTourSection,
+  MobileAppSection,
+  TeamSection,
+  FaqSection,
+  CommandCenterSection,
+  FinalCta,
 } from "./components/marketing-sections";
 import { PricingSection } from "./components/pricing-section";
+import { ScrollReveal } from "./components/scroll-reveal";
 import { site } from "./lib/site";
 
 export const metadata: Metadata = {
@@ -25,15 +29,18 @@ export default function HomePage() {
   return (
     <main id="main-content">
       <Hero />
-      <LogoBar />
-      <ProblemSection />
-      <FeaturesSection />
+      <StatsBand />
       <HowItWorksSection />
+      <FeaturesSection />
       <PricingSection />
       <TestimonialsSection />
-      <ComparisonSection />
+      <ProductTourSection />
+      <MobileAppSection />
+      <TeamSection />
+      <FaqSection />
+      <CommandCenterSection />
       <FinalCta />
+      <ScrollReveal />
     </main>
   );
 }
-
