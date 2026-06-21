@@ -32,7 +32,7 @@ export default function PricingPage() {
         title="Simple pricing. No surprises."
         description="Start free. Upgrade only when you need more clients, more invoices, payments, exports, or team seats."
       />
-      <PricingSection expanded />
+      <PricingSection />
       <section className="section" aria-labelledby="feature-comparison-title">
         <div className="section-inner">
           <div className="section-header reveal">
