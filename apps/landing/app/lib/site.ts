@@ -1,11 +1,11 @@
 export const site = {
   name: "InvoMir",
   marketingUrl: "https://invomir.app",
-  appUrl: "https://invomir.com",
-  registerUrl: "https://invomir.com/auth/register",
-  loginUrl: "https://invomir.com/auth/login",
-  googleAuthUrl: "https://invomir.com/auth/google",
-  dashboardUrl: "https://invomir.com/app/dashboard",
+  appUrl: "https://invomirweb.vercel.app",
+  registerUrl: "https://invomirweb.vercel.app/auth/register",
+  loginUrl: "https://invomirweb.vercel.app/auth/login",
+  googleAuthUrl: "https://invomir-production.up.railway.app/api/auth/google",
+  dashboardUrl: "https://invomirweb.vercel.app/app/dashboard",
   supportEmail: "hello@invomir.com",
   privacyEmail: "privacy@invomir.com",
   twitterUrl: "https://twitter.com/invomir",
@@ -15,9 +15,9 @@ export const site = {
 
 export const primaryNavItems = [
   { label: "Features", href: "/#features" },
-  { label: "Pricing", href: "/pricing" },
-  { label: "About", href: "/about" },
-  { label: "Blog", href: "/blog" },
+  { label: "Pricing", href: "/#pricing" },
+  { label: "Team", href: "/#team" },
+  { label: "FAQ", href: "/#faq" },
 ] as const;
 
 export const resourceNavItems = [
@@ -41,8 +41,7 @@ export const footerGroups = [
   {
     title: "Company",
     links: [
-      { label: "About", href: "/about" },
-      { label: "Blog", href: "/blog" },
+      { label: "Team", href: "/#team" },
       { label: "Help center", href: "/help" },
       { label: "Contact", href: `mailto:${site.supportEmail}` },
     ],
