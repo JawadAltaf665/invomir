@@ -59,3 +59,13 @@ export interface StripeConnectUrlDto {
   oauthUrl: string;
   state: string;
 }
+
+export interface StripeConnectStatusDto {
+  isConnected: boolean;
+  accountId: string | null;
+  connectedAt: string | null;
+}
+
+export interface StripeDisconnectResultDto {
+  message: string;
+}

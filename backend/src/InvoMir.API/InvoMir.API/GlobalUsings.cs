@@ -53,8 +53,10 @@ global using InvoMir.Application.Features.Notifications.Queries.GetUnreadNotific
 global using InvoMir.Application.Features.Payments.Commands.HandleStripeWebhook;
 global using InvoMir.Application.Features.Payments.Commands.CompleteStripeConnectCallback;
 global using InvoMir.Application.Features.Payments.Commands.CreateStripeConnect;
+global using InvoMir.Application.Features.Payments.Commands.DisconnectStripeConnect;
 global using InvoMir.Application.Features.Payments.DTOs;
 global using InvoMir.Application.Features.Payments.Queries.GetPaymentPage;
+global using InvoMir.Application.Features.Payments.Queries.GetStripeConnectStatus;
 global using InvoMir.Application.Features.Payments.Queries.ListPayments;
 global using InvoMir.Application.Features.Reports.DTOs;
 global using InvoMir.Application.Features.Reports.Queries.GetMonthlyReports;

@@ -248,13 +248,21 @@ public sealed class StripeService(
         if (string.IsNullOrWhiteSpace(_settings.ConnectClientId))
             throw new BadRequestException("Stripe Connect is not configured.");
 
+        var clientId = _settings.ConnectClientId.Trim();
+        if (!clientId.StartsWith("ca_", StringComparison.Ordinal))
+        {
+            throw new BadRequestException(
+                "Stripe Connect client ID must start with 'ca_'. " +
+                "Use the OAuth client ID from Stripe Dashboard → Connect → Settings, not an account ID (acct_).");
+        }
+
         if (string.IsNullOrWhiteSpace(request.State))
             throw new BadRequestException("Stripe Connect state is required.");
 
         var fields = new Dictionary<string, string>
         {
             ["response_type"] = "code",
-            ["client_id"] = _settings.ConnectClientId.Trim(),
+            ["client_id"] = clientId,
             ["scope"] = "read_write",
             ["state"] = request.State
         };
@@ -276,14 +284,19 @@ public sealed class StripeService(
         if (string.IsNullOrWhiteSpace(code))
             throw new BadRequestException("Stripe authorization code is required.");
 
+        var tokenFields = new Dictionary<string, string>
+        {
+            ["client_secret"] = _settings.SecretKey.Trim(),
+            ["code"] = code.Trim(),
+            ["grant_type"] = "authorization_code"
+        };
+
+        if (!string.IsNullOrWhiteSpace(_settings.ConnectRedirectUrl))
+            tokenFields["redirect_uri"] = _settings.ConnectRedirectUrl.Trim();
+
         using var httpRequest = new HttpRequestMessage(HttpMethod.Post, ConnectOAuthTokenUrl)
         {
-            Content = new FormUrlEncodedContent(new Dictionary<string, string>
-            {
-                ["client_secret"] = _settings.SecretKey.Trim(),
-                ["code"] = code.Trim(),
-                ["grant_type"] = "authorization_code"
-            })
+            Content = new FormUrlEncodedContent(tokenFields)
         };
 
         using var response = await HttpClient.SendAsync(httpRequest, cancellationToken);
