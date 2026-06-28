@@ -1,5 +1,7 @@
 import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
+import { Router } from '@angular/router';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { catchError, switchMap, throwError } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
@@ -19,6 +21,8 @@ const publicAuthEndpoints = [
 export const authInterceptor: HttpInterceptorFn = (request, next) => {
   const authSession = inject(AuthSessionService);
   const tokenStorage = inject(TokenStorageService);
+  const router = inject(Router);
+  const snackBar = inject(MatSnackBar);
   const isApiRequest = request.url.startsWith(environment.apiBaseUrl) || request.url.startsWith('/api/');
   const isPublicAuthRequest = publicAuthEndpoints.some(endpoint => request.url.includes(endpoint));
   const accessToken = tokenStorage.getAccessToken();
@@ -64,6 +68,12 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
         }),
         catchError(refreshError => {
           authSession.clearSession();
+          void router.navigate(['/auth/login']);
+          snackBar.open('Your session has expired. Please log in again.', 'Close', {
+            duration: 5000,
+            horizontalPosition: 'end',
+            verticalPosition: 'bottom'
+          });
           return throwError(() => refreshError);
         })
       );

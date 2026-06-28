@@ -1,3 +1,4 @@
+using InvoMir.Application.Features.Admin.Notifications;
 using InvoMir.Application.Features.Auth.Common;
 
 namespace InvoMir.Application.Features.Auth.Commands.Register;
@@ -9,7 +10,8 @@ public sealed partial class RegisterCommandHandler(
     IAuthCookieService authCookieService,
     IEmailService emailService,
     IClientContext clientContext,
-    IAuditService auditService)
+    IAuditService auditService,
+    IPublisher publisher)
     : IRequestHandler<RegisterCommand, ApiResponse<AuthTokenDto>>
 {
     public async Task<ApiResponse<AuthTokenDto>> Handle(
@@ -56,6 +58,17 @@ public sealed partial class RegisterCommandHandler(
         context.RefreshTokens.Add(refreshToken);
 
         await context.SaveChangesAsync(cancellationToken);
+
+        await publisher.Publish(
+            new UserRegisteredNotification(
+                user.Id,
+                tenant.Id,
+                user.Email,
+                tenant.Name,
+                DateTime.UtcNow,
+                "Email"),
+            cancellationToken);
+
         await auditService.LogAsync(
             entityName: AuditConstants.Entities.User,
             entityId: user.Id,
