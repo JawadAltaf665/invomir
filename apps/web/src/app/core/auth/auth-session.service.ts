@@ -1,5 +1,5 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { Observable, catchError, finalize, map, of, shareReplay, tap, throwError } from 'rxjs';
+import { Observable, catchError, finalize, firstValueFrom, map, of, shareReplay, tap, throwError } from 'rxjs';
 
 import { ApiResponseError } from '../errors/api-response-error';
 import { ApiResponse } from '../models/api-response.model';
@@ -30,8 +30,11 @@ export class AuthSessionService {
   private readonly tokenStorage = inject(TokenStorageService);
   private refreshInFlight$: Observable<AuthTokenDto> | null = null;
   private readonly stateSignal = signal<AuthState>(this.tokenStorage.getStoredState() ?? anonymousState);
+  private readonly authInitializedSignal = signal(false);
 
   readonly state = this.stateSignal.asReadonly();
+  /** True once the APP_INITIALIZER has finished checking/refreshing the session. */
+  readonly authInitialized = this.authInitializedSignal.asReadonly();
   readonly user = computed(() => this.state().user);
   readonly status = computed(() => this.state().status);
   readonly isAuthenticated = computed(
@@ -39,6 +42,32 @@ export class AuthSessionService {
   );
   readonly permissions = computed(() => this.state().user?.permissions ?? []);
   readonly role = computed(() => this.state().user?.role ?? null);
+
+  /**
+   * Called by APP_INITIALIZER before routes are evaluated.
+   * - If the access token is valid → marks initialized immediately.
+   * - If the token is expired but we have stored user data → attempt silent
+   *   refresh (the httpOnly refresh-token cookie is sent automatically).
+   * - On any failure → clears state and marks initialized so the guard can
+   *   redirect to /auth/login cleanly.
+   */
+  async initializeAuth(): Promise<void> {
+    try {
+      if (this.isAuthenticated()) {
+        return; // Token still valid — no network call needed.
+      }
+
+      if (this.tokenStorage.hasStoredUser()) {
+        // Access token expired but user was previously logged in — try silent refresh.
+        await firstValueFrom(this.refreshSession());
+      }
+    } catch {
+      // Refresh token also expired or revoked — clear everything gracefully.
+      this.clearSession();
+    } finally {
+      this.authInitializedSignal.set(true);
+    }
+  }
 
   login(request: LoginRequest): Observable<AuthTokenDto> {
     return this.authApi.login(request).pipe(

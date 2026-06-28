@@ -12,6 +12,7 @@ import { routes } from './app.routes';
 import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
 import { TranslationService } from './core/i18n/translation.service';
+import { AuthSessionService } from './core/auth/auth-session.service';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -19,6 +20,7 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes),
     provideHttpClient(withFetch(), withInterceptors([authInterceptor])),
     provideAppInitializer(() => inject(TranslationService).initialize()),
+    provideAppInitializer(() => inject(AuthSessionService).initializeAuth()),
     provideClientHydration(withEventReplay()),
     provideAnimationsAsync(),
   ],
