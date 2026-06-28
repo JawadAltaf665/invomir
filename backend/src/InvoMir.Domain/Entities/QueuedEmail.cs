@@ -95,9 +95,25 @@ public sealed class QueuedEmail : SoftDeleteEntity
         RetryCount++;
         LastAttemptAt = NormalizeUtc(utcNow);
         ErrorMessage = NormalizeOptional(errorMessage, 2000);
-        Status = RetryCount >= MaxRetryCount
-            ? QueuedEmailStatus.Failed
-            : QueuedEmailStatus.Pending;
+        
+        if (RetryCount >= MaxRetryCount)
+        {
+            Status = QueuedEmailStatus.Failed;
+            ScheduledAt = null;
+        }
+        else
+        {
+            Status = QueuedEmailStatus.Pending;
+            var backoffMinutes = RetryCount switch
+            {
+                1 => 1,
+                2 => 5,
+                3 => 15,
+                4 => 30,
+                _ => 60
+            };
+            ScheduledAt = NormalizeUtc(utcNow).AddMinutes(backoffMinutes);
+        }
     }
 
     public void ResetForRetry()

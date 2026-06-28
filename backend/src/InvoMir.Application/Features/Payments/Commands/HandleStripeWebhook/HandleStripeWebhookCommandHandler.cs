@@ -1,3 +1,4 @@
+using InvoMir.Application.Features.Admin.Notifications;
 using InvoMir.Application.Features.Notifications;
 using InvoMir.Application.Features.Subscriptions;
 using InvoMir.Application.Features.Team;
@@ -10,7 +11,8 @@ public sealed class HandleStripeWebhookCommandHandler(
     IInvoiceReminderJobService invoiceReminderJobService,
     IEmailService emailService,
     IAuditService auditService,
-    INotificationService notificationService)
+    INotificationService notificationService,
+    IPublisher publisher)
     : IRequestHandler<HandleStripeWebhookCommand>
 {
     private const string PaymentIntentSucceeded = "payment_intent.succeeded";
@@ -289,25 +291,35 @@ public sealed class HandleStripeWebhookCommandHandler(
             },
             cancellationToken);
 
-        var userEmail = await context.Users
+        var user = await context.Users
             .IgnoreQueryFilters()
             .AsNoTracking()
-            .Where(user =>
-                user.Id == userId.Value &&
-                user.TenantId == tenantId.Value &&
-                !user.IsDeleted)
-            .Select(user => user.Email)
+            .Where(u =>
+                u.Id == userId.Value &&
+                u.TenantId == tenantId.Value &&
+                !u.IsDeleted)
+            .Select(u => new { u.Email, u.FirstName, u.LastName })
             .FirstOrDefaultAsync(cancellationToken);
 
-        if (!string.IsNullOrWhiteSpace(userEmail))
-        {
-            await emailService.SendSubscriptionStartedAsync(
-                userEmail,
-                subscription.Plan,
-                subscription.CurrentPeriodEnd,
+        if (user is null)
+            return;
+
+        await emailService.SendSubscriptionStartedAsync(
+            user.Email,
+            subscription.Plan,
+            subscription.CurrentPeriodEnd,
+            tenantId.Value,
+            cancellationToken);
+
+        await publisher.Publish(
+            new UserSubscribedNotification(
+                userId.Value,
                 tenantId.Value,
-                cancellationToken);
-        }
+                user.Email,
+                $"{user.FirstName} {user.LastName}".Trim(),
+                subscription.Plan,
+                DateTime.UtcNow),
+            cancellationToken);
     }
 
     private async Task HandleSubscriptionSyncedAsync(

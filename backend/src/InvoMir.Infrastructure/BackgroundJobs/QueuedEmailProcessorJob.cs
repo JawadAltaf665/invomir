@@ -52,7 +52,7 @@ public sealed class QueuedEmailProcessorJob(
             email.MarkFailed(BuildSafeErrorMessage(exception), DateTime.UtcNow);
             await context.SaveChangesAsync(cancellationToken);
 
-            logger.LogWarning(
+            logger.LogError(
                 exception,
                 "Queued email {QueuedEmailId} delivery failed. Retry {RetryCount}/{MaxRetryCount}.",
                 email.Id,
@@ -63,11 +63,10 @@ public sealed class QueuedEmailProcessorJob(
 
     private static string BuildSafeErrorMessage(Exception exception)
     {
-        return exception switch
-        {
-            InvalidOperationException => exception.Message,
-            FormatException => "Queued email address or attachment format is invalid.",
-            _ => "SMTP delivery failed."
-        };
+        var message = exception.InnerException is not null
+            ? $"{exception.Message} | {exception.InnerException.Message}"
+            : exception.Message;
+
+        return $"{exception.GetType().Name}: {message}";
     }
 }

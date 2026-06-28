@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using InvoMir.Application.Features.Admin.Notifications;
 using InvoMir.Application.Features.Auth.Common;
 
 namespace InvoMir.Application.Features.Auth.Commands.GoogleLogin;
@@ -10,7 +11,8 @@ public sealed class GoogleLoginCommandHandler(
     IPasswordHasher passwordHasher,
     IAuthCookieService authCookieService,
     IClientContext clientContext,
-    IAuditService auditService)
+    IAuditService auditService,
+    IPublisher publisher)
     : IRequestHandler<GoogleLoginCommand, ApiResponse<AuthTokenDto>>
 {
     public async Task<ApiResponse<AuthTokenDto>> Handle(
@@ -33,9 +35,11 @@ public sealed class GoogleLoginCommandHandler(
             return ApiResponse<AuthTokenDto>.Fail("This account cannot sign in with Google.");
 
         var createdNewAccount = false;
+        var tenantName = "";
+
         if (user is null)
         {
-            var tenantName = BuildTenantName(googleProfile);
+            tenantName = BuildTenantName(googleProfile);
             var tenant = Tenant.Create(tenantName, AuthAccountHelper.GenerateSlug(tenantName));
             context.Tenants.Add(tenant);
 
@@ -78,6 +82,19 @@ public sealed class GoogleLoginCommandHandler(
 
         context.RefreshTokens.Add(refreshToken);
         await context.SaveChangesAsync(cancellationToken);
+
+        if (createdNewAccount)
+        {
+            await publisher.Publish(
+                new UserRegisteredNotification(
+                    user.Id,
+                    user.TenantId,
+                    user.Email,
+                    tenantName,
+                    DateTime.UtcNow,
+                    "Google"),
+                cancellationToken);
+        }
 
         await auditService.LogAsync(
             entityName: AuditConstants.Entities.User,
