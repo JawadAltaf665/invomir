@@ -16,10 +16,11 @@ import { AuthSessionService } from '../../../../core/auth/auth-session.service';
 import { ApiResponseError, extractApiErrors } from '../../../../core/errors/api-response-error';
 import { ApiResponse } from '../../../../core/models/api-response.model';
 import { permissions } from '../../../../core/permissions/permissions';
+import { ConfirmationDialogService } from '../../../../core/services/confirmation-dialog.service';
 import { PaymentFiltersComponent } from '../../components/payment-filters/payment-filters.component';
 import { PaymentTableComponent } from '../../components/payment-table/payment-table.component';
 import { StripeConnectCardComponent } from '../../components/stripe-connect-card/stripe-connect-card.component';
-import { PaymentListFilters } from '../../models/payment.models';
+import { PaymentListFilters, StripeConnectStatusDto } from '../../models/payment.models';
 import { PaymentApiService } from '../../services/payment-api.service';
 import { PaymentListStore } from '../../store/payment-list.store';
 
@@ -43,9 +44,13 @@ export class PaymentListComponent implements OnInit {
   protected readonly paymentStore = inject(PaymentListStore);
   private readonly authSession = inject(AuthSessionService);
   private readonly paymentApi = inject(PaymentApiService);
+  private readonly confirmationDialog = inject(ConfirmationDialogService);
   private readonly platformId = inject(PLATFORM_ID);
 
+  protected readonly stripeStatus = signal<StripeConnectStatusDto | null>(null);
+  protected readonly isLoadingStripeStatus = signal(false);
   protected readonly isConnectingStripe = signal(false);
+  protected readonly isDisconnectingStripe = signal(false);
   protected readonly stripeErrorMessages = signal<readonly string[]>([]);
 
   protected readonly canManagePayments = computed(() =>
@@ -58,10 +63,12 @@ export class PaymentListComponent implements OnInit {
     }
 
     this.paymentStore.loadPayments();
+    this.loadStripeStatus();
   }
 
   protected refresh(): void {
     this.paymentStore.loadPayments({ page: this.paymentStore.filters().page });
+    this.loadStripeStatus();
   }
 
   protected applyFilters(filters: Partial<PaymentListFilters>): void {
@@ -90,7 +97,7 @@ export class PaymentListComponent implements OnInit {
   }
 
   protected connectStripe(): void {
-    if (!this.canManagePayments() || this.isConnectingStripe()) {
+    if (!this.canManagePayments() || this.isConnectingStripe() || this.stripeStatus()?.isConnected) {
       return;
     }
 
@@ -105,11 +112,72 @@ export class PaymentListComponent implements OnInit {
       )
       .subscribe({
         next: (result) => {
+          const oauthUrl = result.oauthUrl?.trim();
+          if (!oauthUrl) {
+            this.stripeErrorMessages.set(['Stripe Connect URL was missing from the server response.']);
+            return;
+          }
+
           if (isPlatformBrowser(this.platformId)) {
-            window.location.assign(result.oauthUrl);
+            window.location.assign(oauthUrl);
           }
         },
-        error: (error) => this.stripeErrorMessages.set(extractApiErrors(error)),
+        error: (error) => {
+          const messages = extractApiErrors(error).filter(
+            (message) => !message.toLowerCase().includes('already connected'),
+          );
+
+          if (messages.length > 0) {
+            this.stripeErrorMessages.set(messages);
+          }
+        },
+      });
+  }
+
+  protected disconnectStripe(): void {
+    if (!this.canManagePayments() || this.isDisconnectingStripe() || !this.stripeStatus()?.isConnected) {
+      return;
+    }
+
+    this.confirmationDialog
+      .confirmAction(
+        {
+          title: 'Disconnect Stripe',
+          message: 'Are you sure? This will disable card payments on your invoices.',
+          cancelLabel: 'Cancel',
+          confirmLabel: 'Disconnect',
+          processingLabel: 'Disconnecting',
+          tone: 'danger',
+        },
+        () => {
+          this.isDisconnectingStripe.set(true);
+          return this.paymentApi.disconnectStripe().pipe(
+            map((response) => this.unwrap(response, 'Stripe could not be disconnected.')),
+            finalize(() => this.isDisconnectingStripe.set(false)),
+          );
+        },
+      )
+      .subscribe({
+        next: () => this.loadStripeStatus(),
+        error: () => undefined,
+      });
+  }
+
+  private loadStripeStatus(): void {
+    this.isLoadingStripeStatus.set(true);
+
+    this.paymentApi
+      .getStripeStatus()
+      .pipe(
+        map((response) => this.unwrap(response, 'Stripe status could not be loaded.')),
+        finalize(() => this.isLoadingStripeStatus.set(false)),
+      )
+      .subscribe({
+        next: (status) => {
+          this.stripeStatus.set(status);
+          this.stripeErrorMessages.set([]);
+        },
+        error: () => this.stripeStatus.set({ isConnected: false, accountId: null, connectedAt: null }),
       });
   }
 

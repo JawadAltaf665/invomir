@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 
 import { apiUrl } from '../../../core/config/api-url';
 import { ApiResponse } from '../../../core/models/api-response.model';
-import { PaymentHistoryDto, PaymentListQuery, StripeConnectUrlDto } from '../models/payment.models';
+import { PaymentHistoryDto, PaymentListQuery, StripeConnectStatusDto, StripeConnectUrlDto, StripeDisconnectResultDto } from '../models/payment.models';
 
 @Injectable({ providedIn: 'root' })
 export class PaymentApiService {
@@ -18,6 +18,14 @@ export class PaymentApiService {
 
   createStripeConnect(): Observable<ApiResponse<StripeConnectUrlDto>> {
     return this.http.post<ApiResponse<StripeConnectUrlDto>>(apiUrl('/api/stripe/connect'), {});
+  }
+
+  getStripeStatus(): Observable<ApiResponse<StripeConnectStatusDto>> {
+    return this.http.get<ApiResponse<StripeConnectStatusDto>>(apiUrl('/api/stripe/status'));
+  }
+
+  disconnectStripe(): Observable<ApiResponse<StripeDisconnectResultDto>> {
+    return this.http.delete<ApiResponse<StripeDisconnectResultDto>>(apiUrl('/api/stripe/disconnect'));
   }
 
   private toPaymentListParams(query: PaymentListQuery): HttpParams {
