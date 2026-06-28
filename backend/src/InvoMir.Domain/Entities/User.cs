@@ -185,6 +185,11 @@ public sealed class User : TenantEntity
         StripeAccountId = stripeAccountId.Trim();
     }
 
+    public void ClearStripeAccountId()
+    {
+        StripeAccountId = null;
+    }
+
     public void UpdatePlan(string plan)
     {
         if (!AuthConstants.Plans.All.Contains(plan))

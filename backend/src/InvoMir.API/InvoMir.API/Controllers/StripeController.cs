@@ -8,6 +8,17 @@ namespace InvoMir.API.Controllers;
 [Produces("application/json")]
 public sealed class StripeController(ISender mediator) : ControllerBase
 {
+    [HttpGet("status")]
+    [RequirePermission(Permissions.Payment.View)]
+    [EnableRateLimiting(RateLimitPolicies.ApiAuthenticated)]
+    [ProducesResponseType(typeof(ApiResponse<StripeConnectStatusDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> Status(CancellationToken cancellationToken)
+    {
+        var result = await mediator.Send(new GetStripeConnectStatusQuery(), cancellationToken);
+        return Ok(ApiResponse<StripeConnectStatusDto>.Ok(result));
+    }
+
     [HttpPost("connect")]
     [RequirePermission(Permissions.Payment.Manage)]
     [EnableRateLimiting(RateLimitPolicies.Subscriptions)]
@@ -18,6 +29,18 @@ public sealed class StripeController(ISender mediator) : ControllerBase
     {
         var result = await mediator.Send(new CreateStripeConnectCommand(), cancellationToken);
         return Ok(ApiResponse<StripeConnectUrlDto>.Ok(result));
+    }
+
+    [HttpDelete("disconnect")]
+    [RequirePermission(Permissions.Payment.Manage)]
+    [EnableRateLimiting(RateLimitPolicies.Subscriptions)]
+    [ProducesResponseType(typeof(ApiResponse<StripeDisconnectResultDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> Disconnect(CancellationToken cancellationToken)
+    {
+        var result = await mediator.Send(new DisconnectStripeConnectCommand(), cancellationToken);
+        return Ok(ApiResponse<StripeDisconnectResultDto>.Ok(result));
     }
 
     [AllowAnonymous]

@@ -33,6 +33,25 @@ export function formatPaymentCurrency(value: number, currency: string, locale = 
   }
 }
 
+export function formatStripeConnectedDate(
+  value: string | null | undefined,
+  locale = 'en',
+): string | null {
+  if (!value) {
+    return null;
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+
+  return new Intl.DateTimeFormat(locale, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  }).format(date);
+}
 export function formatPaymentDateTime(
   value: string | null | undefined,
   locale = 'en',
